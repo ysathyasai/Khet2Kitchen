@@ -3,9 +3,22 @@
 {% block title %}Weather & Agronomic Risk Intelligence - Khet2Kitchen{% endblock %}
 
 {% block extra_head %}
-<!-- Leaflet CSS for Interactive Farm Map Picker -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- Leaflet CSS & JS for Interactive Farm GIS Map (No SRI hash to ensure reliable CDN delivery) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
+    #farmMap {
+        height: 420px !important;
+        min-height: 400px !important;
+        width: 100% !important;
+        border-radius: 0.75rem;
+        border: 1px solid var(--card-border);
+        position: relative;
+        z-index: 5;
+        background-color: #E2E8F0;
+        display: block;
+    }
     .leaflet-popup-content-wrapper {
         border-radius: 0.75rem;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -30,28 +43,59 @@
         border-color: #A3C2B0;
         transform: translateY(-1px);
     }
+    .custom-farm-pin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Header -->
-<div style="margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <div style="font-size: 0.75rem; font-weight: 700; color: #0284C7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
-                Farmer Advisory • Real-Time Satellite Telemetry & Interactive GIS Map
-            </div>
-            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
-                Weather & Agronomic Risk Intelligence
-            </h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-                Hyperlocal microclimate, volumetric soil moisture, and real-time Google Gemini agronomic advisories tailored to your crops.
-            </p>
+<!-- =========================================================================
+     HERO SECTION (DARK FOREST GRADIENT & GOLD - MATCHING LANDER DESIGN)
+     ========================================================================= -->
+<div style="background: var(--hero-bg-gradient); border-radius: 1.25rem; padding: 2.5rem 2rem; color: #FFFFFF; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(19, 56, 38, 0.25); position: relative; overflow: hidden;">
+    <div style="position: relative; z-index: 2; max-width: 850px;">
+        <!-- Network Pill -->
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.35); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #6EE7B7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+            <span>🛰️</span> Agronomic Weather & GIS Intelligence
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <span class="status-pill status-growing">
-                ● Live Satellite Telemetry & Gemini AI
-            </span>
+
+        <!-- Headline -->
+        <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: #FFFFFF; line-height: 1.2;">
+            Hyperlocal Microclimate & GIS Telemetry
+        </h1>
+
+        <!-- Subtitle -->
+        <p style="color: #A3C2B0; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem; max-width: 720px;">
+            Connecting rural farms to live satellite meteorological feeds, root-zone volumetric soil moisture models, and real-time Google Gemini agronomic risk advisories.
+        </p>
+
+        <!-- Glassmorphic Badges -->
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.75rem;">
+            <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); padding: 0.45rem 0.95rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #F3F4F6; display: flex; align-items: center; gap: 0.4rem;">
+                <span>📡</span> Live Open-Meteo Telemetry
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); padding: 0.45rem 0.95rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #F3F4F6; display: flex; align-items: center; gap: 0.4rem;">
+                <span>💧</span> Root-Zone Soil Moisture (3-9cm)
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); padding: 0.45rem 0.95rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #F3F4F6; display: flex; align-items: center; gap: 0.4rem;">
+                <span>🌱</span> Google Gemini Advisory
+            </div>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div style="display: flex; gap: 0.85rem; flex-wrap: wrap; align-items: center;">
+            <button type="button" onclick="useCurrentLocation()" class="btn btn-gold" style="padding: 0.65rem 1.4rem; font-size: 0.92rem; font-weight: 700; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <span>🎯</span> Use Device GPS Location →
+            </button>
+            <a href="#farmMapSection" class="btn btn-secondary" style="background: rgba(255, 255, 255, 0.12); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.65rem 1.25rem; font-size: 0.92rem; border-radius: 0.5rem; text-decoration: none;">
+                <span>🗺️</span> Open Interactive GIS Map
+            </a>
+            <button type="button" onclick="openVoiceAssistantModal()" class="btn btn-secondary" style="background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.65rem 1.15rem; font-size: 0.92rem; border-radius: 0.5rem;">
+                <span>🎤</span> Voice Advisory
+            </button>
         </div>
     </div>
 </div>
@@ -59,7 +103,7 @@
 <!-- =========================================================================
      1. WEATHER CONTROLS & TELEMETRY CARD
      ========================================================================= -->
-<div class="card" style="margin-bottom: 1.5rem;">
+<div class="card" style="margin-bottom: 2rem;">
     <div class="card-header">
         <div>
             <h2 class="card-title">
@@ -71,10 +115,10 @@
         <!-- Location Controls: GPS + PIN Code input -->
         <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
             <button type="button" id="useLocationBtn" onclick="useCurrentLocation()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 600;">
-                <span>🎯</span> Use Current Location
+                <span>🎯</span> Use Current GPS
             </button>
             <div style="display: flex; gap: 0.4rem; align-items: center;">
-                <input type="text" id="weatherPincodeInput" placeholder="Enter PIN (e.g. 422004)" value="{{ user.pincode|default:'' }}"
+                <input type="text" id="weatherPincodeInput" placeholder="Enter PIN (e.g. 422004)" value="{{ user.pincode|default:'422004' }}"
                     style="width: 170px; padding: 0.55rem 0.8rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.85rem; outline: none;">
                 <button type="button" id="analyzeRegionBtn" onclick="analyzePincode()" class="btn btn-forest" style="padding: 0.55rem 0.95rem; font-size: 0.85rem; font-weight: 600;">
                     Analyze Region
@@ -193,7 +237,7 @@
 <!-- =========================================================================
      2. INTERACTIVE FARM MAP & MANUAL LOCATION PICKER (LEAFLET GIS)
      ========================================================================= -->
-<div class="card" id="farmMapSection">
+<div class="card" id="farmMapSection" style="margin-bottom: 2rem;">
     <div class="card-header">
         <div>
             <h2 class="card-title">
@@ -222,105 +266,151 @@
     </div>
 
     <!-- Active Coordinates Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding: 0.5rem 0.85rem; background: #F4F6F1; border-radius: 0.5rem; font-size: 0.8rem; color: #133826; font-weight: 600; flex-wrap: wrap; gap: 0.5rem;">
-        <div>
-            <span>🎯 Current Selected Pin:</span>
-            <span style="color: #059669; font-family: monospace; font-size: 0.88rem;">Lat: <span id="mapSelectedLat">20.0050°</span> | Lon: <span id="mapSelectedLon">73.7890°</span></span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; padding: 0.6rem 1rem; background: #F4F6F1; border-radius: 0.5rem; font-size: 0.82rem; color: #133826; font-weight: 600; flex-wrap: wrap; gap: 0.5rem; border: 1px solid var(--card-border);">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>🎯 <strong>Selected Field Pin:</strong></span>
+            <span style="color: #059669; font-family: monospace; font-size: 0.9rem; font-weight: 700; background: #FFFFFF; padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--card-border);">
+                Lat: <span id="mapSelectedLat">19.2060°</span> | Lon: <span id="mapSelectedLon">73.8760°</span>
+            </span>
         </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted);">
-            💡 Tap/click anywhere on map or drag pin to re-query
+        <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem;">
+            <span>💡</span> Tap or drag pin on map to recalculate agronomy
         </div>
     </div>
 
-    <!-- Leaflet Map Canvas -->
-    <div id="farmMap" style="height: 380px; width: 100%; border-radius: 0.75rem; border: 1px solid var(--card-border); z-index: 10;"></div>
+    <!-- Leaflet Map Canvas (Explicit inline style height & width) -->
+    <div id="farmMap" style="height: 420px; min-height: 400px; width: 100%; border-radius: 0.75rem; border: 1px solid var(--card-border); position: relative; z-index: 5; background-color: #E2E8F0; display: block;"></div>
 </div>
 
 <!-- =========================================================================
      JAVASCRIPT CONTROLLERS: WEATHER TELEMETRY & LEAFLET GIS ENGINE
      ========================================================================= -->
-<!-- Leaflet JS CDN -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
 <script>
     let farmMapInstance = null;
     let farmMarkerInstance = null;
-    let currentMapLat = 20.005;
-    let currentMapLon = 73.789;
+    let currentMapLat = 19.2060;
+    let currentMapLon = 73.8760;
 
+    /**
+     * Initializes or smoothly pans the interactive Leaflet GIS map.
+     * Guaranteed to render immediately on DOM load without blank boxes.
+     */
     function initOrUpdateFarmMap(lat, lon, label) {
-        currentMapLat = lat;
-        currentMapLon = lon;
+        currentMapLat = parseFloat(lat) || 19.2060;
+        currentMapLon = parseFloat(lon) || 73.8760;
 
-        updateCoordinatesDisplay(lat, lon);
+        updateCoordinatesDisplay(currentMapLat, currentMapLon);
+
+        if (typeof L === "undefined") {
+            console.warn("[K2K GIS] Leaflet library not ready yet, queuing retry...");
+            setTimeout(() => initOrUpdateFarmMap(currentMapLat, currentMapLon, label), 150);
+            return;
+        }
+
+        const mapContainer = document.getElementById("farmMap");
+        if (!mapContainer) return;
 
         if (!farmMapInstance) {
-            farmMapInstance = L.map('farmMap', {
+            farmMapInstance = L.map("farmMap", {
+                center: [currentMapLat, currentMapLon],
+                zoom: 11,
                 scrollWheelZoom: false
-            }).setView([lat, lon], 11);
+            });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                maxZoom: 18,
+            // Point to standard OpenStreetMap tile server
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+                subdomains: ["a", "b", "c"]
             }).addTo(farmMapInstance);
 
             // Custom Leaflet Farm Marker Icon
             const farmDivIcon = L.divIcon({
-                className: 'custom-farm-pin',
+                className: "custom-farm-pin",
                 html: '<div style="background: #133826; color: #FFFFFF; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 4px 14px rgba(19, 56, 38, 0.45); border: 2.5px solid #FFFFFF; cursor: grab;">🌱</div>',
                 iconSize: [38, 38],
                 iconAnchor: [19, 19],
                 popupAnchor: [0, -20]
             });
 
-            farmMarkerInstance = L.marker([lat, lon], {
+            farmMarkerInstance = L.marker([currentMapLat, currentMapLon], {
                 draggable: true,
                 icon: farmDivIcon
             }).addTo(farmMapInstance);
 
-            farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label || 'Agricultural Land'}<br>Lat: ${lat.toFixed(4)}°, Lon: ${lon.toFixed(4)}°`).openPopup();
+            farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label || "Agricultural Land"}<br>Lat: ${currentMapLat.toFixed(4)}°, Lon: ${currentMapLon.toFixed(4)}°`);
 
             // Handle Pin Drag
-            farmMarkerInstance.on('dragend', function (e) {
+            farmMarkerInstance.on("dragend", function (e) {
                 const pos = e.target.getLatLng();
-                onMapLocationChosen(pos.lat, pos.lng, "Manual Map Pin Selection");
+                onMapLocationChosen(pos.lat, pos.lng, "Manual Map Pin Drag");
             });
 
             // Handle Map Click
-            farmMapInstance.on('click', function (e) {
+            farmMapInstance.on("click", function (e) {
                 const { lat, lng } = e.latlng;
-                onMapLocationChosen(lat, lng, "Manual Map Click Selection");
+                onMapLocationChosen(lat, lng, "Manual Map Click");
             });
+
+            // Crucial Leaflet Fix: Invalidate size after DOM layout computes
+            setTimeout(() => {
+                if (farmMapInstance) farmMapInstance.invalidateSize();
+            }, 250);
+            setTimeout(() => {
+                if (farmMapInstance) farmMapInstance.invalidateSize();
+            }, 600);
         } else {
-            farmMapInstance.panTo([lat, lon]);
+            farmMapInstance.panTo([currentMapLat, currentMapLon]);
             if (farmMarkerInstance) {
-                farmMarkerInstance.setLatLng([lat, lon]);
-                farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label || 'Agricultural Land'}<br>Lat: ${Number(lat).toFixed(4)}°, Lon: ${Number(lon).toFixed(4)}°`).openPopup();
+                farmMarkerInstance.setLatLng([currentMapLat, currentMapLon]);
+                farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label || "Agricultural Land"}<br>Lat: ${currentMapLat.toFixed(4)}°, Lon: ${currentMapLon.toFixed(4)}°`);
             }
+            setTimeout(() => {
+                if (farmMapInstance) farmMapInstance.invalidateSize();
+            }, 100);
         }
     }
 
     function onMapLocationChosen(lat, lng, label) {
-        currentMapLat = lat;
-        currentMapLon = lng;
+        currentMapLat = parseFloat(lat);
+        currentMapLon = parseFloat(lng);
         if (farmMarkerInstance) {
-            farmMarkerInstance.setLatLng([lat, lng]);
-            farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label}<br>Lat: ${Number(lat).toFixed(4)}°, Lon: ${Number(lng).toFixed(4)}°`).openPopup();
+            farmMarkerInstance.setLatLng([currentMapLat, currentMapLon]);
+            farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label}<br>Lat: ${currentMapLat.toFixed(4)}°, Lon: ${currentMapLon.toFixed(4)}°`).openPopup();
         }
-        updateCoordinatesDisplay(lat, lng);
+        updateCoordinatesDisplay(currentMapLat, currentMapLon);
         loadWeatherAdvisory({
-            lat: lat.toFixed(4),
-            lon: lng.toFixed(4),
+            lat: currentMapLat.toFixed(4),
+            lon: currentMapLon.toFixed(4),
             location_name: label,
             skipMapPan: true
         });
     }
 
     function selectMapPreset(lat, lon, name) {
-        if (farmMapInstance) {
-            farmMapInstance.flyTo([lat, lon], 12);
+        currentMapLat = parseFloat(lat);
+        currentMapLon = parseFloat(lon);
+
+        if (!farmMapInstance) {
+            initOrUpdateFarmMap(currentMapLat, currentMapLon, name);
+        } else {
+            farmMapInstance.flyTo([currentMapLat, currentMapLon], 12);
+            if (farmMarkerInstance) {
+                farmMarkerInstance.setLatLng([currentMapLat, currentMapLon]);
+                farmMarkerInstance.bindPopup(`<b>🌱 ${name}</b><br>Lat: ${currentMapLat.toFixed(4)}°, Lon: ${currentMapLon.toFixed(4)}°`).openPopup();
+            }
+            setTimeout(() => {
+                if (farmMapInstance) farmMapInstance.invalidateSize();
+            }, 150);
         }
-        onMapLocationChosen(lat, lon, name);
+
+        updateCoordinatesDisplay(currentMapLat, currentMapLon);
+        loadWeatherAdvisory({
+            lat: currentMapLat.toFixed(4),
+            lon: currentMapLon.toFixed(4),
+            location_name: name,
+            skipMapPan: true
+        });
     }
 
     function updateCoordinatesDisplay(lat, lon) {
@@ -363,8 +453,8 @@
 
             // Update Location
             const loc = data.location || {};
-            const lat = parseFloat(loc.latitude) || 20.005;
-            const lon = parseFloat(loc.longitude) || 73.789;
+            const lat = parseFloat(loc.latitude) || currentMapLat;
+            const lon = parseFloat(loc.longitude) || currentMapLon;
             const locLabel = loc.display_name || (loc.pincode ? `PIN ${loc.pincode}` : `Coordinates (${lat.toFixed(3)}°, ${lon.toFixed(3)}°)`);
 
             if (locationText) {
@@ -373,13 +463,21 @@
 
             // Update Weather metrics
             const w = data.weather || {};
-            document.getElementById("weatherTempDisplay").innerText = `${w.temperature_c ?? '--'}°C`;
-            document.getElementById("weatherTempRange").innerText = `Min: ${w.temp_min_c ?? '--'}°C • Max: ${w.temp_max_c ?? '--'}°C`;
-            document.getElementById("weatherHumidityDisplay").innerText = `${w.relative_humidity_pct ?? '--'}%`;
-            document.getElementById("weatherSoilMoistDisplay").innerText = `${w.avg_soil_moisture_pct ?? '--'}%`;
-            document.getElementById("weatherSoilTempDisplay").innerText = `Soil Temp: ${w.avg_soil_temp_c ?? '--'}°C (24h avg)`;
-            document.getElementById("weatherPrecipDisplay").innerText = `${w.precipitation_mm ?? 0} mm`;
-            document.getElementById("weatherWindDisplay").innerText = `Wind: ${w.wind_speed_kmh ?? 0} km/h`;
+            const tempDisplay = document.getElementById("weatherTempDisplay");
+            const tempRange = document.getElementById("weatherTempRange");
+            const humDisplay = document.getElementById("weatherHumidityDisplay");
+            const soilMoistDisplay = document.getElementById("weatherSoilMoistDisplay");
+            const soilTempDisplay = document.getElementById("weatherSoilTempDisplay");
+            const precipDisplay = document.getElementById("weatherPrecipDisplay");
+            const windDisplay = document.getElementById("weatherWindDisplay");
+
+            if (tempDisplay) tempDisplay.innerText = `${w.temperature_c ?? '--'}°C`;
+            if (tempRange) tempRange.innerText = `Min: ${w.temp_min_c ?? '--'}°C • Max: ${w.temp_max_c ?? '--'}°C`;
+            if (humDisplay) humDisplay.innerText = `${w.relative_humidity_pct ?? '--'}%`;
+            if (soilMoistDisplay) soilMoistDisplay.innerText = `${w.avg_soil_moisture_pct ?? '--'}%`;
+            if (soilTempDisplay) soilTempDisplay.innerText = `Soil Temp: ${w.avg_soil_temp_c ?? '--'}°C (24h avg)`;
+            if (precipDisplay) precipDisplay.innerText = `${w.precipitation_mm ?? 0} mm`;
+            if (windDisplay) windDisplay.innerText = `Wind: ${w.wind_speed_kmh ?? 0} km/h`;
 
             // Update Advisory
             const adv = data.advisory || {};
@@ -424,11 +522,7 @@
             (err) => {
                 console.warn("[K2K Weather] Geolocation denied or unavailable:", err.message);
                 const pin = document.getElementById("weatherPincodeInput")?.value?.trim();
-                if (pin) {
-                    loadWeatherAdvisory({ pincode: pin });
-                } else {
-                    loadWeatherAdvisory({ pincode: "422004" });
-                }
+                loadWeatherAdvisory({ pincode: pin || "422004" });
             },
             { timeout: 10000, enableHighAccuracy: true }
         );
@@ -443,14 +537,19 @@
         loadWeatherAdvisory({ pincode: pin });
     }
 
-    // Auto-load weather telemetry & GIS map on page ready
+    // Auto-load interactive GIS map IMMEDIATELY and query weather telemetry on page ready
     document.addEventListener("DOMContentLoaded", () => {
+        // 1. Render the map instantly so user NEVER sees a blank box
+        initOrUpdateFarmMap(currentMapLat, currentMapLon, "Junnar Valley Agro Center");
+
+        // 2. Load weather telemetry for default or user pincode
         const initialPin = document.getElementById("weatherPincodeInput")?.value?.trim();
-        if (initialPin) {
-            loadWeatherAdvisory({ pincode: initialPin });
-        } else {
-            loadWeatherAdvisory({ pincode: "422004" });
-        }
+        loadWeatherAdvisory({ pincode: initialPin || "422004", skipMapPan: true });
+
+        // 3. Handle window resize to invalidate Leaflet map dimensions
+        window.addEventListener("resize", () => {
+            if (farmMapInstance) farmMapInstance.invalidateSize();
+        });
     });
 </script>
 {% endblock %}
