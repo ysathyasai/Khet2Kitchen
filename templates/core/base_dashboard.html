@@ -1,0 +1,1118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Farmer Portal - Project Khet2Kitchen (K2K){% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* =====================================================================
+           KHET2KITCHEN MODERN DESIGN SYSTEM & TOKENS (DARK FOREST GREEN & CREAM)
+           ===================================================================== */
+        :root {
+            --sidebar-bg: #133826;
+            --sidebar-hover: #1b4d35;
+            --sidebar-text: #A3C2B0;
+            --sidebar-header: #6e9a80;
+            --nav-active-bg: #E6F4EA;
+            --nav-active-text: #133826;
+            
+            --app-canvas: #F4F6F1;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E9E2;
+            --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+            
+            --hero-bg-gradient: linear-gradient(135deg, #0F2027 0%, #133826 45%, #1A4431 100%);
+            --cta-gold: #F59E0B;
+            --cta-gold-hover: #D97706;
+            --cta-gold-text: #0F172A;
+            
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --text-light: #9CA3AF;
+            
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --primary-light: #D1FAE5;
+            
+            /* Status badges */
+            --status-growing-bg: #D1FAE5;
+            --status-growing-text: #065F46;
+            --status-planting-bg: #F3F4F6;
+            --status-planting-text: #374151;
+            --status-harvested-bg: #EAF2EC;
+            --status-harvested-text: #2D4F37;
+            --status-hub-bg: #CCFBF1;
+            --status-hub-text: #115E59;
+            --status-danger-bg: #FEE2E2;
+            --status-danger-text: #991B1B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--app-canvas);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* =====================================================================
+           LEFT SIDEBAR NAVIGATION
+           ===================================================================== */
+        .sidebar {
+            width: 270px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            transition: transform 0.3s ease;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 1.5rem 1.25rem 1.25rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-decoration: none;
+        }
+
+        .sidebar-brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand-title {
+            color: #FFFFFF;
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand-sub {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #34D399;
+            text-transform: uppercase;
+            margin-top: 0.15rem;
+        }
+
+        .sidebar-nav {
+            padding: 1.25rem 0.85rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--sidebar-header);
+            padding: 0 0.65rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .nav-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.85rem;
+            border-radius: 9999px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-link:hover {
+            background-color: var(--sidebar-hover);
+            color: #FFFFFF;
+        }
+
+        .nav-link.active {
+            background-color: var(--nav-active-bg);
+            color: var(--nav-active-text);
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-link-icon {
+            font-size: 1.1rem;
+            width: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #2D4F37;
+            color: #E6F4EA;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        /* =====================================================================
+           MAIN LAYOUT CONTAINER & TOP BAR
+           ===================================================================== */
+        .app-main {
+            margin-left: 270px;
+            flex: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            width: calc(100% - 270px);
+            background-color: var(--app-canvas);
+        }
+
+        .top-navbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            font-size: 1.25rem;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .top-pilot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #065F46;
+            background: #E6F4EA;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .top-cluster-info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .top-quick-hubs {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .hub-pill {
+            padding: 0.3rem 0.75rem;
+            border-radius: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .hub-pill-active {
+            background: #F59E0B;
+            color: #0F172A;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+        }
+
+        .hub-pill-inactive {
+            background: #F3F4F6;
+            color: #6B7280;
+            border: 1px solid #E5E7EB;
+        }
+
+        .hub-pill-inactive:hover {
+            background: #E5E7EB;
+            color: #374151;
+        }
+
+        .content-container {
+            padding: 2rem;
+            flex: 1;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* =====================================================================
+           CARDS & SURFACES (CLEAN WHITE ON CREAM CANVAS)
+           ===================================================================== */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* =====================================================================
+           BUTTONS & PILLS
+           ===================================================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-gold {
+            background: var(--cta-gold);
+            color: var(--cta-gold-text);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+        }
+
+        .btn-gold:hover {
+            background: var(--cta-gold-hover);
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+
+        .btn-forest {
+            background: var(--sidebar-bg);
+            color: #FFFFFF;
+        }
+
+        .btn-forest:hover {
+            background: var(--sidebar-hover);
+        }
+
+        .btn-secondary {
+            background: #FFFFFF;
+            border: 1px solid #D1D5DB;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #F9FAFB;
+            border-color: #9CA3AF;
+        }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-growing {
+            background: var(--status-growing-bg);
+            color: var(--status-growing-text);
+        }
+
+        .status-planting {
+            background: var(--status-planting-bg);
+            color: var(--status-planting-text);
+        }
+
+        .status-harvested {
+            background: var(--status-harvested-bg);
+            color: var(--status-harvested-text);
+        }
+
+        .status-hub {
+            background: var(--status-hub-bg);
+            color: var(--status-hub-text);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid var(--card-border);
+            border-radius: 0.75rem;
+            background: #FFFFFF;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+
+        th {
+            background: #F9FAFB;
+            color: #4B5563;
+            font-weight: 600;
+            padding: 0.85rem 1.15rem;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem 1.15rem;
+            border-bottom: 1px solid #F3F4F6;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #FBFDFB;
+        }
+
+        /* =====================================================================
+           GLOBAL FLOATING VERNACULAR VOICE ASSISTANT FAB & MODAL
+           ===================================================================== */
+        .voice-fab {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #133826, #1b4d35);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 8px 25px rgba(19, 56, 38, 0.45);
+            cursor: pointer;
+            z-index: 990;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid rgba(163, 194, 176, 0.3);
+        }
+
+        .voice-fab:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 12px 30px rgba(19, 56, 38, 0.6);
+            background: linear-gradient(135deg, #1b4d35, #10b981);
+        }
+
+        .voice-fab-pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid #10b981;
+            animation: fabPulse 2.5s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes fabPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        /* Voice Modal / Drawer */
+        .voice-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .voice-modal-content {
+            background: #FFFFFF;
+            border-radius: 1.25rem;
+            width: 100%;
+            max-width: 580px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .voice-modal-header {
+            background: linear-gradient(135deg, #133826, #1b4d35);
+            color: #FFFFFF;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .voice-modal-body {
+            padding: 1.5rem;
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+
+        /* Language pills in voice assistant */
+        .voice-lang-pill {
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid #D1D5DB;
+            background: #FFFFFF;
+            color: #4B5563;
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .voice-lang-pill.active {
+            background: #133826;
+            color: #FFFFFF;
+            border-color: #133826;
+            font-weight: 700;
+        }
+
+        .voice-mic-trigger {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 1.25rem auto;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .voice-mic-trigger.recording {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5);
+            animation: micPulse 1.2s infinite alternate;
+        }
+
+        @keyframes micPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        /* Mobile Drawer Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+        }
+
+        /* =====================================================================
+           RESPONSIVE MOBILE BREAKPOINTS
+           ===================================================================== */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .sidebar-overlay.active {
+                display: block;
+            }
+            .app-main {
+                margin-left: 0;
+                width: 100%;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+            .top-cluster-info {
+                display: none;
+            }
+            .content-container {
+                padding: 1.25rem 1rem;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- =====================================================================
+         1. SIDEBAR NAVIGATION (DARK FOREST GREEN: #133826)
+         ===================================================================== -->
+    <aside class="sidebar" id="appSidebar">
+        <a href="{% url 'farmer_dashboard' %}" class="sidebar-brand">
+            <div class="sidebar-brand-icon">🌱</div>
+            <div class="sidebar-brand-title">
+                <span>Khet2Kitchen</span>
+                <span class="sidebar-brand-sub">Smart Agri-Supply</span>
+            </div>
+        </a>
+
+        <nav class="sidebar-nav">
+            <!-- SECTION 1: CORE OPERATIONS -->
+            <div class="nav-section">
+                <div class="nav-section-title">Core Operations</div>
+                <div class="nav-group">
+                    <a href="{% url 'farmer_dashboard' %}" class="nav-link {% if active_nav == 'dashboard' %}active{% endif %}">
+                        <span class="nav-link-icon">📊</span>
+                        <span>Farmer's Dashboard</span>
+                    </a>
+                    <a href="{% url 'farmer_graded_produce' %}" class="nav-link {% if active_nav == 'graded_produce' %}active{% endif %}">
+                        <span class="nav-link-icon">📦</span>
+                        <span>My Graded Produce</span>
+                    </a>
+                    <a href="{% url 'farmer_pricing' %}" class="nav-link {% if active_nav == 'pricing' %}active{% endif %}">
+                        <span class="nav-link-icon">💵</span>
+                        <span>AI Pricing & MSP Floor</span>
+                    </a>
+                    <a href="{% url 'farmer_orders' %}" class="nav-link {% if active_nav == 'orders' %}active{% endif %}">
+                        <span class="nav-link-icon">🛒</span>
+                        <span>Incoming Orders</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- SECTION 2: SETTLEMENT & FLEET -->
+            <div class="nav-section">
+                <div class="nav-section-title">Settlement & Fleet</div>
+                <div class="nav-group">
+                    <a href="{% url 'farmer_wallet' %}" class="nav-link {% if active_nav == 'wallet' %}active{% endif %}">
+                        <span class="nav-link-icon">💳</span>
+                        <span>Agri-Fintech Payouts</span>
+                    </a>
+                    <a href="{% url 'farmer_logistics' %}" class="nav-link {% if active_nav == 'logistics' %}active{% endif %}">
+                        <span class="nav-link-icon">🚚</span>
+                        <span>Dynamic Sweeps</span>
+                    </a>
+                    <a href="{% url 'admin_command_dashboard' %}" class="nav-link {% if active_nav == 'admin' %}active{% endif %}">
+                        <span class="nav-link-icon">🏢</span>
+                        <span>Command Center</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- SECTION 3: FARMER ADVISORY -->
+            <div class="nav-section">
+                <div class="nav-section-title">Farmer Advisory</div>
+                <div class="nav-group">
+                    <a href="{% url 'farmer_weather' %}" class="nav-link {% if active_nav == 'weather' %}active{% endif %}">
+                        <span class="nav-link-icon">⛅</span>
+                        <span>Weather & Risk</span>
+                    </a>
+                    <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
+                        <span class="nav-link-icon">🎤</span>
+                        <span>Voice Assistant</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Sidebar User Footer -->
+        <div class="sidebar-footer">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div class="user-avatar">
+                    {{ user.first_name|first|default:"K" }}
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #FFFFFF;">
+                        {{ user.get_full_name|default:user.identifier|truncatechars:18 }}
+                    </span>
+                    <span style="font-size: 0.7rem; color: #A3C2B0;">
+                        {{ user.phone_number|default:"Kisan Member" }}
+                    </span>
+                </div>
+            </div>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 1.1rem; padding: 0.25rem;" title="Logout">
+                    🚪
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- =====================================================================
+         2. APP MAIN CANVAS & TOP HEADER
+         ===================================================================== -->
+    <div class="app-main">
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="top-left">
+                <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle Menu">
+                    ☰
+                </button>
+                <div class="top-pilot-badge">
+                    <span>🌾</span>
+                    <span>NASHIK-PUNE RURAL PILOT • DIRECT AGRI-RAIL</span>
+                </div>
+                <div class="top-cluster-info">
+                    <span>Cluster: Maharashtra West</span> • 
+                    <span style="color: #059669; font-weight: 600;">● MSP Floor Active</span>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <div class="top-quick-hubs">
+                    <a href="{% url 'farmer_dashboard' %}" class="hub-pill hub-pill-active">1. Farmer Portal</a>
+                    <a href="{% url 'retailer_dashboard' %}" class="hub-pill hub-pill-inactive">2. Retailer Hub</a>
+                    <a href="{% url 'supplier_dashboard' %}" class="hub-pill hub-pill-inactive">3. Supplier Hub</a>
+                </div>
+
+                <button type="button" onclick="window.location.reload()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
+                    🔄 Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Content -->
+        <main class="content-container">
+            {% block content %}
+                {% block dashboard_content %}{% endblock %}
+            {% endblock content %}
+        </main>
+    </div>
+
+    <!-- =====================================================================
+         3. GLOBAL FLOATING VERNACULAR VOICE ASSISTANT FAB
+         ===================================================================== -->
+    <div class="voice-fab" id="voiceFabBtn" onclick="openVoiceAssistantModal()" title="Bol kar poochhein / Speak with AI Voice Assistant">
+        <div class="voice-fab-pulse"></div>
+        <span>🎙️</span>
+    </div>
+
+    <!-- =====================================================================
+         4. GLOBAL VERNACULAR VOICE ASSISTANT MODAL (SARVAM AI + GEMINI)
+         ===================================================================== -->
+    <div class="voice-modal-backdrop" id="voiceModalBackdrop" onclick="handleBackdropClick(event)">
+        <div class="voice-modal-content" onclick="event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="voice-modal-header">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="font-size: 1.5rem;">🎙️</span>
+                    <div>
+                        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #FFFFFF;">
+                            K2K Vernacular Kisan Assistant
+                        </h3>
+                        <p style="font-size: 0.75rem; color: #A3C2B0; margin: 0;">
+                            Powered by Sarvam Saaras v3, Bulbul TTS & Google Gemini
+                        </p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeVoiceAssistantModal()" style="background: none; border: none; color: #A3C2B0; font-size: 1.5rem; cursor: pointer; line-height: 1;">
+                    &times;
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="voice-modal-body">
+                <!-- Language Selector Pills -->
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.35rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+                    <button type="button" class="voice-lang-pill active" id="modalLang_auto" onclick="setModalVoiceLanguage('auto')">🌐 Auto Detect</button>
+                    <button type="button" class="voice-lang-pill" id="modalLang_en" onclick="setModalVoiceLanguage('en-IN')">🇬🇧 English</button>
+                    <button type="button" class="voice-lang-pill" id="modalLang_hi" onclick="setModalVoiceLanguage('hi-IN')">🇮🇳 हिंदी</button>
+                    <button type="button" class="voice-lang-pill" id="modalLang_mr" onclick="setModalVoiceLanguage('mr-IN')">🇮🇳 मराठी</button>
+                    <button type="button" class="voice-lang-pill" id="modalLang_kn" onclick="setModalVoiceLanguage('kn-IN')">🇮🇳 ಕನ್ನಡ</button>
+                    <button type="button" class="voice-lang-pill" id="modalLang_te" onclick="setModalVoiceLanguage('te-IN')">🇮🇳 తెలుగు</button>
+                    <button type="button" class="voice-lang-pill" id="modalLang_ta" onclick="setModalVoiceLanguage('ta-IN')">🇮🇳 தமிழ்</button>
+                </div>
+
+                <!-- Central Mic Trigger -->
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <div class="voice-mic-trigger" id="modalMicBtn" onclick="toggleModalVoiceRecording()">
+                        <span id="modalMicIcon">🎤</span>
+                    </div>
+                    <div id="modalVoiceStatus" style="font-size: 0.9rem; font-weight: 600; color: #133826;">
+                        Tap microphone & speak in your native language
+                    </div>
+                </div>
+
+                <!-- Text Query Input Fallback -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="modalTextQuery" placeholder="Or type in English or Hindi..."
+                        style="flex: 1; padding: 0.6rem 0.85rem; border: 1px solid #D1D5DB; border-radius: 0.5rem; font-size: 0.88rem; outline: none;">
+                    <button type="button" onclick="submitModalTextQuery()" class="btn btn-forest" style="padding: 0.6rem 1rem;">
+                        Send
+                    </button>
+                </div>
+
+                <!-- Quick Prompts Chips -->
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+                    <button type="button" onclick="quickModalVoiceQuery('मेरा वॉलेट बैलेंस कितना है?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                        💰 वॉलेट बैलेंस?
+                    </button>
+                    <button type="button" onclick="quickModalVoiceQuery('What is my wallet balance?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                        💳 Balance (EN)?
+                    </button>
+                    <button type="button" onclick="quickModalVoiceQuery('अगली फसल कटाई कब करनी है?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                        🌾 फसल कटाई शेड्यूल?
+                    </button>
+                    <button type="button" onclick="quickModalVoiceQuery('What are the tomato market rates today?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                        📈 Tomato Rates?
+                    </button>
+                </div>
+
+                <!-- Live Conversation Box -->
+                <div id="modalConversationBox" style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.75rem; padding: 1rem; min-height: 100px; display: none;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #6B7280; text-transform: uppercase; margin-bottom: 0.4rem;">
+                        Latest Assistant Response
+                    </div>
+                    <div id="modalTranscriptBox" style="font-size: 0.85rem; color: #4B5563; margin-bottom: 0.5rem; font-style: italic;"></div>
+                    <div id="modalResponseText" style="font-size: 1rem; font-weight: 600; color: #133826; line-height: 1.5;"></div>
+                    
+                    <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                        <button type="button" onclick="replayModalAudio()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                            🔊 Replay Voice
+                        </button>
+                        <button type="button" onclick="resetModalChat()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                            🔄 Reset Chat
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         JAVASCRIPT CONTROLLERS: SIDEBAR & GLOBAL VOICE ASSISTANT
+         ===================================================================== -->
+    <script>
+        // Sidebar Toggle for Mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('active');
+        }
+
+        // Voice Assistant Modal Logic
+        let modalSelectedLanguage = 'auto';
+        let modalMediaRecorder = null;
+        let modalAudioChunks = [];
+        let modalIsRecording = false;
+        let modalCurrentAudio = null;
+        let modalLastResponseText = "";
+        let modalLastAudioBase64 = "";
+        let modalLastLanguage = "hi-IN";
+
+        function openVoiceAssistantModal() {
+            const modal = document.getElementById('voiceModalBackdrop');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeVoiceAssistantModal() {
+            const modal = document.getElementById('voiceModalBackdrop');
+            if (modal) modal.style.display = 'none';
+            if (modalCurrentAudio) modalCurrentAudio.pause();
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+        }
+
+        function handleBackdropClick(e) {
+            if (e.target.id === 'voiceModalBackdrop') {
+                closeVoiceAssistantModal();
+            }
+        }
+
+        function setModalVoiceLanguage(code) {
+            modalSelectedLanguage = code;
+            document.querySelectorAll('.voice-lang-pill').forEach(el => el.classList.remove('active'));
+            const btn = document.getElementById(`modalLang_${code.split('-')[0]}`);
+            if (btn) btn.classList.add('active');
+        }
+
+        async function toggleModalVoiceRecording() {
+            const micBtn = document.getElementById('modalMicBtn');
+            const statusText = document.getElementById('modalVoiceStatus');
+
+            if (!modalIsRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    modalAudioChunks = [];
+                    modalMediaRecorder = new MediaRecorder(stream);
+
+                    modalMediaRecorder.ondataavailable = e => {
+                        if (e.data.size > 0) modalAudioChunks.push(e.data);
+                    };
+
+                    modalMediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(modalAudioChunks, { type: 'audio/wav' });
+                        stream.getTracks().forEach(track => track.stop());
+                        await sendModalVoicePayload(audioBlob, null);
+                    };
+
+                    modalMediaRecorder.start();
+                    modalIsRecording = true;
+                    if (micBtn) micBtn.classList.add('recording');
+                    if (statusText) statusText.innerText = "🔴 Listening... Tap to finish & process query";
+                } catch (err) {
+                    console.error("Microphone access denied:", err);
+                    alert("Microphone permission denied. Please allow microphone access or use the text box.");
+                }
+            } else {
+                if (modalMediaRecorder && modalMediaRecorder.state !== 'inactive') {
+                    modalMediaRecorder.stop();
+                }
+                modalIsRecording = false;
+                if (micBtn) micBtn.classList.remove('recording');
+                if (statusText) statusText.innerText = "⏳ Processing voice with Sarvam AI & Gemini...";
+            }
+        }
+
+        async function submitModalTextQuery() {
+            const input = document.getElementById('modalTextQuery');
+            const text = input?.value?.trim();
+            if (!text) return;
+            input.value = "";
+            await sendModalVoicePayload(null, text);
+        }
+
+        function quickModalVoiceQuery(text) {
+            sendModalVoicePayload(null, text);
+        }
+
+        async function sendModalVoicePayload(audioBlob, textQuery) {
+            const statusText = document.getElementById('modalVoiceStatus');
+            const convBox = document.getElementById('modalConversationBox');
+            const transcriptBox = document.getElementById('modalTranscriptBox');
+            const responseBox = document.getElementById('modalResponseText');
+
+            if (statusText) statusText.innerText = "⚡ Analyzing query & database context...";
+
+            try {
+                const formData = new FormData();
+                if (audioBlob) formData.append('audio', audioBlob, 'voice_query.wav');
+                if (textQuery) formData.append('text', textQuery);
+                formData.append('language', modalSelectedLanguage);
+
+                const res = await fetch('/api/voice/assist/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken') || ''
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    modalLastResponseText = data.response_text;
+                    modalLastAudioBase64 = data.audio_base64;
+                    modalLastLanguage = data.detected_language || data.language || 'hi-IN';
+
+                    if (convBox) convBox.style.display = 'block';
+                    if (transcriptBox) transcriptBox.innerText = `You asked: "${data.transcribed_text || textQuery || ''}"`;
+                    if (responseBox) responseBox.innerText = data.response_text;
+                    if (statusText) statusText.innerText = "Ready - Tap microphone to ask another question";
+
+                    // Play audio
+                    if (data.audio_base64 && data.audio_source === 'sarvam') {
+                        playModalBase64Audio(data.audio_base64);
+                    } else if (data.response_text) {
+                        speakModalDeviceSpeech(data.response_text, modalLastLanguage);
+                    }
+                } else {
+                    if (statusText) statusText.innerText = data.error || "Could not process query. Please try again.";
+                }
+            } catch (err) {
+                console.error("Voice assist error:", err);
+                if (statusText) statusText.innerText = "Connection error. Please try again.";
+            }
+        }
+
+        function playModalBase64Audio(b64) {
+            if (modalCurrentAudio) modalCurrentAudio.pause();
+            modalCurrentAudio = new Audio("data:audio/wav;base64," + b64);
+            modalCurrentAudio.play().catch(e => {
+                console.warn("Autoplay restricted; fallback to device speech:", e);
+                if (modalLastResponseText) speakModalDeviceSpeech(modalLastResponseText, modalLastLanguage);
+            });
+        }
+
+        function speakModalDeviceSpeech(text, langCode) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utt = new SpeechSynthesisUtterance(text);
+            utt.lang = langCode || 'hi-IN';
+            window.speechSynthesis.speak(utt);
+        }
+
+        function replayModalAudio() {
+            if (modalLastAudioBase64) {
+                playModalBase64Audio(modalLastAudioBase64);
+            } else if (modalLastResponseText) {
+                speakModalDeviceSpeech(modalLastResponseText, modalLastLanguage);
+            }
+        }
+
+        async function resetModalChat() {
+            try {
+                const fd = new FormData();
+                fd.append('reset_chat', '1');
+                await fetch('/api/voice/assist/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
+                    body: fd
+                });
+                const convBox = document.getElementById('modalConversationBox');
+                if (convBox) convBox.style.display = 'none';
+                const statusText = document.getElementById('modalVoiceStatus');
+                if (statusText) statusText.innerText = "Chat session reset. Speak or type to start fresh.";
+            } catch (e) {
+                console.error("Reset chat failed:", e);
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

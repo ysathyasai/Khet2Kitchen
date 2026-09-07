@@ -1,91 +1,107 @@
-{% extends "base.html" %}
+{% extends "core/base_dashboard.html" %}
 
-{% block title %}K2K Command Center - Admin Overview{% endblock %}
+{% block title %}K2K Command Center - Platform Operations{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-    <div>
-        <h1 style="font-size: 1.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🛡️</span> K2K Command Center
-        </h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-            Supply Chain Supervision & Disintermediation Ops • <strong>{{ user.get_full_name }}</strong>
-        </p>
-    </div>
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="/admin/" class="btn btn-outline" target="_blank">Django Admin Panel ↗</a>
-        <span class="badge badge-success" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-            ● Operations Live
-        </span>
+<!-- Header -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+                Settlement & Fleet • System Administration
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+                🛡️ K2K Command Center
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                Platform Supervision, Aggregated Network Volumes & APMC Disintermediation Operations.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a href="/admin/" class="btn btn-secondary" style="font-size: 0.85rem; font-weight: 600;" target="_blank">
+                Django Admin Panel ↗
+            </a>
+            <span class="status-pill status-growing">
+                ● Operations Live
+            </span>
+        </div>
     </div>
 </div>
 
-<div class="grid-cards">
-    <div class="card">
-        <div class="card-header">
-            <span class="metric-label">Registered Farmers</span>
-            <span style="font-size: 1.5rem;">👨‍🌾</span>
+<!-- Metrics Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Registered Farmers</span>
+            <span style="font-size: 1.3rem;">👨‍🌾</span>
         </div>
-        <div class="metric-value">{{ metrics.total_farmers }}</div>
-        <div class="metric-label" style="color: #34d399;">Mobile / OTP authenticated</div>
+        <div style="font-size: 2rem; font-weight: 800; color: #133826;">{{ metrics.total_farmers }}</div>
+        <div style="font-size: 0.78rem; color: #059669; font-weight: 600; margin-top: 0.3rem;">Mobile / OTP authenticated</div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <span class="metric-label">Registered Retailers</span>
-            <span style="font-size: 1.5rem;">🏬</span>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Registered Retailers</span>
+            <span style="font-size: 1.3rem;">🏬</span>
         </div>
-        <div class="metric-value">{{ metrics.total_retailers }}</div>
-        <div class="metric-label" style="color: #60a5fa;">Urban B2B buyers</div>
+        <div style="font-size: 2rem; font-weight: 800; color: #0284C7;">{{ metrics.total_retailers }}</div>
+        <div style="font-size: 0.78rem; color: #0369A1; font-weight: 600; margin-top: 0.3rem;">Urban B2B buyers</div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <span class="metric-label">Micro-Hubs</span>
-            <span style="font-size: 1.5rem;">📍</span>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Micro-Hubs</span>
+            <span style="font-size: 1.3rem;">📍</span>
         </div>
-        <div class="metric-value">{{ metrics.total_hubs }}</div>
-        <div class="metric-label">AI Grading stations</div>
+        <div style="font-size: 2rem; font-weight: 800; color: #D97706;">{{ metrics.total_hubs }}</div>
+        <div style="font-size: 0.78rem; color: #B45309; font-weight: 600; margin-top: 0.3rem;">AI Grading stations</div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <span class="metric-label">Active Batches Graded</span>
-            <span style="font-size: 1.5rem;">📦</span>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Batches Graded</span>
+            <span style="font-size: 1.3rem;">📦</span>
         </div>
-        <div class="metric-value">{{ metrics.active_batches }}</div>
-        <div class="metric-label">Computer vision quality score</div>
+        <div style="font-size: 2rem; font-weight: 800; color: #059669;">{{ metrics.active_batches }}</div>
+        <div style="font-size: 0.78rem; color: #065F46; font-weight: 600; margin-top: 0.3rem;">Edge vision validated</div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <span class="metric-label">Pending Demand Orders</span>
-            <span style="font-size: 1.5rem;">⏳</span>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending Demand Orders</span>
+            <span style="font-size: 1.3rem;">⏳</span>
         </div>
-        <div class="metric-value" style="color: #fbbf24;">{{ metrics.pending_demand_orders }}</div>
-        <div class="metric-label">Awaiting batch matching & dispatch</div>
+        <div style="font-size: 2rem; font-weight: 800; color: #DC2626;">{{ metrics.pending_demand_orders }}</div>
+        <div style="font-size: 0.78rem; color: #B91C1C; font-weight: 600; margin-top: 0.3rem;">Awaiting dispatch matching</div>
     </div>
 </div>
 
+<!-- Architecture & RBAC Card -->
 <div class="card">
-    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">
-        ⚙️ Architectural Health & Role-Based Access Control (RBAC)
-    </h2>
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>⚙️</span> Architectural Health & Role-Based Access Control (RBAC)
+            </h2>
+            <div class="card-subtitle">Channel dispatch routes and active identity providers.</div>
+        </div>
+    </div>
+
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
-        <div style="background: var(--surface-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-            <div style="font-weight: 600; margin-bottom: 0.25rem;">Farmer Channel</div>
+        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
+            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Farmer Channel</div>
             <div style="color: var(--text-muted); font-size: 0.85rem;">Mobile / OTP login route to <code>/farmer/dashboard/</code></div>
         </div>
-        <div style="background: var(--surface-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-            <div style="font-weight: 600; margin-bottom: 0.25rem;">Retailer Channel</div>
+        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
+            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Retailer Channel</div>
             <div style="color: var(--text-muted); font-size: 0.85rem;">Email / Password login route to <code>/retailer/dashboard/</code></div>
         </div>
-        <div style="background: var(--surface-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-            <div style="font-weight: 600; margin-bottom: 0.25rem;">Supplier Channel</div>
+        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
+            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Supplier Channel</div>
             <div style="color: var(--text-muted); font-size: 0.85rem;">Email / Password login route to <code>/supplier/dashboard/</code></div>
         </div>
-        <div style="background: var(--surface-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-            <div style="font-weight: 600; margin-bottom: 0.25rem;">Command Central</div>
+        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
+            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Command Central</div>
             <div style="color: var(--text-muted); font-size: 0.85rem;">Superuser / Admin route to <code>/k2k-command/</code></div>
         </div>
     </div>

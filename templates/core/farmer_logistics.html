@@ -1,0 +1,162 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}Dynamic Sweeps & Cold-Chain Fleet - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+                Settlement & Fleet • Cold-Chain Logistics
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+                Dynamic Sweeps & Cold-Chain Fleet
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                IoT temperature-tracked Reefer EV fleet routes aggregated produce from village micro-hubs to urban supermarkets in under 4 hours.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="status-pill status-growing">
+                ● Reefer Cold-Chain (4°C) Active
+            </span>
+            <span class="status-pill status-planting">
+                Zero Emission EV Fleet
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Fleet Telemetry KPI Cards -->
+{% if route_plan %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Assigned Vehicle
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #133826;">
+            {{ route_plan.dispatch_vehicle.vehicle_type }}
+        </div>
+        <div style="font-size: 0.78rem; color: #059669; font-weight: 600; margin-top: 0.25rem;">
+            ID: {{ route_plan.dispatch_vehicle.vehicle_id }}
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Cargo Temperature
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #0284C7;">
+            {{ route_plan.dispatch_vehicle.cargo_temperature }}
+        </div>
+        <div style="font-size: 0.78rem; color: #0369A1; font-weight: 600; margin-top: 0.25rem;">
+            ● IoT Sensor Active
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            EV Battery Status
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #059669;">
+            {{ route_plan.dispatch_vehicle.battery_level }}
+        </div>
+        <div style="font-size: 0.78rem; color: #065F46; font-weight: 600; margin-top: 0.25rem;">
+            ● Range: 180 km Headroom
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Green Carbon Offset
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #059669;">
+            +{{ route_plan.dispatch_vehicle.co2_savings_kg }} kg
+        </div>
+        <div style="font-size: 0.78rem; color: #065F46; font-weight: 600; margin-top: 0.25rem;">
+            CO2 emissions avoided vs diesel truck
+        </div>
+    </div>
+</div>
+
+<!-- Scheduled Route Stops Table -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📍</span> AI Dynamic Sweep Route Plan
+            </h2>
+            <div class="card-subtitle">Dispatch route connecting rural aggregation hubs directly to urban retailer drop-points.</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>STOP #</th>
+                    <th>LOCATION / DESTINATION</th>
+                    <th>ACTIVITY</th>
+                    <th>VOLUME (KG)</th>
+                    <th>ESTIMATED ARRIVAL</th>
+                    <th>COLD-CHAIN AUDIT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stop in route_plan.optimized_stops %}
+                <tr>
+                    <td><strong>Stop {{ stop.stop_number }}</strong></td>
+                    <td><strong>{{ stop.destination_name }}</strong></td>
+                    <td>
+                        <span class="status-pill {% if stop.activity == 'PICKUP' %}status-growing{% else %}status-hub{% endif %}">
+                            {{ stop.activity }}
+                        </span>
+                    </td>
+                    <td>{{ stop.volume_kg }} kg</td>
+                    <td style="color: var(--text-muted);">{{ stop.eta_minutes }} mins</td>
+                    <td><span class="status-pill status-growing">✓ 4°C Maintained</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Operational Micro-Hub Drop-Off Network -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🏬</span> Operational Micro-Hub Drop-Off Points
+            </h2>
+            <div class="card-subtitle">Regional collection hubs equipped with calibrated load cells, cold storage, and edge vision cameras.</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+        {% for hub in active_hubs %}
+        <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 0.75rem; padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <div style="font-weight: 700; font-size: 1.1rem; color: #133826;">{{ hub.name }}</div>
+                <span class="status-pill status-planting">{{ hub.code }}</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+                {{ hub.location }}, {{ hub.district }}, {{ hub.state }}
+            </div>
+            <div style="border-top: 1px solid var(--card-border); padding-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span style="color: var(--text-muted);">Available Headroom:</span>
+                <strong style="color: #059669;">{{ hub.get_available_capacity }} kg</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-top: 0.25rem; color: var(--text-muted);">
+                <span>Total Storage:</span>
+                <span>{{ hub.capacity_kg }} kg</span>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">No active micro-hubs configured.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

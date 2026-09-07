@@ -1,0 +1,183 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}Agri-Fintech Payouts & Digital Wallet - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+                Settlement & Fleet • Agri-Fintech
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+                Agri-Fintech Payouts & Digital Wallet
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                Immutable digital ledger tracking batch sales, quality bonuses, and instantaneous UPI/IMPS bank withdrawals.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="status-pill status-growing">
+                ● 24/7 IMPS & UPI Settlement Active
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Digital Wallet Balance Card -->
+<div class="card" style="border: 2px solid #10B981; background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+                Available Wallet Balance
+            </div>
+            <div style="font-size: 2.75rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;" id="walletBalanceDisplay">
+                ₹{{ wallet.current_balance|floatformat:2 }}
+            </div>
+            <div style="font-size: 0.85rem; color: #065F46; font-weight: 600; margin-top: 0.25rem;">
+                ● Linked to: {{ user.phone_number }}@upi (Instant settlement rail)
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-end;">
+            <button type="button" id="withdrawBtn" class="btn btn-gold" style="padding: 0.75rem 1.75rem; font-size: 1rem; font-weight: 800; border-radius: 0.6rem;">
+                ⚡ Withdraw to Bank Account
+            </button>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">
+                Zero transaction fees • Instant NEFT/IMPS rail
+            </span>
+        </div>
+    </div>
+
+    <!-- Quick stats strip -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--card-border);">
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Cumulative Payouts</div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: #133826;">₹{{ financial_summary.total_net_payout|floatformat:2 }}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Disintermediation Saved</div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: #059669;">+₹{{ financial_summary.total_disintermediation_gain|floatformat:2 }}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Gross Produced</div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: #1F2937;">₹{{ financial_summary.total_gross_value|floatformat:2 }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Digital Wallet Transaction Ledger -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📜</span> Digital Wallet Transaction Ledger
+            </h2>
+            <div class="card-subtitle">Immutable audit trail of instant batch settlement credits and bank withdrawals.</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table id="walletLedgerTable">
+            <thead>
+                <tr>
+                    <th>TIMESTAMP</th>
+                    <th>TYPE</th>
+                    <th>DESCRIPTION</th>
+                    <th>AMOUNT</th>
+                    <th>SETTLEMENT RAIL</th>
+                </tr>
+            </thead>
+            <tbody id="walletLedgerBody">
+                {% for tx in recent_transactions %}
+                <tr>
+                    <td style="color: var(--text-muted); font-size: 0.88rem;">{{ tx.timestamp|date:"d M Y, H:i" }}</td>
+                    <td>
+                        <span class="status-pill {% if tx.transaction_type == 'CREDIT' %}status-growing{% else %}status-planting{% endif %}">
+                            {{ tx.get_transaction_type_display }}
+                        </span>
+                    </td>
+                    <td><strong>{{ tx.description }}</strong></td>
+                    <td>
+                        {% if tx.transaction_type == 'CREDIT' %}
+                            <strong style="color: #059669; font-size: 1rem;">+₹{{ tx.amount }}</strong>
+                        {% else %}
+                            <strong style="color: #DC2626; font-size: 1rem;">-₹{{ tx.amount }}</strong>
+                        {% endif %}
+                    </td>
+                    <td><span class="status-pill status-hub">Settled (UPI/IMPS)</span></td>
+                </tr>
+                {% empty %}
+                <tr id="emptyLedgerRow">
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No wallet transactions recorded yet. Drop off a produce batch at a micro-hub to receive instant credit!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Wallet Withdrawal JavaScript -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const withdrawBtn = document.getElementById("withdrawBtn");
+        const walletBalanceDisplay = document.getElementById("walletBalanceDisplay");
+        const walletLedgerBody = document.getElementById("walletLedgerBody");
+
+        withdrawBtn.addEventListener("click", async () => {
+            const currentBalText = walletBalanceDisplay.innerText.replace(/[^0-9.]/g, '');
+            const currentBal = parseFloat(currentBalText) || 0;
+
+            if (currentBal <= 0) {
+                alert("Your wallet balance is currently ₹0.00. Drop off a produce batch to earn instant payouts!");
+                return;
+            }
+
+            const withdrawAmount = prompt(`Enter amount to withdraw to your bank account via UPI (Max: ₹${currentBal.toFixed(2)}):`, currentBal.toFixed(2));
+            if (!withdrawAmount) return;
+
+            const amtNum = parseFloat(withdrawAmount);
+            if (isNaN(amtNum) || amtNum <= 0 || amtNum > currentBal) {
+                alert("Please enter a valid amount within your current balance.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("amount", amtNum.toString());
+
+            try {
+                const res = await fetch("/api/wallet/withdraw/", {
+                    method: "POST",
+                    headers: { "X-CSRFToken": getCookie("csrftoken") || "" },
+                    body: formData,
+                });
+                const data = await res.json();
+                if (data.success) {
+                    walletBalanceDisplay.innerText = "₹" + data.new_balance.toFixed(2);
+                    alert("⚡ " + data.message);
+                    
+                    const emptyRow = document.getElementById("emptyLedgerRow");
+                    if (emptyRow) emptyRow.remove();
+
+                    const newRow = document.createElement("tr");
+                    newRow.innerHTML = `
+                        <td style="color: var(--text-muted); font-size: 0.88rem;">Just Now</td>
+                        <td><span class="status-pill status-planting">Debit (Bank Withdrawal)</span></td>
+                        <td><strong>Instant IMPS settlement to UPI</strong></td>
+                        <td><strong style="color: #DC2626; font-size: 1rem;">-₹${amtNum.toFixed(2)}</strong></td>
+                        <td><span class="status-pill status-hub">Settled (UPI/IMPS)</span></td>
+                    `;
+                    walletLedgerBody.insertBefore(newRow, walletLedgerBody.firstChild);
+                } else {
+                    alert("Withdrawal failed: " + (data.error || "Unknown error"));
+                }
+            } catch (err) {
+                alert("Error connecting to banking rail: " + err.message);
+            }
+        });
+    });
+</script>
+{% endblock %}

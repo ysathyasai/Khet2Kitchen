@@ -1,0 +1,275 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}Weather & Agronomic Risk Intelligence - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #0284C7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+                Farmer Advisory • Real-Time Satellite Telemetry
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+                Weather & Agronomic Risk Intelligence
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                Hyperlocal microclimate, volumetric soil moisture, and real-time Google Gemini agronomic advisories tailored to your crops.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="status-pill status-growing">
+                ● Live Satellite Telemetry & Gemini AI
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Weather Controls & Telemetry Card -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🌾</span> Field Location & Microclimate
+            </h2>
+            <div class="card-subtitle">Select your farm location via GPS or postal PIN code.</div>
+        </div>
+
+        <!-- Location Controls: GPS + PIN Code input -->
+        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <button type="button" id="useLocationBtn" onclick="useCurrentLocation()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 600;">
+                <span>📍</span> Use Current Location
+            </button>
+            <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <input type="text" id="weatherPincodeInput" placeholder="Enter PIN (e.g. 422004)" value="{{ user.pincode|default:'' }}"
+                    style="width: 170px; padding: 0.55rem 0.8rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.85rem; outline: none;">
+                <button type="button" id="analyzeRegionBtn" onclick="analyzePincode()" class="btn btn-forest" style="padding: 0.55rem 0.95rem; font-size: 0.85rem; font-weight: 600;">
+                    Analyze Region
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Region Badge & Spinner -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding: 0.75rem 1rem; background: #F9FAFB; border-radius: 0.5rem; border: 1px solid var(--card-border); flex-wrap: wrap; gap: 0.5rem;">
+        <div id="weatherLocationLabel" style="font-size: 0.88rem; color: #133826; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
+            <span>📍</span> <span id="weatherLocationText">Loading agronomic telemetry...</span>
+        </div>
+        <div id="weatherSpinner" style="display: none; align-items: center; gap: 0.5rem; color: #0284C7; font-size: 0.82rem; font-weight: 600;">
+            <span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span>
+            <span>Querying Open-Meteo & Gemini AI...</span>
+        </div>
+    </div>
+
+    <!-- Weather Headline Banner -->
+    <div id="weatherHeadlineCard" style="background: linear-gradient(90deg, #EFF6FF, #ECFDF5); border-left: 4px solid #0284C7; padding: 0.9rem 1.25rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #0284C7; font-weight: 700; margin-bottom: 0.2rem;">
+            Microclimate Overview
+        </div>
+        <div id="weatherHeadlineText" style="font-size: 1rem; font-weight: 700; color: #133826; line-height: 1.4;">
+            Fetching live agronomic readings...
+        </div>
+    </div>
+
+    <!-- Metric Badges (Temperature, Humidity, Soil Moisture %, Precipitation/Wind) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+        <!-- Temperature -->
+        <div style="background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.6rem; padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Ambient Temp</span>
+                <span style="font-size: 1.25rem;">🌡️</span>
+            </div>
+            <div id="weatherTempDisplay" style="font-size: 1.6rem; font-weight: 800; color: #133826;">--°C</div>
+            <div id="weatherTempRange" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Min: --°C • Max: --°C</div>
+        </div>
+
+        <!-- Relative Humidity -->
+        <div style="background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.6rem; padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Relative Humidity</span>
+                <span style="font-size: 1.25rem;">💧</span>
+            </div>
+            <div id="weatherHumidityDisplay" style="font-size: 1.6rem; font-weight: 800; color: #0284C7;">--%</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Atmospheric moisture</div>
+        </div>
+
+        <!-- Soil Moisture -->
+        <div style="background: #FFFFFF; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 0.6rem; padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">Soil Moisture (3-9cm)</span>
+                <span style="font-size: 1.25rem;">🌱</span>
+            </div>
+            <div id="weatherSoilMoistDisplay" style="font-size: 1.6rem; font-weight: 800; color: #059669;">--%</div>
+            <div id="weatherSoilTempDisplay" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Soil Temp: --°C (24h avg)</div>
+        </div>
+
+        <!-- Precipitation & Wind -->
+        <div style="background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.6rem; padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Rain & Wind</span>
+                <span style="font-size: 1.25rem;">🌧️</span>
+            </div>
+            <div id="weatherPrecipDisplay" style="font-size: 1.6rem; font-weight: 800; color: #0369A1;">-- mm</div>
+            <div id="weatherWindDisplay" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Wind: -- km/h</div>
+        </div>
+    </div>
+
+    <!-- AI Agronomic Advisory Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <!-- Agronomic Risks Card -->
+        <div style="background: #FEF2F2; border-left: 4px solid #EF4444; border-radius: 0.6rem; padding: 1.25rem; border-top: 1px solid #FEE2E2; border-right: 1px solid #FEE2E2; border-bottom: 1px solid #FEE2E2;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">⚠️</span>
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: #991B1B; margin: 0;">
+                    Agronomic Risks & Threats
+                </h3>
+            </div>
+            <p id="weatherRisksText" style="font-size: 0.88rem; color: #7F1D1D; line-height: 1.5; margin: 0;">
+                Analyzing pest, disease & heat stress risks...
+            </p>
+        </div>
+
+        <!-- Irrigation & Harvest Advice Card -->
+        <div style="background: #F0FDF4; border-left: 4px solid #10B981; border-radius: 0.6rem; padding: 1.25rem; border-top: 1px solid #DCFCE7; border-right: 1px solid #DCFCE7; border-bottom: 1px solid #DCFCE7;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">🚜</span>
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: #065F46; margin: 0;">
+                    Irrigation & Harvest Directives
+                </h3>
+            </div>
+            <p id="weatherIrrigationText" style="font-size: 0.88rem; color: #14532D; line-height: 1.5; margin: 0;">
+                Calculating optimal water recharge and plucking schedule...
+            </p>
+        </div>
+
+        <!-- Recommended Crops Card -->
+        <div style="background: #FAF5FF; border-left: 4px solid #8B5CF6; border-radius: 0.6rem; padding: 1.25rem; border-top: 1px solid #F3E8FF; border-right: 1px solid #F3E8FF; border-bottom: 1px solid #F3E8FF;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">🌱</span>
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: #5B21B6; margin: 0;">
+                    Recommended High-Yield Crops
+                </h3>
+            </div>
+            <p id="weatherCropsText" style="font-size: 0.88rem; color: #4C1D95; line-height: 1.5; margin: 0;">
+                Identifying high-yield crop matches for current soil moisture...
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Weather Client JavaScript -->
+<script>
+    async function loadWeatherAdvisory(params = {}) {
+        const spinner = document.getElementById("weatherSpinner");
+        const locationText = document.getElementById("weatherLocationText");
+        const headlineText = document.getElementById("weatherHeadlineText");
+        const risksText = document.getElementById("weatherRisksText");
+        const irrigationText = document.getElementById("weatherIrrigationText");
+        const cropsText = document.getElementById("weatherCropsText");
+
+        if (spinner) spinner.style.display = "inline-flex";
+        if (locationText) locationText.innerText = "Querying live weather & soil telemetry...";
+
+        try {
+            const query = new URLSearchParams();
+            if (params.lat && params.lon) {
+                query.set("lat", params.lat);
+                query.set("lon", params.lon);
+            }
+            if (params.pincode) {
+                query.set("pincode", params.pincode);
+            }
+            if (params.location_name) {
+                query.set("location_name", params.location_name);
+            }
+
+            const response = await fetch(`/api/weather-advisory/?${query.toString()}`);
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || "Failed to load weather intelligence");
+            }
+
+            // Update Location
+            const loc = data.location || {};
+            const locLabel = loc.display_name || (loc.pincode ? `PIN ${loc.pincode}` : `Coordinates (${loc.latitude}, ${loc.longitude})`);
+            if (locationText) {
+                locationText.innerText = `${locLabel} (Lat: ${Number(loc.latitude).toFixed(3)}°, Lon: ${Number(loc.longitude).toFixed(3)}°)`;
+            }
+
+            // Update Weather metrics
+            const w = data.weather || {};
+            document.getElementById("weatherTempDisplay").innerText = `${w.temperature_c ?? '--'}°C`;
+            document.getElementById("weatherTempRange").innerText = `Min: ${w.temp_min_c ?? '--'}°C • Max: ${w.temp_max_c ?? '--'}°C`;
+            document.getElementById("weatherHumidityDisplay").innerText = `${w.relative_humidity_pct ?? '--'}%`;
+            document.getElementById("weatherSoilMoistDisplay").innerText = `${w.avg_soil_moisture_pct ?? '--'}%`;
+            document.getElementById("weatherSoilTempDisplay").innerText = `Soil Temp: ${w.avg_soil_temp_c ?? '--'}°C (24h avg)`;
+            document.getElementById("weatherPrecipDisplay").innerText = `${w.precipitation_mm ?? 0} mm`;
+            document.getElementById("weatherWindDisplay").innerText = `Wind: ${w.wind_speed_kmh ?? 0} km/h`;
+
+            // Update Advisory
+            const adv = data.advisory || {};
+            if (headlineText) headlineText.innerText = adv.weather_headline || "Stable weather conditions across agricultural zone.";
+            if (risksText) risksText.innerText = adv.risks || "No severe pest or disease hazards detected.";
+            if (irrigationText) irrigationText.innerText = adv.irrigation_harvest_advice || "Standard irrigation schedule recommended.";
+            if (cropsText) cropsText.innerText = adv.recommended_crops || "Suitable for regional cash crops.";
+
+        } catch (err) {
+            console.error("[K2K Weather] Error fetching advisory:", err);
+            if (locationText) locationText.innerText = "Error loading weather data. Please check PIN code or try again.";
+            if (headlineText) headlineText.innerText = "Unable to connect to weather telemetry. Defaulting to regional baseline.";
+        } finally {
+            if (spinner) spinner.style.display = "none";
+        }
+    }
+
+    function useCurrentLocation() {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser. Please enter your PIN code instead.");
+            return;
+        }
+
+        const locationText = document.getElementById("weatherLocationText");
+        if (locationText) locationText.innerText = "Requesting device GPS coordinates...";
+        const spinner = document.getElementById("weatherSpinner");
+        if (spinner) spinner.style.display = "inline-flex";
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                loadWeatherAdvisory({ lat, lon, location_name: "Farmer GPS Location" });
+            },
+            (err) => {
+                console.warn("[K2K Weather] Geolocation denied or unavailable:", err.message);
+                const pin = document.getElementById("weatherPincodeInput")?.value?.trim();
+                if (pin) {
+                    loadWeatherAdvisory({ pincode: pin });
+                } else {
+                    loadWeatherAdvisory({ pincode: "422004" });
+                }
+            },
+            { timeout: 10000, enableHighAccuracy: true }
+        );
+    }
+
+    function analyzePincode() {
+        const pin = document.getElementById("weatherPincodeInput")?.value?.trim();
+        if (!pin) {
+            alert("Please enter a 6-digit Indian PIN code (e.g., 422004).");
+            return;
+        }
+        loadWeatherAdvisory({ pincode: pin });
+    }
+
+    // Auto-load weather telemetry on page ready
+    document.addEventListener("DOMContentLoaded", () => {
+        const initialPin = document.getElementById("weatherPincodeInput")?.value?.trim();
+        if (initialPin) {
+            loadWeatherAdvisory({ pincode: initialPin });
+        } else {
+            loadWeatherAdvisory({ pincode: "422004" });
+        }
+    });
+</script>
+{% endblock %}

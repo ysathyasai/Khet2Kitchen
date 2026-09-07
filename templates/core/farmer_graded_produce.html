@@ -1,0 +1,488 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}My Graded Produce & Optical AI Scan - Khet2Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Optical Scanner Animations */
+    .scanner-viewfinder {
+        border: 2px dashed #10B981;
+        border-radius: 1rem;
+        background: #F9FBFA;
+        min-height: 280px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .scanner-viewfinder:hover {
+        background: #F0FDF4;
+        border-color: #059669;
+    }
+
+    .corner-bracket {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-color: #10B981;
+        border-style: solid;
+        pointer-events: none;
+    }
+    .cb-tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+    .cb-tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+    .cb-bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+    .cb-br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+    .laser-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #10b981, #34d399, transparent);
+        box-shadow: 0 0 15px 3px #10b981;
+        top: 0;
+        display: none;
+        z-index: 10;
+        animation: scanSweep 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes scanSweep {
+        0% { top: 5%; opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { top: 95%; opacity: 0.4; }
+    }
+
+    .radar-pulse {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 2px solid rgba(16, 185, 129, 0.6);
+        display: none;
+        z-index: 9;
+        animation: radarPing 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+
+    @keyframes radarPing {
+        0% { transform: scale(0.2); opacity: 1; }
+        100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    .grade-badge-A {
+        background: #D1FAE5;
+        color: #065F46;
+        border: 1px solid #10B981;
+    }
+    .grade-badge-B {
+        background: #EFF6FF;
+        color: #1E40AF;
+        border: 1px solid #3B82F6;
+    }
+    .grade-badge-C {
+        background: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #F59E0B;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+                Core Operations • Computer Vision
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+                My Graded Produce & Optical AI Scan
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                Drop off produce at hub conveyor or upload a photo for instant computer vision quality grading and guaranteed transparent payout calculation.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="status-pill status-growing">
+                ● Edge Vision AI Active
+            </span>
+            <span class="status-pill status-planting">
+                AGMARK Certified
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- OPTICAL AI GRADING STATION INTERFACE                                    -->
+<!-- ======================================================================= -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📸</span> Optical Inspection Scanner
+            </h2>
+            <div class="card-subtitle">Multispectral color uniformity, geometry assessment & defect ratio measurement.</div>
+        </div>
+    </div>
+
+    <!-- Controls Row -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <label for="cropSelect" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                Crop Variety:
+            </label>
+            <select id="cropSelect" style="width: 100%; padding: 0.65rem 0.9rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.9rem; outline: none;">
+                {% for crop in crops %}
+                    <option value="{{ crop.id }}" data-price="{{ crop.base_price }}" data-name="{{ crop.name }}">
+                        {{ crop.name }} (Base: ₹{{ crop.base_price }}/kg)
+                    </option>
+                {% empty %}
+                    <option value="1">Hybrid Tomato (Tamatar)</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="volumeInput" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                Batch Volume (kg):
+            </label>
+            <input type="number" id="volumeInput" value="100" min="1" step="10" 
+                style="width: 100%; padding: 0.65rem 0.9rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.9rem; outline: none;">
+        </div>
+
+        <div style="display: flex; align-items: flex-end;">
+            <button type="button" id="triggerUploadBtn" class="btn btn-gold" style="width: 100%; padding: 0.65rem; font-weight: 700; border-radius: 0.5rem;">
+                📷 Upload / Capture Photo
+            </button>
+            <input type="file" id="produceImageInput" accept="image/*" style="display: none;">
+        </div>
+    </div>
+
+    <!-- Viewfinder Dropzone -->
+    <div id="viewfinder" class="scanner-viewfinder">
+        <div class="corner-bracket cb-tl"></div>
+        <div class="corner-bracket cb-tr"></div>
+        <div class="corner-bracket cb-bl"></div>
+        <div class="corner-bracket cb-br"></div>
+        
+        <div class="laser-line" id="laserLine"></div>
+        <div class="radar-pulse" id="radarPulse"></div>
+
+        <!-- Initial Placeholder State -->
+        <div id="viewfinderPlaceholder" style="text-align: center; padding: 2.5rem 1rem;">
+            <div style="font-size: 3.5rem; margin-bottom: 0.75rem;">🔍</div>
+            <div style="font-weight: 700; font-size: 1.15rem; color: #133826; margin-bottom: 0.25rem;">
+                Optical Viewfinder Ready
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 440px; margin: 0 auto;">
+                Drag & drop a harvest sample photo here, or click to capture. Multispectral optical scan will analyze surface blemishes and grade the batch automatically.
+            </p>
+        </div>
+
+        <!-- Image Preview Container -->
+        <img id="imagePreview" src="" alt="Scanned Produce Preview" style="display: none; max-height: 320px; width: auto; max-width: 100%; border-radius: 0.5rem; object-fit: contain;">
+
+        <!-- Scanning Status Bar Overlay -->
+        <div id="scanningStatus" style="display: none; position: absolute; bottom: 15px; background: rgba(19, 56, 38, 0.95); border: 1px solid #34D399; padding: 0.5rem 1.25rem; border-radius: 9999px; color: #FFFFFF; font-size: 0.85rem; font-weight: 600;">
+            ⚡ Scanning: Analyzing surface blemishes & geometry...
+        </div>
+    </div>
+
+    <!-- Dynamic AI Quality & Payout Results Card (Hidden until scan completes) -->
+    <div id="scanResultCard" style="display: none; margin-top: 1.5rem; background: #FFFFFF; border: 2px solid #10B981; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span style="font-size: 0.72rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">
+                    AI Quality Assessment Result
+                </span>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #133826; margin-top: 0.2rem;" id="resultCropName">
+                    Produce Variety
+                </div>
+            </div>
+            <div>
+                <span id="resultGradeBadge" class="status-pill grade-badge-A" style="padding: 0.5rem 1.25rem; font-size: 1rem; font-weight: 800;">
+                    GRADE A
+                </span>
+            </div>
+        </div>
+
+        <!-- AI Confidence & Defect Meter -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: #F9FAFB; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--card-border);">
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem;">Neural Confidence Score</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #059669;" id="resultConfidence">98.2%</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Validated against AGMARK models</div>
+            </div>
+
+            <div style="background: #F9FAFB; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--card-border);">
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem;">Surface Defect Ratio</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #2563EB;" id="resultDefect">2.1%</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Negligible cosmetic markings</div>
+            </div>
+
+            <div style="background: #F9FAFB; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--card-border);">
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem;">Optical Firmness Index</div>
+                <div style="font-size: 1.3rem; font-weight: 800; color: #D97706;" id="resultFirmness">Firm (Optimal)</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">High shelf-life rating</div>
+            </div>
+        </div>
+
+        <!-- AI Rationale explanation -->
+        <div style="background: #F0FDF4; padding: 0.9rem 1.2rem; border-radius: 0.5rem; border-left: 4px solid #10B981; margin-bottom: 1.5rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #065F46; margin-bottom: 0.2rem; text-transform: uppercase;">
+                AI INSPECTION RATIONALE:
+            </div>
+            <p id="resultRationale" style="font-size: 0.88rem; color: #166534; line-height: 1.4; margin: 0;"></p>
+        </div>
+
+        <!-- Instant Transparent Financial Payout Table -->
+        <div style="border-top: 1px solid var(--card-border); padding-top: 1.25rem;">
+            <div style="font-size: 1rem; font-weight: 700; color: #133826; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>💵</span> Instant Guaranteed Financial Settlement
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Volume</th>
+                            <th>Base Price</th>
+                            <th>Base Value</th>
+                            <th>AI Quality Bonus</th>
+                            <th>Hub Logistics</th>
+                            <th>Net Final Direct Payout</th>
+                            <th>Traditional Mandi Payout</th>
+                            <th>Farmer Direct Benefit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="fbVolume">100.00 kg</td>
+                            <td id="fbBasePrice">₹25.00/kg</td>
+                            <td id="fbBaseValue">₹2500.00</td>
+                            <td id="fbModifier" style="color: #059669; font-weight: 600;">+20% (+₹500.00)</td>
+                            <td id="fbLogistics" style="color: #DC2626;">-₹150.00</td>
+                            <td id="fbFinalPayout" style="color: #059669; font-size: 1.15rem; font-weight: 800;">₹2850.00</td>
+                            <td id="fbMandiPayout" style="color: var(--text-muted); text-decoration: line-through;">₹2160.00</td>
+                            <td id="fbGain"><span class="status-pill status-growing" style="font-weight: 700;">+₹690.00 (+31.9%)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History of Graded Batches -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📦</span> Graded Batches History
+            </h2>
+            <div class="card-subtitle">Batches quality-graded and audited by the micro-hub edge vision model.</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>BATCH ID</th>
+                    <th>CROP</th>
+                    <th>VOLUME</th>
+                    <th>GRADE</th>
+                    <th>CONFIDENCE</th>
+                    <th>FINAL NET PAYOUT</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in batch_breakdowns %}
+                <tr>
+                    <td><code>{{ item.batch.batch_id }}</code></td>
+                    <td><strong>{{ item.batch.crop.name }}</strong></td>
+                    <td>{{ item.breakdown.volume_kg }} kg</td>
+                    <td>
+                        <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}">
+                            Grade {{ item.breakdown.ai_grade }}
+                        </span>
+                    </td>
+                    <td>{{ item.breakdown.ai_confidence_score }}%</td>
+                    <td><strong style="color: #059669;">₹{{ item.breakdown.final_payout }}</strong></td>
+                    <td><span class="status-pill status-hub">Inspected</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        No graded batches recorded yet. Upload a produce photo above to test!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- OPTICAL AI SCANNER JAVASCRIPT                                           -->
+<!-- ======================================================================= -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const triggerBtn = document.getElementById("triggerUploadBtn");
+        const fileInput = document.getElementById("produceImageInput");
+        const cropSelect = document.getElementById("cropSelect");
+        const volumeInput = document.getElementById("volumeInput");
+        const viewfinder = document.getElementById("viewfinder");
+        const placeholder = document.getElementById("viewfinderPlaceholder");
+        const previewImg = document.getElementById("imagePreview");
+        const laserLine = document.getElementById("laserLine");
+        const radarPulse = document.getElementById("radarPulse");
+        const scanningStatus = document.getElementById("scanningStatus");
+        const resultCard = document.getElementById("scanResultCard");
+
+        // Trigger file input dialog
+        triggerBtn.addEventListener("click", () => fileInput.click());
+        viewfinder.addEventListener("click", () => fileInput.click());
+
+        // Drag & Drop handlers
+        viewfinder.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            viewfinder.style.borderColor = "#059669";
+            viewfinder.style.background = "#ECFDF5";
+        });
+        viewfinder.addEventListener("dragleave", () => {
+            viewfinder.style.borderColor = "#10B981";
+            viewfinder.style.background = "#F9FBFA";
+        });
+        viewfinder.addEventListener("drop", (e) => {
+            e.preventDefault();
+            viewfinder.style.borderColor = "#10B981";
+            viewfinder.style.background = "#F9FBFA";
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        // File selection handler
+        fileInput.addEventListener("change", (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        function handleFileUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.style.display = "block";
+                placeholder.style.display = "none";
+                resultCard.style.display = "none";
+
+                startScanAnimation();
+                sendToVisionAPI(file);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function startScanAnimation() {
+            laserLine.style.display = "block";
+            radarPulse.style.display = "block";
+            scanningStatus.style.display = "block";
+            scanningStatus.innerText = "⚡ Scanning: Running optical edge CNN inspection...";
+
+            setTimeout(() => {
+                if (laserLine.style.display === "block") {
+                    scanningStatus.innerText = "🔬 Analyzing surface blemishes, color uniformity & geometry...";
+                }
+            }, 800);
+        }
+
+        function stopScanAnimation() {
+            laserLine.style.display = "none";
+            radarPulse.style.display = "none";
+            scanningStatus.style.display = "none";
+        }
+
+        async function sendToVisionAPI(file) {
+            const formData = new FormData();
+            formData.append("image", file);
+            formData.append("crop_id", cropSelect.value);
+            formData.append("volume_kg", volumeInput.value || "100.00");
+
+            const csrfToken = getCookie("csrftoken");
+
+            try {
+                const response = await fetch("/api/grade-batch/", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken || "",
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+                stopScanAnimation();
+
+                if (data.success) {
+                    renderScanResult(data);
+                } else {
+                    alert("Optical Scan Failed: " + (data.error || "Unknown error"));
+                }
+            } catch (err) {
+                stopScanAnimation();
+                alert("Network error contacting AI inspection station: " + err.message);
+            }
+        }
+
+        function renderScanResult(data) {
+            document.getElementById("resultCropName").innerText = data.crop_name + " (" + data.volume_kg + " kg Batch)";
+            
+            const badge = document.getElementById("resultGradeBadge");
+            badge.innerText = data.grade_display;
+            badge.className = "status-pill grade-badge-" + data.grade;
+
+            document.getElementById("resultConfidence").innerText = data.confidence_score.toFixed(1) + "%";
+            document.getElementById("resultDefect").innerText = data.defect_percentage.toFixed(1) + "%";
+            document.getElementById("resultFirmness").innerText = data.metrics.surface_firmness;
+            document.getElementById("resultRationale").innerText = data.rationale;
+
+            // Financial Breakdown
+            const fb = data.financial_breakdown;
+            document.getElementById("fbVolume").innerText = data.volume_kg.toFixed(2) + " kg";
+            document.getElementById("fbBasePrice").innerText = "₹" + fb.base_price_per_kg.toFixed(2) + "/kg";
+            document.getElementById("fbBaseValue").innerText = "₹" + fb.base_value.toFixed(2);
+            
+            const modElem = document.getElementById("fbModifier");
+            if (fb.grade_modifier_pct > 0) {
+                modElem.style.color = "#059669";
+                modElem.innerText = "+" + fb.grade_modifier_pct + "% (+₹" + fb.grade_modifier_amount.toFixed(2) + ")";
+            } else if (fb.grade_modifier_pct === 0) {
+                modElem.style.color = "var(--text-muted)";
+                modElem.innerText = "0% (Standard)";
+            } else {
+                modElem.style.color = "#DC2626";
+                modElem.innerText = fb.grade_modifier_pct + "% (-₹" + Math.abs(fb.grade_modifier_amount).toFixed(2) + ")";
+            }
+
+            document.getElementById("fbLogistics").innerText = "-₹" + fb.logistics_deduction.toFixed(2);
+            document.getElementById("fbFinalPayout").innerText = "₹" + fb.final_payout.toFixed(2);
+            document.getElementById("fbMandiPayout").innerText = "₹" + fb.traditional_mandi_payout.toFixed(2);
+
+            document.getElementById("fbGain").innerHTML = `
+                <span class="status-pill status-growing" style="font-weight: 700;">
+                    +₹${fb.disintermediation_gain.toFixed(2)} (+${fb.extra_income_pct.toFixed(1)}%)
+                </span>
+            `;
+
+            resultCard.style.display = "block";
+            resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,198 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}AI Pricing & Guaranteed MSP Floor - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+                Core Operations • Financial Transparency
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+                AI Pricing & Guaranteed MSP Floor
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                Transparent pricing formulas, mathematical disintermediation audits, and government-backed Minimum Support Price (MSP) floor protection.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="status-pill status-growing">
+                🛡️ MSP Floor Enforced
+            </span>
+            <span class="status-pill status-planting">
+                0% Middleman Cut
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- 3 KPI Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Guaranteed MSP Floor Protection
+        </div>
+        <div style="font-size: 1.85rem; font-weight: 800; color: #133826;">
+            100% Enforced
+        </div>
+        <div style="font-size: 0.78rem; color: #059669; font-weight: 600; margin-top: 0.4rem;">
+            ● Prices never fall below statutory MSP rates
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Average Disintermediation Gain
+        </div>
+        <div style="font-size: 1.85rem; font-weight: 800; color: #059669;">
+            +28.4%
+        </div>
+        <div style="font-size: 0.78rem; color: #065F46; font-weight: 600; margin-top: 0.4rem;">
+            Total extra income: +₹{{ financial_summary.total_disintermediation_gain|floatformat:2 }}
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Flat Micro-Hub Logistics Fee
+        </div>
+        <div style="font-size: 1.85rem; font-weight: 800; color: #D97706;">
+            ₹1.50 <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">/ kg</span>
+        </div>
+        <div style="font-size: 0.78rem; color: #B45309; font-weight: 600; margin-top: 0.4rem;">
+            Replaces 12-18% arbitrary mandi deductions
+        </div>
+    </div>
+</div>
+
+<!-- Mandi vs Khet2Kitchen Comparison Card -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>⚖️</span> Traditional APMC Mandi vs. Khet2Kitchen Direct Rail
+            </h2>
+            <div class="card-subtitle">Transparent mathematical comparison of farmer take-home pay and supply chain efficiency.</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>EVALUATION FACTOR</th>
+                    <th>TRADITIONAL APMC MANDI</th>
+                    <th>KHET2KITCHEN DIRECT PLATFORM</th>
+                    <th>FARMER ADVANTAGE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Brokerage / Commission</strong></td>
+                    <td style="color: #DC2626;">6% - 10% taken by middlemen</td>
+                    <td style="color: #059669; font-weight: 700;">0% (Zero Brokerage)</td>
+                    <td><span class="status-pill status-growing">+100% Commission Saved</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Quality Assessment</strong></td>
+                    <td style="color: #DC2626;">Subjective eyeballing by traders (under-grading)</td>
+                    <td style="color: #059669; font-weight: 700;">Objective AGMARK Computer Vision Model</td>
+                    <td><span class="status-pill status-growing">+20% Bonus for Grade A</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Settlement</strong></td>
+                    <td style="color: #DC2626;">15 to 45 days delayed credit</td>
+                    <td style="color: #059669; font-weight: 700;">Instant Digital Wallet (UPI / IMPS)</td>
+                    <td><span class="status-pill status-growing">Immediate Cash Liquidity</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Weighment & Deductions</strong></td>
+                    <td style="color: #DC2626;">Arbitrary 2-5 kg "wastage" per crate</td>
+                    <td style="color: #059669; font-weight: 700;">Calibrated IoT digital load-cells</td>
+                    <td><span class="status-pill status-growing">100% True Weight Paid</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Price Floor Protection</strong></td>
+                    <td style="color: #DC2626;">Distress selling during market gluts</td>
+                    <td style="color: #059669; font-weight: 700;">Guaranteed MSP Floor Protection</td>
+                    <td><span class="status-pill status-growing">Downside Price Immunity</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Transparent Payout Breakdown Table -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📜</span> Transparent Payout & Disintermediation Breakdown
+            </h2>
+            <div class="card-subtitle">Every produce batch with transparent quality modifier, logistics fee, and net direct payout.</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>BATCH ID</th>
+                    <th>CROP & HUB</th>
+                    <th>VOLUME (KG)</th>
+                    <th>AI GRADE</th>
+                    <th>BASE VALUE</th>
+                    <th>AI MODIFIER</th>
+                    <th>LOGISTICS FEE</th>
+                    <th>NET PAYOUT</th>
+                    <th>MANDI PAYOUT</th>
+                    <th>DIRECT GAIN</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in batch_breakdowns %}
+                <tr>
+                    <td><code>{{ item.batch.batch_id }}</code></td>
+                    <td>
+                        <strong>{{ item.batch.crop.name }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ item.batch.hub.name }}</div>
+                    </td>
+                    <td><strong>{{ item.breakdown.volume_kg }} kg</strong></td>
+                    <td>
+                        <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}">
+                            Grade {{ item.breakdown.ai_grade }}
+                        </span>
+                    </td>
+                    <td>₹{{ item.breakdown.base_value }}</td>
+                    <td>
+                        {% if item.breakdown.grade_modifier_pct > 0 %}
+                            <span style="color: #059669; font-weight: 600;">+{{ item.breakdown.grade_modifier_pct }}% (+₹{{ item.breakdown.grade_modifier_amount }})</span>
+                        {% elif item.breakdown.grade_modifier_pct == 0 %}
+                            <span style="color: var(--text-muted);">0%</span>
+                        {% else %}
+                            <span style="color: #DC2626; font-weight: 600;">{{ item.breakdown.grade_modifier_pct }}% (-₹{{ item.breakdown.grade_modifier_amount|stringformat:".2f" }})</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: #DC2626;">-₹{{ item.breakdown.logistics_deduction }}</td>
+                    <td><strong style="color: #059669; font-size: 1rem;">₹{{ item.breakdown.final_payout }}</strong></td>
+                    <td style="color: var(--text-muted); text-decoration: line-through;">₹{{ item.breakdown.traditional_mandi_payout }}</td>
+                    <td>
+                        <span class="status-pill status-growing" style="font-weight: 700;">
+                            +₹{{ item.breakdown.disintermediation_gain }} (+{{ item.breakdown.extra_income_pct }}%)
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        No harvest batches recorded yet. Once batches are graded, their full financial audit trail will appear here.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

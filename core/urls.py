@@ -10,6 +10,12 @@ urlpatterns = [
 
     # Role-Specific Dashboard Routes
     path("farmer/dashboard/", views.farmer_dashboard_view, name="farmer_dashboard"),
+    path("farmer/graded-produce/", views.farmer_graded_produce_view, name="farmer_graded_produce"),
+    path("farmer/pricing/", views.farmer_pricing_view, name="farmer_pricing"),
+    path("farmer/orders/", views.farmer_orders_view, name="farmer_orders"),
+    path("farmer/wallet/", views.farmer_wallet_view, name="farmer_wallet"),
+    path("farmer/logistics/", views.farmer_logistics_view, name="farmer_logistics"),
+    path("farmer/weather/", views.farmer_weather_view, name="farmer_weather"),
     path("retailer/dashboard/", views.retailer_dashboard_view, name="retailer_dashboard"),
     path("supplier/dashboard/", views.supplier_dashboard_view, name="supplier_dashboard"),
     path("k2k-command/", views.admin_dashboard_view, name="admin_command_dashboard"),

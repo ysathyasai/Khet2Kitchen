@@ -1,793 +1,202 @@
-{% extends "base.html" %}
+{% extends "core/base_dashboard.html" %}
 
-{% block title %}Kisan Dashboard (PWA) - Khet2Kitchen{% endblock %}
-
-{% block extra_head %}
-<style>
-    /* Futuristic Scanner Styles & Keyframe Animations */
-    .scanner-station {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
-        border: 1px solid rgba(16, 185, 129, 0.4);
-        border-radius: 1rem;
-        padding: 2rem;
-        margin-bottom: 2.5rem;
-        box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.15);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .scanner-station::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #10b981, #3b82f6, transparent);
-    }
-
-    .viewfinder-zone {
-        border: 2px dashed rgba(16, 185, 129, 0.35);
-        border-radius: 0.75rem;
-        background: rgba(15, 23, 42, 0.6);
-        min-height: 260px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s ease;
-    }
-
-    .viewfinder-zone:hover {
-        border-color: #10b981;
-        background: rgba(16, 185, 129, 0.04);
-    }
-
-    .corner-bracket {
-        position: absolute;
-        width: 16px;
-        height: 16px;
-        border-color: #10b981;
-        border-style: solid;
-        pointer-events: none;
-    }
-    .cb-tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
-    .cb-tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
-    .cb-bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
-    .cb-br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
-
-    /* Laser scan line animation */
-    .laser-line {
-        position: absolute;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, transparent, #10b981, #34d399, transparent);
-        box-shadow: 0 0 15px 3px #10b981;
-        top: 0;
-        display: none;
-        z-index: 10;
-        animation: scanSweep 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes scanSweep {
-        0% { top: 5%; opacity: 0.4; }
-        50% { opacity: 1; }
-        100% { top: 95%; opacity: 0.4; }
-    }
-
-    /* Radar Pulse animation */
-    .radar-pulse {
-        position: absolute;
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        border: 2px solid rgba(16, 185, 129, 0.6);
-        display: none;
-        z-index: 9;
-        animation: radarPing 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-    }
-
-    @keyframes radarPing {
-        0% { transform: scale(0.2); opacity: 1; }
-        100% { transform: scale(2.2); opacity: 0; }
-    }
-
-    .grade-badge-glow-A {
-        background: rgba(16, 185, 129, 0.2);
-        color: #34d399;
-        border: 1px solid #10b981;
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-    }
-    .grade-badge-glow-B {
-        background: rgba(59, 130, 246, 0.2);
-        color: #60a5fa;
-        border: 1px solid #3b82f6;
-        box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
-    }
-    .grade-badge-glow-C {
-        background: rgba(245, 158, 11, 0.2);
-        color: #fbbf24;
-        border: 1px solid #f59e0b;
-        box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
-    }
-
-    /* Vernacular Voice Assistant Pulsing Mic */
-    .voice-mic-container {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .voice-mic-btn {
-        width: 76px;
-        height: 76px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #10b981, #059669);
-        border: 3px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        font-size: 2rem;
-        cursor: pointer;
-        outline: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 0 25px rgba(16, 185, 129, 0.45);
-        z-index: 2;
-    }
-
-    .voice-mic-btn:hover {
-        transform: scale(1.06);
-        box-shadow: 0 0 35px rgba(16, 185, 129, 0.7);
-    }
-
-    .voice-mic-btn.recording {
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-        box-shadow: 0 0 35px rgba(239, 68, 68, 0.8);
-        animation: recordBeat 1.2s infinite;
-    }
-
-    @keyframes recordBeat {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.08); }
-    }
-
-    .voice-pulse-ring {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        border: 2px solid rgba(16, 185, 129, 0.7);
-        pointer-events: none;
-        display: none;
-        z-index: 1;
-        animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-    }
-
-    .voice-mic-btn.recording ~ .voice-pulse-ring {
-        display: block;
-        border-color: rgba(239, 68, 68, 0.7);
-    }
-
-    @keyframes pulseRing {
-        0% { transform: scale(0.9); opacity: 0.9; }
-        100% { transform: scale(2.2); opacity: 0; }
-    }
-
-    .voice-chip {
-        background: rgba(30, 41, 59, 0.75);
-        border: 1px solid var(--border);
-        color: #e2e8f0;
-        padding: 0.45rem 0.9rem;
-        border-radius: 9999px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .voice-chip:hover {
-        border-color: #10b981;
-        background: rgba(16, 185, 129, 0.15);
-        color: #34d399;
-        transform: translateY(-1px);
-    }
-
-    .voice-lang-pill {
-        background: rgba(30, 41, 59, 0.85);
-        border: 1px solid var(--border);
-        color: #94a3b8;
-        padding: 0.35rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .voice-lang-pill:hover {
-        border-color: #38bdf8;
-        color: #f8fafc;
-        background: rgba(56, 189, 248, 0.15);
-    }
-
-    .voice-lang-pill.active {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        border-color: #60a5fa;
-        color: #ffffff;
-        box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
-    }
-
-    .voice-chat-bubble-user {
-        align-self: flex-end;
-        background: rgba(59, 130, 246, 0.25);
-        border: 1px solid rgba(96, 165, 250, 0.4);
-        color: #f8fafc;
-        padding: 0.65rem 0.95rem;
-        border-radius: 1rem 1rem 0.2rem 1rem;
-        font-size: 0.92rem;
-        max-width: 85%;
-    }
-
-    .voice-chat-bubble-assistant {
-        align-self: flex-start;
-        background: rgba(30, 41, 59, 0.9);
-        border: 1px solid rgba(16, 185, 129, 0.4);
-        color: #f8fafc;
-        padding: 0.75rem 1rem;
-        border-radius: 1rem 1rem 1rem 0.2rem;
-        font-size: 0.95rem;
-        line-height: 1.5;
-        max-width: 90%;
-        border-left: 3px solid #10b981;
-    }
-</style>
-{% endblock %}
+{% block title %}Farmer's Dashboard & My Crops - Khet2Kitchen{% endblock %}
 
 {% block content %}
-<!-- Top Header & Direct Rail Status -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-    <div>
-        <h1 style="font-size: 1.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-            <span>👨‍🌾</span> Kisan Harvest & Earnings Portal
+<!-- ======================================================================= -->
+<!-- 1. STRIKING HERO SECTION (FROM REFERENCE IMAGE 4F6E78.JPG)              -->
+<!-- ======================================================================= -->
+<div class="hero-section">
+    <div style="position: relative; z-index: 2; max-width: 850px;">
+        <!-- Network pill -->
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; color: #34D399; text-transform: uppercase; margin-bottom: 1.25rem;">
+            <span>⚡</span> Smart Agri-Supply Network • APMC Disintermediation
+        </div>
+
+        <!-- Headline -->
+        <h1 class="hero-title">
+            Khet2Kitchen Kisan Gateway
         </h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-            Namaste, <strong>{{ user.get_full_name }}</strong> (📱 {{ user.phone_number }}) • Micro-Hub Direct Rail
+
+        <!-- Subtitle -->
+        <p class="hero-subtitle">
+            Direct Farm-to-Fork Disintermediation Platform. Real-time computer vision quality grading, guaranteed MSP floor protection, and instantaneous UPI settlements directly to your bank account.
         </p>
-    </div>
-    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-        <button type="button" onclick="document.getElementById('voiceAssistantSection').scrollIntoView({behavior:'smooth'})" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
-            <span style="font-size: 1.15rem;">🎤</span> AI Voice Assistant
-        </button>
-        <span class="badge badge-success" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-            ● Direct Bank Settlement Active
-        </span>
-    </div>
-</div>
 
-<!-- Financial Summary & Digital Wallet Metrics -->
-<div class="grid-cards">
-    <!-- Live Digital Wallet Card -->
-    <div class="card" style="border-left: 4px solid #10b981; background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(16, 185, 129, 0.08));">
-        <div class="card-header">
-            <div>
-                <span class="metric-label" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem;">Digital Farmer Wallet</span>
-                <div style="font-size: 0.75rem; color: #34d399; font-weight: 500;">● Zero Middleman Commission Rail</div>
-            </div>
-            <span style="font-size: 1.5rem;">💳</span>
-        </div>
-        <div class="metric-value" style="color: #34d399;" id="walletBalanceDisplay">₹{{ wallet.current_balance|floatformat:2 }}</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
-            <span style="font-size: 0.75rem; color: var(--text-muted);">Instant UPI / IMPS</span>
-            <button type="button" id="withdrawBtn" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; font-weight: 600;">
-                ⚡ Withdraw to Bank
-            </button>
-        </div>
-    </div>
-
-    <div class="card" style="border-left: 4px solid #3b82f6;">
-        <div class="card-header">
-            <span class="metric-label">Cumulative Direct Payouts</span>
-            <span style="font-size: 1.5rem;">💰</span>
-        </div>
-        <div class="metric-value" style="color: #60a5fa;">₹{{ financial_summary.total_net_payout|floatformat:2 }}</div>
-        <div class="metric-label" style="color: var(--text-muted);">Gross produce value: ₹{{ financial_summary.total_gross_value|floatformat:2 }}</div>
-    </div>
-
-    <div class="card" style="border-left: 4px solid #f59e0b;">
-        <div class="card-header">
-            <span class="metric-label">Middleman Commission Saved</span>
-            <span style="font-size: 1.5rem;">🛡️</span>
-        </div>
-        <div class="metric-value" style="color: #fbbf24;">+₹{{ financial_summary.total_disintermediation_gain|floatformat:2 }}</div>
-        <div class="metric-label" style="color: #fbbf24;">+28% more than traditional APMC mandi</div>
-    </div>
-</div>
-
-<!-- ======================================================================= -->
-<!-- HYBRID VERNACULAR VOICE ASSISTANT (SARVAM AI + GOOGLE GEMINI)           -->
-<!-- ======================================================================= -->
-<div id="voiceAssistantSection" class="card" style="margin-bottom: 2rem; border-color: rgba(16, 185, 129, 0.45); background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.9)); position: relative; overflow: hidden;">
-    <!-- Top badge & intro -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 1.5rem;">🎙️</span>
-                <h2 style="font-size: 1.3rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.01em;">
-                    K2K Vernacular Kisan Voice Assistant
-                </h2>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
-                Speak in your native language (Hindi, Marathi, Kannada, English) to check your wallet balance, harvest schedules, or market advice.
-            </p>
-        </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); font-size: 0.75rem;">
-                ✨ Powered by Sarvam AI & Google Gemini
+        <!-- Feature chips -->
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.75rem;">
+            <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.8rem; border-radius: 9999px; font-size: 0.78rem; color: #F3F4F6;">
+                🛡️ 100% Guaranteed MSP Floor
+            </span>
+            <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.8rem; border-radius: 9999px; font-size: 0.78rem; color: #F3F4F6;">
+                ⚡ Zero-Wait Instant UPI Rail
+            </span>
+            <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.8rem; border-radius: 9999px; font-size: 0.78rem; color: #F3F4F6;">
+                🌱 Micro-Hub Cold-Chain Aggregation
             </span>
         </div>
-    </div>
 
-    <!-- Language Selector Pills -->
-    <div style="display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
-        <span style="font-size: 0.78rem; color: var(--text-muted); margin-right: 0.25rem; font-weight: 600;">भाषा / Language:</span>
-        <button type="button" class="voice-lang-pill active" id="langPill_auto" onclick="setVoiceLanguage('auto')">🌐 Auto Detect</button>
-        <button type="button" class="voice-lang-pill" id="langPill_en" onclick="setVoiceLanguage('en-IN')">🇬🇧 English</button>
-        <button type="button" class="voice-lang-pill" id="langPill_hi" onclick="setVoiceLanguage('hi-IN')">🇮🇳 हिंदी (Hindi)</button>
-        <button type="button" class="voice-lang-pill" id="langPill_mr" onclick="setVoiceLanguage('mr-IN')">🇮🇳 मराठी (Marathi)</button>
-        <button type="button" class="voice-lang-pill" id="langPill_kn" onclick="setVoiceLanguage('kn-IN')">🇮🇳 ಕನ್ನಡ (Kannada)</button>
-        <button type="button" class="voice-lang-pill" id="langPill_te" onclick="setVoiceLanguage('te-IN')">🇮🇳 తెలుగు (Telugu)</button>
-        <button type="button" class="voice-lang-pill" id="langPill_ta" onclick="setVoiceLanguage('ta-IN')">🇮🇳 தமிழ் (Tamil)</button>
-    </div>
-
-    <!-- Main Voice Controller Panel -->
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; background: rgba(15, 23, 42, 0.5); border-radius: 0.75rem; border: 1px solid var(--border); margin-bottom: 1.25rem;">
-        <!-- Pulsing Microphone Trigger -->
-        <div class="voice-mic-container" style="margin-bottom: 1rem;">
-            <button type="button" id="voiceMicBtn" class="voice-mic-btn" onclick="toggleVoiceRecording()" title="Click to Speak / Stop">
-                <span id="voiceMicIcon">🎤</span>
-            </button>
-            <div class="voice-pulse-ring"></div>
-        </div>
-
-        <!-- Dynamic Status Label -->
-        <div id="voiceStatusText" style="font-size: 0.95rem; font-weight: 600; color: #34d399; margin-bottom: 0.5rem; text-align: center;">
-            Tap microphone to speak in your language
-        </div>
-
-        <div id="voiceSubStatus" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; max-width: 460px;">
-            Speak in English, Hindi, Marathi or any Indic dialect. Automatic speech fallback ensures seamless answers.
-        </div>
-
-        <!-- Audio Waveform Activity Visualizer (hidden by default) -->
-        <div id="voiceWaveVisualizer" style="display: none; align-items: center; gap: 4px; height: 28px; margin-top: 0.75rem;">
-            <span style="display:inline-block; width:4px; height:12px; background:#10b981; border-radius:2px;"></span>
-            <span style="display:inline-block; width:4px; height:24px; background:#34d399; border-radius:2px;"></span>
-            <span style="display:inline-block; width:4px; height:18px; background:#10b981; border-radius:2px;"></span>
-            <span style="display:inline-block; width:4px; height:28px; background:#34d399; border-radius:2px;"></span>
-            <span style="display:inline-block; width:4px; height:14px; background:#10b981; border-radius:2px;"></span>
-        </div>
-    </div>
-
-    <!-- Suggested Voice Prompts / Quick Tap Chips -->
-    <div style="margin-bottom: 1.25rem;">
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-            <span>💡 Quick Questions (Tap to ask instantly or speak aloud):</span>
-            <button type="button" id="voiceResetChatBtn" onclick="resetVoiceChat()" style="background: none; border: none; color: #94a3b8; font-size: 0.75rem; cursor: pointer; text-decoration: underline;" title="Clear conversation context and start fresh">
-                🔄 Start New Conversation
-            </button>
-        </div>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="voice-chip" onclick="askVoiceAssistantWithText('Hello I am Santosh Patil, what is my wallet balance?')">
-                💰 "What is my wallet balance?" (English)
-            </button>
-            <button type="button" class="voice-chip" onclick="askVoiceAssistantWithText('I want to sell my tomato harvest as soon as possible')">
-                🍅 "I want to sell tomatoes" (English)
-            </button>
-            <button type="button" class="voice-chip" onclick="askVoiceAssistantWithText('मेरा वॉलेट बैलेंस कितना है?')">
-                💰 "मेरा वॉलेट बैलेंस कितना है?" (Hindi)
-            </button>
-            <button type="button" class="voice-chip" onclick="askVoiceAssistantWithText('मेरी अगली फसल कटाई कब है?')">
-                📅 "मेरी अगली फसल कटाई कब है?" (Hindi)
-            </button>
-        </div>
-    </div>
-
-    <!-- Conversational Live Response Box -->
-    <div id="voiceConversationBox" style="display: none; background: rgba(15, 23, 42, 0.75); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem;">
-        <!-- Top Status Bar -->
-        <div style="margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <span id="preferredNameTag" style="font-size: 0.85rem; font-weight: 700; color: #38bdf8;">👨‍🌾 Farmer</span>
-                <span id="detectedLangBadge" class="badge badge-info">en-IN</span>
-                <span id="intentBadge" class="badge badge-success">wallet_balance</span>
-            </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <span id="voiceEngineBadge" class="badge badge-warning" style="font-size: 0.72rem;">🔊 Voice Engine</span>
-                <button type="button" onclick="resetVoiceChat()" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
-                    🔄 New Chat
-                </button>
-            </div>
-        </div>
-
-        <!-- Scrollable Conversation History Stream -->
-        <div id="voiceChatThread" style="max-height: 280px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
-            <!-- Turns dynamically inserted here -->
-        </div>
-
-        <!-- Active Turn Controls -->
-        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center; padding-top: 0.5rem; border-top: 1px solid var(--border);">
-            <button type="button" id="replayVoiceBtn" onclick="replayAssistantVoice()" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem;">
-                <span>🔊</span> Replay Voice
+        <!-- CTA Buttons -->
+        <div class="hero-cta-group">
+            <a href="{% url 'farmer_graded_produce' %}" class="btn btn-gold" style="padding: 0.75rem 1.6rem; font-size: 0.95rem; font-weight: 700; border-radius: 0.6rem;">
+                <span>+ Log Harvest / AI Scan</span> →
+            </a>
+            <a href="{% url 'farmer_pricing' %}" class="btn btn-secondary" style="background: rgba(255, 255, 255, 0.12); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.75rem 1.4rem; font-size: 0.95rem; border-radius: 0.6rem;">
+                <span>⚖️ View MSP Floor & Pricing</span>
+            </a>
+            <button type="button" onclick="openVoiceAssistantModal()" class="btn btn-secondary" style="background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.75rem 1.25rem; font-size: 0.95rem; border-radius: 0.6rem;">
+                <span>🎤 Voice Assistant</span>
             </button>
         </div>
     </div>
 </div>
 
-<!-- AI Harvest Scheduling Alerts -->
-{% if pending_schedules %}
-<div class="card" style="margin-bottom: 2rem; border-left: 4px solid #3b82f6; background: rgba(30, 41, 59, 0.7);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 1.25rem;">📅</span>
-            <h3 style="font-size: 1.1rem; font-weight: 700; color: #f8fafc;">
-                AI-Driven Harvest Recommendations (Demand Pre-Matched)
-            </h3>
-        </div>
-        <span class="badge badge-info" style="font-size: 0.75rem;">Dynamic Pre-Order Rail</span>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-        {% for sched in pending_schedules %}
-        <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
-                <strong style="font-size: 1rem; color: #34d399;">{{ sched.crop.name }}</strong>
-                <span class="badge badge-warning" style="font-size: 0.75rem;">Due: {{ sched.recommended_date }}</span>
-            </div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-                Target Volume: <strong style="color: var(--text);">{{ sched.target_volume_kg }} kg</strong>
-            </div>
-            {% if sched.notes %}
-                <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3; margin: 0; padding: 0.4rem; background: rgba(15, 23, 42, 0.4); border-radius: 0.25rem;">
-                    💡 {{ sched.notes }}
-                </p>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
 <!-- ======================================================================= -->
-<!-- REAL-TIME AGRONOMIC WEATHER & AI ADVISORY (OPEN-METEO + GEMINI)         -->
+<!-- 2. MY CROPS TABULAR SECTION (FROM SCREENSHOT 2026-09-07 131221.PNG)     -->
 <!-- ======================================================================= -->
-<div id="weatherAdvisorySection" class="card" style="margin-bottom: 2.5rem; border: 1px solid rgba(59, 130, 246, 0.35); background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95)); position: relative; overflow: hidden; box-shadow: 0 15px 35px -10px rgba(59, 130, 246, 0.15);">
-    <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);"></div>
-
-    <!-- Header & Controls -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+<div class="card">
+    <div class="card-header">
         <div>
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span style="font-size: 1.75rem;">🌾</span>
-                <h2 style="font-size: 1.35rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.01em;">
-                    Smart Weather & Agronomic Advisory
-                </h2>
-                <span class="badge badge-primary" style="font-size: 0.75rem; text-transform: uppercase; background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4);">
-                    ● Live Satellite Telemetry & Gemini AI
-                </span>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">
-                Hyperlocal microclimate, soil moisture, and real-time AI agronomic advisories tailored to your fields.
-            </p>
+            <h2 class="card-title">
+                <span>🌱</span> My Crops
+            </h2>
+            <div class="card-subtitle">An overview of your current and past crops.</div>
         </div>
-
-        <!-- Location Controls: GPS + PIN Code input -->
         <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-            <button type="button" id="useLocationBtn" onclick="useCurrentLocation()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(59, 130, 246, 0.4);">
-                <span>📍</span> Use Current Location
-            </button>
-            <div style="display: flex; gap: 0.4rem; align-items: center;">
-                <input type="text" id="weatherPincodeInput" placeholder="Enter PIN (e.g. 422004)" value="{{ user.pincode|default:'' }}"
-                    style="width: 170px; padding: 0.6rem 0.8rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.85rem; outline: none;">
-                <button type="button" id="analyzeRegionBtn" onclick="analyzePincode()" class="btn btn-primary" style="padding: 0.6rem 0.95rem; font-size: 0.85rem; font-weight: 600; background: #3b82f6; border-color: #3b82f6;">
-                    Analyze Region
-                </button>
-            </div>
+            <a href="{% url 'farmer_graded_produce' %}" class="btn btn-forest" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem;">
+                <span>➕ Add Crop</span>
+            </a>
+            <a href="{% url 'farmer_orders' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem;">
+                <span>🔍 Batch Traceability Tracker</span>
+            </a>
         </div>
     </div>
 
-    <!-- Active Region Badge & Spinner -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding: 0.6rem 1rem; background: rgba(15, 23, 42, 0.6); border-radius: 0.5rem; border: 1px solid rgba(255, 255, 255, 0.05); flex-wrap: wrap; gap: 0.5rem;">
-        <div id="weatherLocationLabel" style="font-size: 0.85rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.4rem;">
-            <span>📍</span> <span id="weatherLocationText">Loading agronomic telemetry...</span>
-        </div>
-        <div id="weatherSpinner" style="display: none; align-items: center; gap: 0.5rem; color: #60a5fa; font-size: 0.8rem; font-weight: 500;">
-            <div class="spinner-border" style="width: 14px; height: 14px; border: 2px solid rgba(96, 165, 250, 0.3); border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-            <span>Querying Open-Meteo & Gemini AI...</span>
-        </div>
-    </div>
-
-    <!-- Weather Headline Banner -->
-    <div id="weatherHeadlineCard" style="background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.1)); border-left: 4px solid #3b82f6; padding: 0.85rem 1.15rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #93c5fd; font-weight: 700; margin-bottom: 0.2rem;">
-            Microclimate Overview
-        </div>
-        <div id="weatherHeadlineText" style="font-size: 0.95rem; font-weight: 600; color: #f8fafc; line-height: 1.4;">
-            Fetching live agronomic readings...
-        </div>
-    </div>
-
-    <!-- Metric Badges (Temperature, Humidity, Soil Moisture %, Precipitation/Wind) -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
-        <!-- Temperature -->
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 0.6rem; padding: 0.9rem 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Ambient Temp</span>
-                <span style="font-size: 1.25rem;">🌡️</span>
-            </div>
-            <div id="weatherTempDisplay" style="font-size: 1.45rem; font-weight: 700; color: #f8fafc;">--°C</div>
-            <div id="weatherTempRange" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Min: --°C • Max: --°C</div>
-        </div>
-
-        <!-- Relative Humidity -->
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 0.6rem; padding: 0.9rem 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Relative Humidity</span>
-                <span style="font-size: 1.25rem;">💧</span>
-            </div>
-            <div id="weatherHumidityDisplay" style="font-size: 1.45rem; font-weight: 700; color: #60a5fa;">--%</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Atmospheric moisture</div>
-        </div>
-
-        <!-- Soil Moisture -->
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 0.6rem; padding: 0.9rem 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                <span style="font-size: 0.75rem; color: #34d399; font-weight: 600;">Soil Moisture (3-9cm)</span>
-                <span style="font-size: 1.25rem;">🌱</span>
-            </div>
-            <div id="weatherSoilMoistDisplay" style="font-size: 1.45rem; font-weight: 700; color: #34d399;">--%</div>
-            <div id="weatherSoilTempDisplay" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Soil Temp: --°C (24h avg)</div>
-        </div>
-
-        <!-- Precipitation & Wind -->
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 0.6rem; padding: 0.9rem 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Rain & Wind</span>
-                <span style="font-size: 1.25rem;">🌧️</span>
-            </div>
-            <div id="weatherPrecipDisplay" style="font-size: 1.45rem; font-weight: 700; color: #38bdf8;">-- mm</div>
-            <div id="weatherWindDisplay" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Wind: -- km/h</div>
-        </div>
-    </div>
-
-    <!-- AI Agronomic Advisory Cards Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
-        <!-- Agronomic Risks Card -->
-        <div style="background: rgba(15, 23, 42, 0.85); border-left: 4px solid #ef4444; border-radius: 0.6rem; padding: 1.15rem; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
-                <span style="font-size: 1.2rem;">⚠️</span>
-                <h3 style="font-size: 0.95rem; font-weight: 700; color: #fca5a5; margin: 0;">
-                    Agronomic Risks
-                </h3>
-            </div>
-            <p id="weatherRisksText" style="font-size: 0.875rem; color: #e2e8f0; line-height: 1.5; margin: 0;">
-                Analyzing pest, disease & heat stress risks...
-            </p>
-        </div>
-
-        <!-- Irrigation & Harvest Advice Card -->
-        <div style="background: rgba(15, 23, 42, 0.85); border-left: 4px solid #10b981; border-radius: 0.6rem; padding: 1.15rem; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
-                <span style="font-size: 1.2rem;">🚜</span>
-                <h3 style="font-size: 0.95rem; font-weight: 700; color: #6ee7b7; margin: 0;">
-                    Irrigation & Harvest Directives
-                </h3>
-            </div>
-            <p id="weatherIrrigationText" style="font-size: 0.875rem; color: #e2e8f0; line-height: 1.5; margin: 0;">
-                Calculating optimal water recharge and plucking schedule...
-            </p>
-        </div>
-
-        <!-- Recommended Crops Card -->
-        <div style="background: rgba(15, 23, 42, 0.85); border-left: 4px solid #8b5cf6; border-radius: 0.6rem; padding: 1.15rem; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
-                <span style="font-size: 1.2rem;">🌱</span>
-                <h3 style="font-size: 0.95rem; font-weight: 700; color: #c4b5fd; margin: 0;">
-                    Recommended Crops
-                </h3>
-            </div>
-            <p id="weatherCropsText" style="font-size: 0.875rem; color: #e2e8f0; line-height: 1.5; margin: 0;">
-                Identifying high-yield crop matches for current soil moisture...
-            </p>
-        </div>
-    </div>
-</div>
-
-<!-- ======================================================================= -->
-<!-- COMPUTER VISION AI GRADING STATION (HACKATHON SHOWCASE)                -->
-<!-- ======================================================================= -->
-<div class="scanner-station">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span style="font-size: 1.75rem;">📷</span>
-                <h2 style="font-size: 1.4rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.01em;">
-                    Micro-Hub Smart Optical AI Grading Station
-                </h2>
-                <span class="badge badge-success" style="font-size: 0.75rem; text-transform: uppercase;">
-                    Edge Vision v2.4
-                </span>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">
-                Drop off produce at hub conveyor or upload a photo for instant computer vision quality grading and guaranteed transparent payout calculation.
-            </p>
-        </div>
-    </div>
-
-    <!-- Scanner Control Bar -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-        <div>
-            <label for="cropSelect" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
-                Select Crop Variety:
-            </label>
-            <select id="cropSelect" style="width: 100%; padding: 0.65rem 0.9rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.9rem; outline: none;">
-                {% for crop in crops %}
-                    <option value="{{ crop.id }}" data-price="{{ crop.base_price }}" data-name="{{ crop.name }}">
-                        {{ crop.name }} (Base: ₹{{ crop.base_price }}/kg)
-                    </option>
-                {% empty %}
-                    <option value="1">Red Onion (Nashik Special)</option>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>CROP NAME</th>
+                    <th>PLANTED / HARVEST DATE</th>
+                    <th>EXPECTED YIELD</th>
+                    <th>STATUS</th>
+                    <th style="text-align: right;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for crop_item in my_crops %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">
+                            {{ crop_item.name }}
+                            {% if crop_item.is_demo %}
+                                <span style="display: inline-block; margin-left: 0.4rem; padding: 0.15rem 0.45rem; background: #D1FAE5; color: #065F46; border-radius: 4px; font-size: 0.68rem; font-weight: 700;">Active Demo</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.88rem;">{{ crop_item.planted_date }}</td>
+                    <td style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">{{ crop_item.expected_yield }}</td>
+                    <td>
+                        <span class="status-pill {{ crop_item.status_class }}">
+                            {{ crop_item.status }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        {% if crop_item.action == 'Inspect' %}
+                            <a href="{% url 'farmer_graded_produce' %}" class="btn btn-forest" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; border-radius: 0.4rem;">
+                                Inspect
+                            </a>
+                        {% else %}
+                            <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; border-radius: 0.4rem;" onclick="alert('Viewing crop details for {{ crop_item.name }}')">
+                                Edit
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
                 {% endfor %}
-            </select>
-        </div>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-        <div>
-            <label for="volumeInput" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
-                Batch Volume (kg):
-            </label>
-            <input type="number" id="volumeInput" value="100" min="1" step="10" 
-                style="width: 100%; padding: 0.65rem 0.9rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.9rem; outline: none;">
+<!-- ======================================================================= -->
+<!-- 3. FOUR KPI CARDS (BOTTOM METRICS ROW FROM MOCKUP)                      -->
+<!-- ======================================================================= -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+    <!-- Card 1: Farm Reliability Score -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Farm Reliability Score
         </div>
-
-        <div style="display: flex; align-items: flex-end;">
-            <button type="button" id="triggerUploadBtn" class="btn btn-primary" style="width: 100%; padding: 0.7rem; font-weight: 600;">
-                📸 Capture / Upload Produce Photo
-            </button>
-            <input type="file" id="produceImageInput" accept="image/*" style="display: none;">
+        <div style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+            {{ reliability_score }} <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">/ 100</span>
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #065F46; font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
+            <span>⭐ Grade A Tier</span> • 100% Delivery Integrity
         </div>
     </div>
 
-    <!-- Interactive Viewfinder Dropzone & Preview -->
-    <div id="viewfinder" class="viewfinder-zone">
-        <div class="corner-bracket cb-tl"></div>
-        <div class="corner-bracket cb-tr"></div>
-        <div class="corner-bracket cb-bl"></div>
-        <div class="corner-bracket cb-br"></div>
-        
-        <div class="laser-line" id="laserLine"></div>
-        <div class="radar-pulse" id="radarPulse"></div>
-
-        <!-- Initial Placeholder State -->
-        <div id="viewfinderPlaceholder" style="text-align: center; padding: 2rem;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.75rem; opacity: 0.85;">🔍</div>
-            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">Optical Viewfinder Ready</div>
-            <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 400px; margin: 0 auto;">
-                Drag and drop a harvest sample photo or click to open camera. High-resolution multispectral scan will commence automatically.
-            </p>
+    <!-- Card 2: Digital Wallet Balance -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Digital Wallet Balance</span>
+            <span style="font-size: 1.1rem;">💳</span>
         </div>
-
-        <!-- Image Preview Container -->
-        <img id="imagePreview" src="" alt="Scanned Produce Preview" style="display: none; max-height: 320px; width: auto; max-width: 100%; border-radius: 0.5rem; object-fit: contain;">
-
-        <!-- Scanning Status Bar Overlay -->
-        <div id="scanningStatus" style="display: none; position: absolute; bottom: 15px; background: rgba(15, 23, 42, 0.9); border: 1px solid #10b981; padding: 0.5rem 1.25rem; border-radius: 9999px; color: #34d399; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em;">
-            ⚡ Scanning: Analyzing surface blemishes & geometry...
+        <div style="font-size: 1.85rem; font-weight: 800; color: #059669; letter-spacing: -0.02em;">
+            ₹{{ wallet.current_balance|floatformat:2 }}
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; font-size: 0.78rem;">
+            <span style="color: var(--text-muted);">Instant UPI Rail</span>
+            <a href="{% url 'farmer_wallet' %}" style="color: #133826; font-weight: 700; text-decoration: underline;">
+                Withdraw →
+            </a>
         </div>
     </div>
 
-    <!-- Dynamic AI Quality & Payout Results Card (Hidden until scan completes) -->
-    <div id="scanResultCard" style="display: none; margin-top: 1.5rem; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; animation: fadeIn 0.4s ease-in-out;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
-                    AI Quality Assessment Result
-                </span>
-                <div style="font-size: 1.4rem; font-weight: 700; margin-top: 0.2rem;" id="resultCropName">
-                    Produce Variety
-                </div>
-            </div>
-            <div>
-                <span id="resultGradeBadge" class="badge" style="padding: 0.5rem 1.25rem; font-size: 1rem; font-weight: 700;">
-                    GRADE A
-                </span>
-            </div>
+    <!-- Card 3: Active Input Loans -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Active Input Loans
         </div>
-
-        <!-- AI Confidence & Defect Meter -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-            <div style="background: var(--surface-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Neural Confidence Score</div>
-                <div style="font-size: 1.5rem; font-weight: 700; color: #34d399;" id="resultConfidence">98.2%</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Validated against AGMARK models</div>
-            </div>
-
-            <div style="background: var(--surface-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Surface Defect Ratio</div>
-                <div style="font-size: 1.5rem; font-weight: 700; color: #60a5fa;" id="resultDefect">2.1%</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Negligible cosmetic markings</div>
-            </div>
-
-            <div style="background: var(--surface-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Optical Firmness Index</div>
-                <div style="font-size: 1.25rem; font-weight: 700; color: #fbbf24;" id="resultFirmness">Firm (Optimal)</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">4K Multispectral stream</div>
-            </div>
+        <div style="font-size: 1.85rem; font-weight: 800; color: #1F2937; letter-spacing: -0.02em;">
+            ₹0.00
         </div>
-
-        <!-- AI Rationale explanation -->
-        <div style="background: rgba(30, 41, 59, 0.5); padding: 0.9rem 1.2rem; border-radius: 0.5rem; border-left: 3px solid #10b981; margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.2rem;">AI INSPECTION RATIONALE:</div>
-            <p id="resultRationale" style="font-size: 0.9rem; color: #e2e8f0; line-height: 1.4; margin: 0;"></p>
+        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #059669; font-weight: 600;">
+            ● 0% Pre-Harvest Subsidized Credit
         </div>
+    </div>
 
-        <!-- Instant Transparent Financial Payout Table -->
-        <div style="border-top: 1px solid var(--border); padding-top: 1.25rem;">
-            <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span>💵</span> Instant Guaranteed Financial Settlement
-            </div>
-
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Volume</th>
-                            <th>Base Price</th>
-                            <th>Base Value</th>
-                            <th>AI Quality Bonus</th>
-                            <th>Flat Hub Logistics</th>
-                            <th>Net Final Direct Payout</th>
-                            <th>Traditional Mandi Payout</th>
-                            <th>Farmer Direct Benefit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td id="fbVolume">100.00 kg</td>
-                            <td id="fbBasePrice">₹25.00/kg</td>
-                            <td id="fbBaseValue">₹2500.00</td>
-                            <td id="fbModifier" style="color: #34d399; font-weight: 600;">+20% (+₹500.00)</td>
-                            <td id="fbLogistics" style="color: #f87171;">-₹150.00</td>
-                            <td id="fbFinalPayout" style="color: #34d399; font-size: 1.15rem; font-weight: 700;">₹2850.00</td>
-                            <td id="fbMandiPayout" style="color: var(--text-muted); text-decoration: line-through;">₹2160.00</td>
-                            <td id="fbGain"><span class="badge badge-success" style="font-weight: 700;">+₹690.00 (+31.9%)</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <!-- Card 4: Guaranteed MSP Floor -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            Guaranteed MSP Floor
+        </div>
+        <div style="font-size: 1.85rem; font-weight: 800; color: #D97706; letter-spacing: -0.02em;">
+            100% Protected
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #B45309; font-weight: 600;">
+            +{{ financial_summary.total_disintermediation_gain|floatformat:0 }} Direct Disintermediation Gain
         </div>
     </div>
 </div>
 
 <!-- ======================================================================= -->
-<!-- EXISTING TRANSPARENT PRICING BREAKDOWN SECTION                          -->
+<!-- 4. TRANSPARENT PAYOUT & DISINTERMEDIATION BREAKDOWN (UNIT TEST REQUIRED) -->
 <!-- ======================================================================= -->
-<div class="card" style="margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+<div class="card">
+    <div class="card-header">
         <div>
-            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <h2 class="card-title">
                 <span>⚖️</span> Transparent Payout & Disintermediation Breakdown
             </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
-                Historical produce batches dropped off at micro-hubs with transparent disintermediation audit trail.
-            </p>
+            <div class="card-subtitle">Historical produce batches dropped off at micro-hubs with transparent disintermediation audit trail.</div>
         </div>
-        <span class="badge badge-info" style="font-size: 0.8rem;">Zero Middleman Guarantee</span>
+        <a href="{% url 'farmer_pricing' %}" class="btn btn-forest" style="padding: 0.45rem 0.9rem; font-size: 0.8rem;">
+            View Detailed Analysis →
+        </a>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
@@ -796,11 +205,11 @@
                     <th>Volume (kg)</th>
                     <th>AI Grade</th>
                     <th>Base Value</th>
-                    <th>AI Quality Modifier</th>
+                    <th>Quality Modifier</th>
                     <th>Hub Logistics</th>
                     <th>Net Final Payout</th>
-                    <th>Traditional Mandi Payout</th>
-                    <th>Farmer Direct Gain</th>
+                    <th>Traditional Mandi</th>
+                    <th>Farmer Gain</th>
                 </tr>
             </thead>
             <tbody>
@@ -813,33 +222,31 @@
                     </td>
                     <td><strong>{{ item.breakdown.volume_kg }} kg</strong></td>
                     <td>
-                        <span class="badge {% if item.breakdown.ai_grade == 'A' %}badge-success{% elif item.breakdown.ai_grade == 'B' %}badge-info{% else %}badge-warning{% endif %}">
+                        <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}">
                             Grade {{ item.breakdown.ai_grade }} ({{ item.breakdown.ai_confidence_score }}%)
                         </span>
                     </td>
                     <td>₹{{ item.breakdown.base_value }}<br><span style="font-size: 0.75rem; color: var(--text-muted);">@ ₹{{ item.breakdown.base_price_per_kg }}/kg</span></td>
                     <td>
                         {% if item.breakdown.grade_modifier_pct > 0 %}
-                            <span style="color: #34d399; font-weight: 600;">+{{ item.breakdown.grade_modifier_pct }}% (+₹{{ item.breakdown.grade_modifier_amount }})</span>
+                            <span style="color: #059669; font-weight: 600;">+{{ item.breakdown.grade_modifier_pct }}% (+₹{{ item.breakdown.grade_modifier_amount }})</span>
                         {% elif item.breakdown.grade_modifier_pct == 0 %}
                             <span style="color: var(--text-muted);">0% (Standard)</span>
                         {% else %}
-                            <span style="color: #f87171; font-weight: 600;">{{ item.breakdown.grade_modifier_pct }}% (-₹{{ item.breakdown.grade_modifier_amount|stringformat:".2f" }})</span>
+                            <span style="color: #DC2626; font-weight: 600;">{{ item.breakdown.grade_modifier_pct }}% (-₹{{ item.breakdown.grade_modifier_amount|stringformat:".2f" }})</span>
                         {% endif %}
                     </td>
-                    <td style="color: #f87171;">
+                    <td style="color: #DC2626;">
                         -₹{{ item.breakdown.logistics_deduction }}
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">₹{{ item.breakdown.logistics_rate_per_kg }}/kg flat</div>
                     </td>
                     <td>
-                        <strong style="color: #34d399; font-size: 1.05rem;">₹{{ item.breakdown.final_payout }}</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">₹{{ item.breakdown.effective_price_per_kg }}/kg net</div>
+                        <strong style="color: #059669; font-size: 1rem;">₹{{ item.breakdown.final_payout }}</strong>
                     </td>
                     <td style="color: var(--text-muted); text-decoration: line-through;">
                         ₹{{ item.breakdown.traditional_mandi_payout }}
                     </td>
                     <td>
-                        <span class="badge badge-success" style="font-weight: 700;">
+                        <span class="status-pill status-growing" style="font-weight: 700;">
                             +₹{{ item.breakdown.disintermediation_gain }} (+{{ item.breakdown.extra_income_pct }}%)
                         </span>
                     </td>
@@ -847,95 +254,7 @@
                 {% empty %}
                 <tr>
                     <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-                        No harvest batches recorded yet. Use the Smart Optical AI Scanner above to test produce grading!
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Micro-Hubs Grid -->
-<div class="card">
-    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-        <span>🏬</span> Operational Micro-Hub Drop-Off Points
-    </h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-        {% for hub in active_hubs %}
-        <div style="background: var(--surface-card); padding: 1.25rem; border-radius: 0.5rem; border: 1px solid var(--border);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <div style="font-weight: 600; font-size: 1.05rem;">{{ hub.name }}</div>
-                <span class="badge badge-info">{{ hub.code }}</span>
-            </div>
-            <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
-                {{ hub.location }}, {{ hub.district }}, {{ hub.state }}
-            </div>
-            <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.85rem;">
-                <span style="color: var(--text-muted);">Available Headroom:</span>
-                <strong style="color: #34d399;">{{ hub.get_available_capacity }} kg</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 0.25rem; color: var(--text-muted);">
-                <span>Total Capacity:</span>
-                <span>{{ hub.capacity_kg }} kg</span>
-            </div>
-        </div>
-        {% empty %}
-        <p style="color: var(--text-muted); font-size: 0.875rem;">No active micro-hubs configured.</p>
-        {% endfor %}
-    </div>
-</div>
-
-<!-- ======================================================================= -->
-<!-- DIGITAL WALLET TRANSACTION LEDGER                                       -->
-<!-- ======================================================================= -->
-<div class="card" style="margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-        <div>
-            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-                <span>📜</span> Digital Wallet Transaction Ledger
-            </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
-                Immutable audit ledger tracking instant batch settlement credits and bank/UPI withdrawals.
-            </p>
-        </div>
-        <span class="badge badge-success" style="font-size: 0.8rem;">Instant Settlement Rail</span>
-    </div>
-
-    <div class="table-responsive">
-        <table id="walletLedgerTable">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Type</th>
-                    <th>Description</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="walletLedgerBody">
-                {% for tx in recent_transactions %}
-                <tr>
-                    <td>{{ tx.timestamp|date:"d M Y H:i" }}</td>
-                    <td>
-                        <span class="badge {% if tx.transaction_type == 'CREDIT' %}badge-success{% else %}badge-warning{% endif %}">
-                            {{ tx.get_transaction_type_display }}
-                        </span>
-                    </td>
-                    <td>{{ tx.description }}</td>
-                    <td>
-                        {% if tx.transaction_type == 'CREDIT' %}
-                            <strong style="color: #34d399;">+₹{{ tx.amount }}</strong>
-                        {% else %}
-                            <strong style="color: #f87171;">-₹{{ tx.amount }}</strong>
-                        {% endif %}
-                    </td>
-                    <td><span class="badge badge-info">Settled (UPI/IMPS)</span></td>
-                </tr>
-                {% empty %}
-                <tr id="emptyLedgerRow">
-                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                        No wallet transactions recorded yet. Complete an optical scan or drop off a batch to receive instant credit!
+                        No harvest batches recorded yet. <a href="{% url 'farmer_graded_produce' %}" style="color: #133826; font-weight: 700;">Upload produce photo</a> to run optical AI quality grading!
                     </td>
                 </tr>
                 {% endfor %}
@@ -945,881 +264,55 @@
 </div>
 
 <!-- ======================================================================= -->
-<!-- VANILLA JAVASCRIPT SCANNER & WALLET LOGIC                               -->
+<!-- 5. PORTAL QUICK ACCESS TILES                                            -->
 <!-- ======================================================================= -->
-<script>
-    // Global Helper to get Django CSRF Token (via cookie or form input)
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        if (!cookieValue) {
-            const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
-            if (csrfInput) cookieValue = csrfInput.value;
-        }
-        return cookieValue;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        const triggerBtn = document.getElementById("triggerUploadBtn");
-        const fileInput = document.getElementById("produceImageInput");
-        const cropSelect = document.getElementById("cropSelect");
-        const volumeInput = document.getElementById("volumeInput");
-        const viewfinder = document.getElementById("viewfinder");
-        const placeholder = document.getElementById("viewfinderPlaceholder");
-        const previewImg = document.getElementById("imagePreview");
-        const laserLine = document.getElementById("laserLine");
-        const radarPulse = document.getElementById("radarPulse");
-        const scanningStatus = document.getElementById("scanningStatus");
-        const resultCard = document.getElementById("scanResultCard");
-        const withdrawBtn = document.getElementById("withdrawBtn");
-        const walletBalanceDisplay = document.getElementById("walletBalanceDisplay");
-        const walletLedgerBody = document.getElementById("walletLedgerBody");
-
-        // Trigger file input dialog
-        triggerBtn.addEventListener("click", () => fileInput.click());
-        viewfinder.addEventListener("click", () => fileInput.click());
-
-        // Instant Wallet Withdrawal Handler
-        withdrawBtn.addEventListener("click", async () => {
-            const currentBalText = walletBalanceDisplay.innerText.replace(/[^0-9.]/g, '');
-            const currentBal = parseFloat(currentBalText) || 0;
-
-            if (currentBal <= 0) {
-                alert("Your wallet balance is currently ₹0.00. Drop off a produce batch to earn instant payouts!");
-                return;
-            }
-
-            const withdrawAmount = prompt(`Enter amount to withdraw to your bank account (Max: ₹${currentBal.toFixed(2)}):`, currentBal.toFixed(2));
-            if (!withdrawAmount) return;
-
-            const amtNum = parseFloat(withdrawAmount);
-            if (isNaN(amtNum) || amtNum <= 0 || amtNum > currentBal) {
-                alert("Please enter a valid amount within your current balance.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("amount", amtNum.toString());
-
-            try {
-                const res = await fetch("/api/wallet/withdraw/", {
-                    method: "POST",
-                    headers: { "X-CSRFToken": getCookie("csrftoken") || "" },
-                    body: formData,
-                });
-                const data = await res.json();
-                if (data.success) {
-                    walletBalanceDisplay.innerText = "₹" + data.new_balance.toFixed(2);
-                    alert("⚡ " + data.message);
-                    
-                    // Prepend ledger row
-                    const emptyRow = document.getElementById("emptyLedgerRow");
-                    if (emptyRow) emptyRow.remove();
-
-                    const newRow = document.createElement("tr");
-                    newRow.innerHTML = `
-                        <td>Just Now</td>
-                        <td><span class="badge badge-warning">Debit (Bank Withdrawal)</span></td>
-                        <td>Instant IMPS settlement to UPI</td>
-                        <td style="color: #f87171; font-weight: bold;">-₹${amtNum.toFixed(2)}</td>
-                        <td><span class="badge badge-info">Settled (UPI/IMPS)</span></td>
-                    `;
-                    walletLedgerBody.insertBefore(newRow, walletLedgerBody.firstChild);
-                } else {
-                    alert("Withdrawal failed: " + (data.error || "Unknown error"));
-                }
-            } catch (err) {
-                alert("Error connecting to banking rail: " + err.message);
-            }
-        });
-
-        // Drag & Drop handlers
-        viewfinder.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            viewfinder.style.borderColor = "#10b981";
-        });
-        viewfinder.addEventListener("dragleave", () => {
-            viewfinder.style.borderColor = "rgba(16, 185, 129, 0.35)";
-        });
-        viewfinder.addEventListener("drop", (e) => {
-            e.preventDefault();
-            viewfinder.style.borderColor = "rgba(16, 185, 129, 0.35)";
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                handleFileUpload(e.dataTransfer.files[0]);
-            }
-        });
-
-        // File selection handler
-        fileInput.addEventListener("change", (e) => {
-            if (e.target.files && e.target.files[0]) {
-                handleFileUpload(e.target.files[0]);
-            }
-        });
-
-        function handleFileUpload(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                previewImg.style.display = "block";
-                placeholder.style.display = "none";
-                resultCard.style.display = "none";
-
-                // Start Scanner Effects
-                startScanAnimation();
-
-                // Send to Django Vision API
-                sendToVisionAPI(file);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function startScanAnimation() {
-            laserLine.style.display = "block";
-            radarPulse.style.display = "block";
-            scanningStatus.style.display = "block";
-            scanningStatus.innerText = "⚡ Scanning: Running optical edge CNN inspection...";
-
-            setTimeout(() => {
-                if (laserLine.style.display === "block") {
-                    scanningStatus.innerText = "🔬 Analyzing surface blemishes, color uniformity & geometry...";
-                }
-            }, 800);
-        }
-
-        function stopScanAnimation() {
-            laserLine.style.display = "none";
-            radarPulse.style.display = "none";
-            scanningStatus.style.display = "none";
-        }
-
-        async function sendToVisionAPI(file) {
-            const formData = new FormData();
-            formData.append("image", file);
-            formData.append("crop_id", cropSelect.value);
-            formData.append("volume_kg", volumeInput.value || "100.00");
-
-            const csrfToken = getCookie("csrftoken");
-
-            try {
-                const response = await fetch("/api/grade-batch/", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": csrfToken || "",
-                    },
-                    body: formData,
-                });
-
-                const data = await response.json();
-                stopScanAnimation();
-
-                if (data.success) {
-                    renderScanResult(data);
-                } else {
-                    alert("Optical Scan Failed: " + (data.error || "Unknown error"));
-                }
-            } catch (err) {
-                stopScanAnimation();
-                alert("Network error contacting AI inspection station: " + err.message);
-            }
-        }
-
-        function renderScanResult(data) {
-            document.getElementById("resultCropName").innerText = data.crop_name + " (" + data.volume_kg + " kg Batch)";
-            
-            const badge = document.getElementById("resultGradeBadge");
-            badge.innerText = data.grade_display;
-            badge.className = "badge grade-badge-glow-" + data.grade;
-
-            document.getElementById("resultConfidence").innerText = data.confidence_score.toFixed(1) + "%";
-            document.getElementById("resultDefect").innerText = data.defect_percentage.toFixed(1) + "%";
-            document.getElementById("resultFirmness").innerText = data.metrics.surface_firmness;
-            document.getElementById("resultRationale").innerText = data.rationale;
-
-            // Financial Breakdown
-            const fb = data.financial_breakdown;
-            document.getElementById("fbVolume").innerText = data.volume_kg.toFixed(2) + " kg";
-            document.getElementById("fbBasePrice").innerText = "₹" + fb.base_price_per_kg.toFixed(2) + "/kg";
-            document.getElementById("fbBaseValue").innerText = "₹" + fb.base_value.toFixed(2);
-            
-            const modElem = document.getElementById("fbModifier");
-            if (fb.grade_modifier_pct > 0) {
-                modElem.style.color = "#34d399";
-                modElem.innerText = "+" + fb.grade_modifier_pct + "% (+₹" + fb.grade_modifier_amount.toFixed(2) + ")";
-            } else if (fb.grade_modifier_pct === 0) {
-                modElem.style.color = "var(--text-muted)";
-                modElem.innerText = "0% (Standard)";
-            } else {
-                modElem.style.color = "#f87171";
-                modElem.innerText = fb.grade_modifier_pct + "% (-₹" + Math.abs(fb.grade_modifier_amount).toFixed(2) + ")";
-            }
-
-            document.getElementById("fbLogistics").innerText = "-₹" + fb.logistics_deduction.toFixed(2);
-            document.getElementById("fbFinalPayout").innerText = "₹" + fb.final_payout.toFixed(2);
-            document.getElementById("fbMandiPayout").innerText = "₹" + fb.traditional_mandi_payout.toFixed(2);
-
-            document.getElementById("fbGain").innerHTML = `
-                <span class="badge badge-success" style="font-weight: 700;">
-                    +₹${fb.disintermediation_gain.toFixed(2)} (+${fb.extra_income_pct.toFixed(1)}%)
-                </span>
-            `;
-
-            // Instant Digital Wallet Update
-            if (data.wallet && data.wallet.new_wallet_balance !== undefined) {
-                walletBalanceDisplay.innerText = "₹" + data.wallet.new_wallet_balance.toFixed(2);
-
-                // Add to ledger
-                const emptyRow = document.getElementById("emptyLedgerRow");
-                if (emptyRow) emptyRow.remove();
-
-                const newRow = document.createElement("tr");
-                newRow.innerHTML = `
-                    <td>Just Now</td>
-                    <td><span class="badge badge-success">Credit (Produce Payout)</span></td>
-                    <td>Payout for Batch ${data.batch_id}: ${data.volume_kg}kg ${data.crop_name} (${data.grade})</td>
-                    <td style="color: #34d399; font-weight: bold;">+₹${data.wallet.wallet_credited.toFixed(2)}</td>
-                    <td><span class="badge badge-info">Settled (Wallet)</span></td>
-                `;
-                walletLedgerBody.insertBefore(newRow, walletLedgerBody.firstChild);
-            }
-
-            resultCard.style.display = "block";
-            resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
-    });
-
-    // ==============================================================================
-    // HYBRID VERNACULAR VOICE ASSISTANT CLIENT (SARVAM AI + GEMINI + WEB SPEECH)
-    // ==============================================================================
-    let voiceMediaRecorder = null;
-    let voiceAudioChunks = [];
-    let isVoiceRecording = false;
-    let currentVoiceAudio = null;
-    let currentVoiceAudioBase64 = null;
-    let lastResponseText = null;
-    let lastLanguageCode = "auto";
-    let lastAudioSource = "browser_speech";
-    let speechRecognizer = null;
-    let liveTranscribedQuery = "";
-    let currentSelectedLanguage = "auto";
-
-    const voiceMicBtn = document.getElementById("voiceMicBtn");
-    const voiceMicIcon = document.getElementById("voiceMicIcon");
-    const voiceStatusText = document.getElementById("voiceStatusText");
-    const voiceWaveVisualizer = document.getElementById("voiceWaveVisualizer");
-    const voiceConversationBox = document.getElementById("voiceConversationBox");
-    const voiceChatThread = document.getElementById("voiceChatThread");
-    const preferredNameTag = document.getElementById("preferredNameTag");
-    const detectedLangBadge = document.getElementById("detectedLangBadge");
-    const intentBadge = document.getElementById("intentBadge");
-
-    function escapeHtml(unsafe) {
-        if (!unsafe) return "";
-        return String(unsafe)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    // Pre-warm SpeechSynthesis voices
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    }
-
-    function setVoiceLanguage(lang) {
-        currentSelectedLanguage = lang;
-        document.querySelectorAll(".voice-lang-pill").forEach(pill => {
-            pill.classList.remove("active");
-        });
-        const activeBtn = document.getElementById("langPill_" + (lang === "auto" ? "auto" : lang.split("-")[0]));
-        if (activeBtn) activeBtn.classList.add("active");
-
-        console.log("[K2K Voice] Target voice language set to:", lang);
-        voiceStatusText.innerText = "Language: " + (lang === "auto" ? "Auto Detect" : lang) + " • Tap mic to speak";
-        voiceStatusText.style.color = "#34d399";
-
-        // Update active recognizer language if supported
-        if (speechRecognizer) {
-            speechRecognizer.lang = (lang === "auto") ? (navigator.language || "en-IN") : lang;
-        }
-    }
-
-    async function resetVoiceChat() {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        if (currentVoiceAudio) currentVoiceAudio.pause();
-
-        try {
-            const csrfToken = getCookie("csrftoken");
-            await fetch("/api/voice/assist/?reset_chat=1", {
-                headers: { "X-CSRFToken": csrfToken || "" }
-            });
-        } catch (e) {
-            console.warn("Reset chat note:", e);
-        }
-
-        if (voiceChatThread) voiceChatThread.innerHTML = "";
-        if (voiceConversationBox) voiceConversationBox.style.display = "none";
-        if (preferredNameTag) preferredNameTag.innerText = "👨‍🌾 Farmer";
-        lastResponseText = null;
-        currentVoiceAudioBase64 = null;
-        voiceStatusText.innerText = "✨ New conversation started. Tap mic to speak in English or your native language.";
-        voiceStatusText.style.color = "#34d399";
-    }
-
-    function setupSpeechRecognition() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return null;
-        try {
-            const recognizer = new SpeechRecognition();
-            recognizer.continuous = true;
-            recognizer.interimResults = true;
-            recognizer.lang = (currentSelectedLanguage === "auto") ? (navigator.language || "en-IN") : currentSelectedLanguage;
-
-            recognizer.onresult = (event) => {
-                let text = "";
-                for (let i = 0; i < event.results.length; i++) {
-                    text += event.results[i][0].transcript + " ";
-                }
-                text = text.trim();
-                if (text) {
-                    liveTranscribedQuery = text;
-                    voiceStatusText.innerText = "🗣️ " + text;
-                    voiceStatusText.style.color = "#34d399";
-                }
-            };
-            recognizer.onerror = (e) => {
-                console.log("[K2K Voice] SpeechRecognition event:", e.error);
-            };
-            return recognizer;
-        } catch (e) {
-            console.warn("Could not init SpeechRecognition:", e);
-            return null;
-        }
-    }
-
-    async function toggleVoiceRecording() {
-        if (!isVoiceRecording) {
-            await startVoiceRecording();
-        } else {
-            stopVoiceRecording();
-        }
-    }
-
-    async function startVoiceRecording() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("Microphone recording is not directly supported in this browser. Please tap any of the quick question buttons below.");
-            return;
-        }
-
-        // Cancel any active speech
-        if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-        }
-        if (currentVoiceAudio) {
-            currentVoiceAudio.pause();
-        }
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            voiceAudioChunks = [];
-            liveTranscribedQuery = "";
-
-            let options = {};
-            if (MediaRecorder.isTypeSupported("audio/webm")) {
-                options = { mimeType: "audio/webm" };
-            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                options = { mimeType: "audio/mp4" };
-            }
-
-            voiceMediaRecorder = new MediaRecorder(stream, options);
-
-            voiceMediaRecorder.ondataavailable = (event) => {
-                if (event.data && event.data.size > 0) {
-                    voiceAudioChunks.push(event.data);
-                }
-            };
-
-            voiceMediaRecorder.onstop = async () => {
-                stream.getTracks().forEach(track => track.stop());
-                const mimeType = voiceMediaRecorder.mimeType || "audio/webm";
-                const audioBlob = new Blob(voiceAudioChunks, { type: mimeType });
-                console.log("[K2K Voice] Audio recording finished. Blob size:", audioBlob.size, "bytes, mimeType:", mimeType);
-                if (audioBlob.size === 0 && !liveTranscribedQuery) {
-                    voiceStatusText.innerText = "⚠️ No audio captured. Tap mic to speak again or use the buttons below.";
-                    voiceStatusText.style.color = "#ef4444";
-                    return;
-                }
-                await submitVoiceAudio(audioBlob);
-            };
-
-            voiceMediaRecorder.start();
-            isVoiceRecording = true;
-            voiceMicBtn.classList.add("recording");
-            voiceMicIcon.innerText = "⏹️";
-            voiceStatusText.innerText = "🔴 Listening... Speak now (English, Hindi, Marathi, etc.)";
-            voiceStatusText.style.color = "#ef4444";
-            voiceWaveVisualizer.style.display = "flex";
-
-            // Start SpeechRecognition in parallel if browser supports it
-            speechRecognizer = setupSpeechRecognition();
-            if (speechRecognizer) {
-                try {
-                    speechRecognizer.start();
-                } catch (e) {
-                    console.log("Speech recognition start note:", e);
-                }
-            }
-        } catch (err) {
-            console.error("Microphone access error:", err);
-            alert("Microphone permission was denied or is unavailable: " + err.message + "\nYou can test by tapping any of the quick question buttons below.");
-        }
-    }
-
-    function stopVoiceRecording() {
-        if (voiceMediaRecorder && voiceMediaRecorder.state !== "inactive") {
-            voiceMediaRecorder.stop();
-        }
-        if (speechRecognizer) {
-            try {
-                speechRecognizer.stop();
-            } catch (e) {}
-        }
-        isVoiceRecording = false;
-        voiceMicBtn.classList.remove("recording");
-        voiceMicIcon.innerText = "🎤";
-        voiceStatusText.innerText = "🧠 Analyzing audio with Sarvam AI & Gemini...";
-        voiceStatusText.style.color = "#fbbf24";
-        voiceWaveVisualizer.style.display = "none";
-    }
-
-    async function submitVoiceAudio(audioBlob) {
-        const formData = new FormData();
-        formData.append("audio", audioBlob, "farmer_recording.webm");
-        formData.append("language", currentSelectedLanguage);
-
-        // Attach live transcribed text whenever available to ensure high fidelity even with network latency
-        if (liveTranscribedQuery && liveTranscribedQuery.trim()) {
-            console.log("[K2K Voice] Attaching live transcribed text:", liveTranscribedQuery);
-            formData.append("text", liveTranscribedQuery.trim());
-        }
-
-        await sendVoiceRequest(formData);
-    }
-
-    async function askVoiceAssistantWithText(text) {
-        // Cancel any existing speech playback
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        if (currentVoiceAudio) currentVoiceAudio.pause();
-
-        voiceStatusText.innerText = "🧠 Processing with Gemini reasoning...";
-        voiceStatusText.style.color = "#fbbf24";
-
-        const formData = new FormData();
-        formData.append("text", text);
-        formData.append("language", currentSelectedLanguage);
-
-        await sendVoiceRequest(formData);
-    }
-
-    function findBestIndicVoice(langCode) {
-        if (!window.speechSynthesis) return null;
-        const voices = window.speechSynthesis.getVoices() || [];
-        if (voices.length === 0) return null;
-
-        const targetLocale = (langCode || "en-IN").toLowerCase();
-        const shortLang = targetLocale.split("-")[0];
-
-        // 1. Highest Priority: Microsoft / Google / Apple Natural & Online Neural Voices for target language
-        const naturalVoice = voices.find(v => {
-            const vLang = (v.lang || "").toLowerCase();
-            const vName = (v.name || "").toLowerCase();
-            const matchesLang = vLang.startsWith(shortLang) || vLang.includes(shortLang);
-            const isNatural = vName.includes("natural") || vName.includes("online") || vName.includes("neural");
-            return matchesLang && isNatural;
-        });
-        if (naturalVoice) return naturalVoice;
-
-        // 2. High Priority: Google / Microsoft / Apple Dedicated Voices
-        const brandedVoice = voices.find(v => {
-            const vLang = (v.lang || "").toLowerCase();
-            const vName = (v.name || "").toLowerCase();
-            const matchesLang = vLang.startsWith(shortLang) || vLang.includes(shortLang);
-            const isBranded = vName.includes("google") || vName.includes("microsoft") || vName.includes("apple") || vName.includes("siri");
-            return matchesLang && isBranded;
-        });
-        if (brandedVoice) return brandedVoice;
-
-        // 3. Exact matching locale or prefix (e.g. 'en-IN', 'hi-IN')
-        const directMatch = voices.find(v => (v.lang || "").toLowerCase().startsWith(shortLang));
-        if (directMatch) return directMatch;
-
-        // 4. Natural Indian English Voice (e.g., Microsoft Neerja Online / Microsoft Prabhat Online)
-        const indianEnglishNatural = voices.find(v => {
-            const vLang = (v.lang || "").toLowerCase();
-            const vName = (v.name || "").toLowerCase();
-            const isIndian = vLang === "en-in" || vName.includes("india");
-            const isNatural = vName.includes("natural") || vName.includes("online") || vName.includes("neural");
-            return isIndian && isNatural;
-        });
-        if (indianEnglishNatural) return indianEnglishNatural;
-
-        // 5. Any Indian English voice
-        const anyIndianVoice = voices.find(v => {
-            const vLang = (v.lang || "").toLowerCase();
-            return vLang === "en-in" || vLang.endsWith("-in") || (v.name || "").toLowerCase().includes("india");
-        });
-        if (anyIndianVoice) return anyIndianVoice;
-
-        // 6. Best general natural voice
-        const anyNaturalVoice = voices.find(v => (v.name || "").toLowerCase().includes("natural") || (v.name || "").toLowerCase().includes("google"));
-        if (anyNaturalVoice) return anyNaturalVoice;
-
-        // 7. System default
-        return voices.find(v => v.default) || voices[0];
-    }
-
-    async function sendVoiceRequest(formData) {
-        try {
-            const csrfToken = getCookie("csrftoken");
-            console.log("[K2K Voice] Sending request to /api/voice/assist/...", {
-                hasAudio: formData.has("audio") || formData.has("audio_file"),
-                text: formData.get("text"),
-                language: formData.get("language"),
-                hasCSRF: Boolean(csrfToken)
-            });
-
-            const response = await fetch("/api/voice/assist/", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": csrfToken || "",
-                },
-                body: formData,
-            });
-
-            console.log("[K2K Voice] Response HTTP status:", response.status);
-            const data = await response.json();
-            console.log("[K2K Voice] Payload received:", data);
-
-            if (!response.ok || !data.success) {
-                const errMsg = data.error || "Please try speaking again";
-                voiceStatusText.innerText = "⚠️ " + errMsg;
-                voiceStatusText.style.color = "#ef4444";
-                if (data.response_text) {
-                    speakTextWithBrowser(data.response_text, currentSelectedLanguage !== "auto" ? currentSelectedLanguage : "en-IN");
-                }
-                return;
-            }
-
-            // Populate Conversation Box & Thread
-            const userText = data.transcribed_text || data.transcript || (formData.has("audio") ? "Spoken Audio Query" : "Voice Query");
-            const assistantText = data.response_text || data.voice_reply_text;
-            const detectedLang = data.detected_language || data.language_code || "en-IN";
-            const currentFarmerName = data.preferred_name || "Farmer";
-
-            if (preferredNameTag) preferredNameTag.innerText = "👨‍🌾 " + currentFarmerName;
-            if (detectedLangBadge) detectedLangBadge.innerText = detectedLang;
-            if (intentBadge) intentBadge.innerText = data.intent || "general";
-
-            // Render Conversation Thread
-            if (voiceChatThread) {
-                if (data.conversation_history && data.conversation_history.length > 0) {
-                    voiceChatThread.innerHTML = data.conversation_history.map(t => `
-                        <div class="voice-chat-bubble-user">
-                            <div style="font-size: 0.72rem; color: #93c5fd; margin-bottom: 2px;">👨‍🌾 ${escapeHtml(currentFarmerName)}</div>
-                            <div>${escapeHtml(t.user)}</div>
-                        </div>
-                        <div class="voice-chat-bubble-assistant">
-                            <div style="font-size: 0.72rem; color: #34d399; margin-bottom: 2px;">🤖 K2K Assistant (${escapeHtml(t.language || detectedLang)})</div>
-                            <div>${escapeHtml(t.assistant)}</div>
-                        </div>
-                    `).join("");
-                } else {
-                    voiceChatThread.innerHTML = `
-                        <div class="voice-chat-bubble-user">
-                            <div style="font-size: 0.72rem; color: #93c5fd; margin-bottom: 2px;">👨‍🌾 ${escapeHtml(currentFarmerName)}</div>
-                            <div>${escapeHtml(userText)}</div>
-                        </div>
-                        <div class="voice-chat-bubble-assistant">
-                            <div style="font-size: 0.72rem; color: #34d399; margin-bottom: 2px;">🤖 K2K Assistant (${escapeHtml(detectedLang)})</div>
-                            <div>${escapeHtml(assistantText)}</div>
-                        </div>
-                    `;
-                }
-                voiceChatThread.scrollTop = voiceChatThread.scrollHeight;
-            }
-
-            voiceConversationBox.style.display = "block";
-            voiceConversationBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
-            lastResponseText = assistantText;
-            lastLanguageCode = detectedLang;
-
-            // Audio Playback: Sarvam Bulbul AI v3 OR Seamless Web Native Fallback
-            const hasSarvamAudio = Boolean(data.audio_base64 && data.audio_base64.length > 500 && (data.sarvam_tts_enabled || data.audio_source === "sarvam"));
-            const voiceBadge = document.getElementById("voiceEngineBadge");
-
-            if (hasSarvamAudio) {
-                console.log("[K2K Voice] Playing Sarvam Bulbul v3 neural audio (speaker='shubh').");
-                if (voiceBadge) {
-                    voiceBadge.innerText = "🔊 Sarvam Bulbul AI (Shubh)";
-                    voiceBadge.className = "badge badge-success";
-                }
-                currentVoiceAudioBase64 = data.audio_base64;
-                lastAudioSource = "sarvam";
-                playVoiceAudio(data.audio_base64);
-            } else {
-                console.log("[K2K Voice] Sarvam TTS offline/credits exhausted; switching to Web Native Speech fallback.");
-                lastAudioSource = "browser_speech";
-                speakTextWithBrowser(lastResponseText, lastLanguageCode);
-            }
-        } catch (err) {
-            console.error("[K2K Voice] Fetch exception:", err);
-            voiceStatusText.innerText = "Connection issue. Speaking fallback response...";
-            voiceStatusText.style.color = "#fbbf24";
-            const fallbackMsg = (currentSelectedLanguage && currentSelectedLanguage.startsWith("en"))
-                ? "I am listening. Please tap the microphone to speak your question again."
-                : "माफ़ कीजिए, संपर्क में कुछ तकनीकी समस्या आई है। कृपया दोबारा प्रयास करें।";
-            speakTextWithBrowser(fallbackMsg, currentSelectedLanguage !== "auto" ? currentSelectedLanguage : "en-IN");
-        }
-    }
-
-    function speakTextWithBrowser(text, langCode) {
-        if (!window.speechSynthesis) {
-            console.warn("Browser does not support SpeechSynthesis");
-            voiceStatusText.innerText = "Ready - Tap microphone to speak again";
-            voiceStatusText.style.color = "#34d399";
-            return;
-        }
-
-        window.speechSynthesis.cancel();
-
-        // Clean text for speech synthesis (strip currency symbols appropriately based on language)
-        const isEn = Boolean(langCode && (langCode.startsWith("en") || langCode === "en-IN"));
-        let cleanText = (text || "")
-            .replace(/₹/g, isEn ? " rupees " : "रुपये ")
-            .replace(/[\*#_`~]/g, " ")
-            .replace(/[🤖🔊🎤📢🌾⚠️🚨✨🏬🚜📦]/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        if (!cleanText) return;
-
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = langCode || (isEn ? "en-IN" : "hi-IN");
-        utterance.rate = 0.95; // Natural tempo
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
-
-        const matchedVoice = findBestIndicVoice(langCode);
-        const voiceBadge = document.getElementById("voiceEngineBadge");
-
-        if (matchedVoice) {
-            utterance.voice = matchedVoice;
-            console.log("[K2K Voice] Selected browser natural voice:", matchedVoice.name, "| Lang:", matchedVoice.lang);
-            if (voiceBadge) {
-                const shortVoiceName = matchedVoice.name.replace(/Online|Natural|\(India\)|Microsoft|Google/gi, "").trim();
-                voiceBadge.innerText = "🗣️ Browser: " + (shortVoiceName || matchedVoice.name).substring(0, 20);
-                voiceBadge.className = "badge badge-info";
-            }
-        } else if (voiceBadge) {
-            voiceBadge.innerText = "🗣️ Device Natural Voice";
-            voiceBadge.className = "badge badge-info";
-        }
-
-        utterance.onstart = () => {
-            voiceStatusText.innerText = "🔊 Speaking response (Device Natural Voice)...";
-            voiceStatusText.style.color = "#34d399";
-            voiceWaveVisualizer.style.display = "flex";
-        };
-        utterance.onend = () => {
-            window.__k2k_speech_utterance = null;
-            voiceStatusText.innerText = "Ready - Tap microphone to speak again";
-            voiceStatusText.style.color = "#34d399";
-            voiceWaveVisualizer.style.display = "none";
-        };
-        utterance.onerror = (e) => {
-            window.__k2k_speech_utterance = null;
-            console.warn("[K2K Voice] SpeechSynthesis error:", e);
-            voiceStatusText.innerText = "Ready - Tap microphone to speak again";
-            voiceStatusText.style.color = "#34d399";
-            voiceWaveVisualizer.style.display = "none";
-        };
-
-        window.__k2k_speech_utterance = utterance;
-        window.speechSynthesis.speak(utterance);
-    }
-
-    function playVoiceAudio(base64Audio) {
-        try {
-            if (currentVoiceAudio) {
-                currentVoiceAudio.pause();
-            }
-            currentVoiceAudio = new Audio("data:audio/wav;base64," + base64Audio);
-            currentVoiceAudio.onplay = () => {
-                voiceStatusText.innerText = "🔊 Speaking response (Sarvam Bulbul AI)...";
-                voiceStatusText.style.color = "#34d399";
-                voiceWaveVisualizer.style.display = "flex";
-            };
-            currentVoiceAudio.onended = () => {
-                voiceStatusText.innerText = "Ready - Tap microphone to speak again";
-                voiceStatusText.style.color = "#34d399";
-                voiceWaveVisualizer.style.display = "none";
-            };
-            currentVoiceAudio.onerror = (err) => {
-                console.warn("[K2K Voice] HTML Audio playback error, switching seamlessly to device speech:", err);
-                if (lastResponseText) {
-                    speakTextWithBrowser(lastResponseText, lastLanguageCode);
-                }
-            };
-            currentVoiceAudio.play().catch(e => {
-                console.log("Audio autoplay restricted by browser policy; falling back to speech synthesis:", e);
-                if (lastResponseText) {
-                    speakTextWithBrowser(lastResponseText, lastLanguageCode);
-                } else {
-                    voiceStatusText.innerText = "Tap 'Replay Voice' to listen aloud";
-                    voiceStatusText.style.color = "#60a5fa";
-                }
-            });
-        } catch (e) {
-            console.error("Audio playback exception:", e);
-            if (lastResponseText) {
-                speakTextWithBrowser(lastResponseText, lastLanguageCode);
-            }
-        }
-    }
-
-    function replayAssistantVoice() {
-        if (lastAudioSource === "sarvam" && currentVoiceAudioBase64) {
-            playVoiceAudio(currentVoiceAudioBase64);
-        } else if (lastResponseText) {
-            speakTextWithBrowser(lastResponseText, lastLanguageCode);
-        }
-    }
-
-    // =========================================================================
-    // AGRONOMIC WEATHER & AI ADVISORY CONTROLLER
-    // =========================================================================
-    async function loadWeatherAdvisory(params = {}) {
-        const spinner = document.getElementById("weatherSpinner");
-        const locationText = document.getElementById("weatherLocationText");
-        const headlineText = document.getElementById("weatherHeadlineText");
-        const risksText = document.getElementById("weatherRisksText");
-        const irrigationText = document.getElementById("weatherIrrigationText");
-        const cropsText = document.getElementById("weatherCropsText");
-
-        if (spinner) spinner.style.display = "inline-flex";
-        if (locationText) locationText.innerText = "Querying live weather & soil telemetry...";
-
-        try {
-            const query = new URLSearchParams();
-            if (params.lat && params.lon) {
-                query.set("lat", params.lat);
-                query.set("lon", params.lon);
-            }
-            if (params.pincode) {
-                query.set("pincode", params.pincode);
-            }
-            if (params.location_name) {
-                query.set("location_name", params.location_name);
-            }
-
-            const response = await fetch(`/api/weather-advisory/?${query.toString()}`);
-            const data = await response.json();
-
-            if (!data.success) {
-                throw new Error(data.error || "Failed to load weather intelligence");
-            }
-
-            // Update Location
-            const loc = data.location || {};
-            const locLabel = loc.display_name || (loc.pincode ? `PIN ${loc.pincode}` : `Coordinates (${loc.latitude}, ${loc.longitude})`);
-            if (locationText) {
-                locationText.innerText = `${locLabel} (Lat: ${Number(loc.latitude).toFixed(3)}°, Lon: ${Number(loc.longitude).toFixed(3)}°)`;
-            }
-
-            // Update Weather metrics
-            const w = data.weather || {};
-            document.getElementById("weatherTempDisplay").innerText = `${w.temperature_c ?? '--'}°C`;
-            document.getElementById("weatherTempRange").innerText = `Min: ${w.temp_min_c ?? '--'}°C • Max: ${w.temp_max_c ?? '--'}°C`;
-            document.getElementById("weatherHumidityDisplay").innerText = `${w.relative_humidity_pct ?? '--'}%`;
-            document.getElementById("weatherSoilMoistDisplay").innerText = `${w.avg_soil_moisture_pct ?? '--'}%`;
-            document.getElementById("weatherSoilTempDisplay").innerText = `Soil Temp: ${w.avg_soil_temp_c ?? '--'}°C (24h avg)`;
-            document.getElementById("weatherPrecipDisplay").innerText = `${w.precipitation_mm ?? 0} mm`;
-            document.getElementById("weatherWindDisplay").innerText = `Wind: ${w.wind_speed_kmh ?? 0} km/h`;
-
-            // Update Advisory
-            const adv = data.advisory || {};
-            if (headlineText) headlineText.innerText = adv.weather_headline || "Stable weather conditions across agricultural zone.";
-            if (risksText) risksText.innerText = adv.risks || "No severe pest or disease hazards detected.";
-            if (irrigationText) irrigationText.innerText = adv.irrigation_harvest_advice || "Standard irrigation schedule recommended.";
-            if (cropsText) cropsText.innerText = adv.recommended_crops || "Suitable for regional cash crops.";
-
-        } catch (err) {
-            console.error("[K2K Weather] Error fetching advisory:", err);
-            if (locationText) locationText.innerText = "Error loading weather data. Please check PIN code or try again.";
-            if (headlineText) headlineText.innerText = "Unable to connect to weather telemetry. Defaulting to regional baseline.";
-        } finally {
-            if (spinner) spinner.style.display = "none";
-        }
-    }
-
-    function useCurrentLocation() {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser. Please enter your PIN code instead.");
-            return;
-        }
-
-        const locationText = document.getElementById("weatherLocationText");
-        if (locationText) locationText.innerText = "Requesting device GPS coordinates...";
-        const spinner = document.getElementById("weatherSpinner");
-        if (spinner) spinner.style.display = "inline-flex";
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                loadWeatherAdvisory({ lat, lon, location_name: "Farmer GPS Location" });
-            },
-            (err) => {
-                console.warn("[K2K Weather] Geolocation denied or unavailable:", err.message);
-                const pin = document.getElementById("weatherPincodeInput")?.value?.trim();
-                if (pin) {
-                    loadWeatherAdvisory({ pincode: pin });
-                } else {
-                    loadWeatherAdvisory({ pincode: "422004" });
-                }
-            },
-            { timeout: 10000, enableHighAccuracy: true }
-        );
-    }
-
-    function analyzePincode() {
-        const pin = document.getElementById("weatherPincodeInput")?.value?.trim();
-        if (!pin) {
-            alert("Please enter a 6-digit Indian PIN code (e.g., 422004).");
-            return;
-        }
-        loadWeatherAdvisory({ pincode: pin });
-    }
-
-    // Auto-load weather telemetry on page ready
-    document.addEventListener("DOMContentLoaded", () => {
-        const initialPin = document.getElementById("weatherPincodeInput")?.value?.trim();
-        if (initialPin) {
-            loadWeatherAdvisory({ pincode: initialPin });
-        } else {
-            loadWeatherAdvisory({ pincode: "422004" });
-        }
-    });
-</script>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+    <!-- Tile 1 -->
+    <a href="{% url 'farmer_graded_produce' %}" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease; display: block;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #E6F4EA; color: #133826; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                📦
+            </div>
+            <div>
+                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Optical AI Grading Station</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Multispectral surface inspection</div>
+            </div>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
+            Upload harvest photos or place produce on the conveyor for instant neural AGMARK grading and guaranteed payouts.
+        </p>
+    </a>
+
+    <!-- Tile 2 -->
+    <a href="{% url 'farmer_weather' %}" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease; display: block;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                ⛅
+            </div>
+            <div>
+                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Weather & Agronomic Risk</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Satellite & Soil Telemetry</div>
+            </div>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
+            Real-time Open-Meteo microclimate, volumetric soil moisture, and Gemini AI irrigation and harvest advisories.
+        </p>
+    </a>
+
+    <!-- Tile 3 -->
+    <a href="{% url 'farmer_logistics' %}" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease; display: block;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                🚚
+            </div>
+            <div>
+                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Dynamic Cold-Chain Sweeps</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">4°C Reefer EV Fleet</div>
+            </div>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
+            Track scheduled EV collection sweeps from local micro-hubs to urban retail buyers with carbon offset audit.
+        </p>
+    </a>
+</div>
 {% endblock %}

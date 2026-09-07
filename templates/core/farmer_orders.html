@@ -1,0 +1,121 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}Incoming Orders & Demand Allocation - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+                Core Operations • Demand Pipeline
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+                Incoming Orders & Demand Allocation
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                Urban supermarket chains and B2B buyers place forward contracts and demand pre-orders before harvest.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="status-pill status-growing">
+                ● Demand Pre-Matching Active
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- AI Harvest Scheduling Alerts -->
+{% if pending_schedules %}
+<div class="card" style="border-left: 4px solid #10B981;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📅</span> AI-Driven Harvest Recommendations (Demand Pre-Matched)
+            </h2>
+            <div class="card-subtitle">Optimal plucking windows calculated to match high-value urban pre-orders.</div>
+        </div>
+        <span class="status-pill status-growing">
+            Pre-Order Rail Active
+        </span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+        {% for sched in pending_schedules %}
+        <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 0.75rem; padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <strong style="font-size: 1.1rem; color: #133826;">{{ sched.crop.name }}</strong>
+                <span class="status-pill status-planting">Due: {{ sched.recommended_date }}</span>
+            </div>
+            <div style="font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.5rem;">
+                Target Volume: <strong style="color: #059669;">{{ sched.target_volume_kg }} kg</strong>
+            </div>
+            {% if sched.notes %}
+                <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; padding: 0.5rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.4rem;">
+                    💡 {{ sched.notes }}
+                </div>
+            {% endif %}
+            <div style="margin-top: 0.75rem;">
+                <a href="{% url 'farmer_graded_produce' %}" class="btn btn-forest" style="padding: 0.35rem 0.8rem; font-size: 0.78rem; width: 100%; border-radius: 0.4rem;">
+                    Ready for Drop-off →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Active Retailer Pre-Orders Table -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🛒</span> Active Urban Retailer Pre-Orders
+            </h2>
+            <div class="card-subtitle">Direct pre-orders received from verified urban supermarkets, cloud kitchens, and buyers.</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ORDER ID</th>
+                    <th>RETAILER</th>
+                    <th>CROP REQUESTED</th>
+                    <th>REQUIRED VOLUME</th>
+                    <th>DELIVERY DATE</th>
+                    <th>ESTIMATED VALUE</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in incoming_orders %}
+                <tr>
+                    <td><code>{{ order.order_id }}</code></td>
+                    <td>
+                        <strong>{{ order.retailer.get_full_name|default:order.retailer.identifier }}</strong>
+                    </td>
+                    <td>{{ order.crop.name }}</td>
+                    <td><strong>{{ order.required_volume_kg }} kg</strong></td>
+                    <td style="color: var(--text-muted);">{{ order.required_date }}</td>
+                    <td><strong style="color: #059669;">₹{{ order.calculate_estimated_cost }}</strong></td>
+                    <td>
+                        <span class="status-pill {% if order.status == 'PENDING' %}status-planting{% elif order.status == 'ALLOCATED' %}status-hub{% else %}status-growing{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No pending retailer orders currently queued. Check back as new urban demand surges arrive!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

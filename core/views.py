@@ -509,19 +509,16 @@ def dashboard_dispatcher_view(request):
 # Role-Specific Dashboards (Skinny Views with Service Layer Integration)
 # ==============================================================================
 
-@role_required(User.Role.FARMER)
-def farmer_dashboard_view(request):
+def _get_farmer_dashboard_context(request, active_nav="dashboard"):
     """
-    Farmer Portal Dashboard - PWA Optimized.
-    Integrates with:
-    1. Digital Farmer Wallet & Transaction Ledger.
-    2. AI Harvest Schedules & Alerts.
-    3. Optical AI Grading Station & Transparent Pricing.
+    Shared contextual builder for all Farmer Portal pages in the multi-page architecture.
+    Provides unified access to wallet balance, transactions, harvest batches,
+    pricing breakdowns, crop schedules, incoming pre-orders, and logistics routes.
     """
     farmer = request.user
     recent_batches = (
         farmer.harvest_batches.select_related("crop", "hub")
-        .order_by("-received_at")[:10]
+        .order_by("-received_at")[:15]
     )
 
     # Attach transparent pricing breakdown to each batch
@@ -552,26 +549,54 @@ def farmer_dashboard_view(request):
         farmer=farmer,
         defaults={"current_balance": Decimal("0.00")},
     )
-    recent_transactions = wallet.transactions.order_by("-timestamp")[:6]
+    recent_transactions = wallet.transactions.order_by("-timestamp")[:10]
 
     # Retrieve upcoming AI harvest schedules
     pending_schedules = farmer.harvest_schedules.filter(
         status=HarvestSchedule.Status.PENDING
-    ).select_related("crop").order_by("recommended_date")[:5]
+    ).select_related("crop").order_by("recommended_date")[:10]
 
-    active_hubs = MicroHub.objects.filter(is_active=True)[:5]
+    active_hubs = MicroHub.objects.filter(is_active=True)[:6]
     crops = Crop.objects.filter(is_active=True)
 
-    context = {
+    # Pre-orders & Demand Matching
+    incoming_orders = DemandOrder.objects.filter(
+        status=DemandOrder.Status.PENDING
+    ).select_related("crop", "retailer")[:10]
+
+    # Dynamic route calculation for logistics
+    first_hub = active_hubs.first()
+    try:
+        route_plan = mock_dynamic_route(first_hub.id if first_hub else None)
+    except Exception as exc:
+        logger.warning("Could not compute route plan: %s", exc)
+        route_plan = None
+
+    # Curated crop status list matching the tabular blueprint
+    my_crops = [
+        {"name": "Winter Wheat", "planted_date": "2023-10-15", "expected_yield": "8,000 kg", "status": "Growing", "status_class": "status-growing", "action": "Edit"},
+        {"name": "Corn", "planted_date": "2024-04-20", "expected_yield": "12,000 kg", "status": "Growing", "status_class": "status-growing", "action": "Edit"},
+        {"name": "Soybeans", "planted_date": "2024-05-01", "expected_yield": "10,000 kg", "status": "Planting", "status_class": "status-planting", "action": "Edit"},
+        {"name": "Barley", "planted_date": "2023-09-30", "expected_yield": "6,500 kg", "status": "Harvested", "status_class": "status-harvested", "action": "Edit"},
+        {"name": "Hybrid Tomato (Tamatar)", "planted_date": "2026-04-10", "expected_yield": "400 kg", "status": "At Hub (Graded)", "status_class": "status-hub", "action": "Inspect", "is_demo": True},
+    ]
+
+    return {
         "title": "Khet2Kitchen - Kisan Portal",
         "role": "FARMER",
         "user": farmer,
+        "farmer": farmer,
+        "active_nav": active_nav,
         "wallet": wallet,
         "recent_transactions": recent_transactions,
         "pending_schedules": pending_schedules,
         "batch_breakdowns": batch_breakdowns,
         "active_hubs": active_hubs,
         "crops": crops,
+        "incoming_orders": incoming_orders,
+        "route_plan": route_plan,
+        "my_crops": my_crops,
+        "reliability_score": "98.4",
         "financial_summary": {
             "total_gross_value": total_gross_value,
             "total_net_payout": total_net_payout,
@@ -579,20 +604,106 @@ def farmer_dashboard_view(request):
         },
     }
 
+
+@role_required(User.Role.FARMER)
+def farmer_dashboard_view(request):
+    """
+    1. Farmer's Dashboard & My Crops.
+    Features the striking Hero Section, crop summary cards, tabular My Crops data,
+    and transparent disintermediation breakdown.
+    """
+    context = _get_farmer_dashboard_context(request, active_nav="dashboard")
+    context["title"] = "Farmer's Dashboard & My Crops - Khet2Kitchen"
     try:
         return render(request, "core/farmer_dashboard.html", context)
     except TemplateDoesNotExist:
-        return JsonResponse({
-            "portal": "Farmer PWA Dashboard",
-            "user": farmer.get_full_name() or farmer.identifier,
-            "wallet_balance": float(wallet.current_balance),
-            "batches_count": len(batch_breakdowns),
-            "financial_summary": {
-                "total_net_payout": str(total_net_payout),
-                "total_disintermediation_gain": str(total_disintermediation_gain),
-            },
-            "status": "Operational",
-        })
+        return JsonResponse({"portal": "Farmer Dashboard", "status": "Operational"})
+
+
+@role_required(User.Role.FARMER)
+def farmer_graded_produce_view(request):
+    """
+    2. My Graded Produce & AI Scan.
+    Integrates optical CV grading dropzone, live laser scanner, AGMARK quality metrics,
+    and history of graded batches.
+    """
+    context = _get_farmer_dashboard_context(request, active_nav="graded_produce")
+    context["title"] = "My Graded Produce & Optical AI Scan - Khet2Kitchen"
+    try:
+        return render(request, "core/farmer_graded_produce.html", context)
+    except TemplateDoesNotExist:
+        return JsonResponse({"portal": "Graded Produce", "status": "Operational"})
+
+
+@role_required(User.Role.FARMER)
+def farmer_pricing_view(request):
+    """
+    3. AI Pricing & MSP Floor.
+    Displays transparent payout breakdown, guaranteed MSP floor protection,
+    and disintermediation comparison vs traditional APMC mandis.
+    """
+    context = _get_farmer_dashboard_context(request, active_nav="pricing")
+    context["title"] = "AI Pricing & Guaranteed MSP Floor - Khet2Kitchen"
+    try:
+        return render(request, "core/farmer_pricing.html", context)
+    except TemplateDoesNotExist:
+        return JsonResponse({"portal": "AI Pricing & MSP", "status": "Operational"})
+
+
+@role_required(User.Role.FARMER)
+def farmer_orders_view(request):
+    """
+    4. Incoming Orders & Allocation.
+    Displays urban retailer pre-orders, AI demand matching, and harvest schedules.
+    """
+    context = _get_farmer_dashboard_context(request, active_nav="orders")
+    context["title"] = "Incoming Orders & Demand Allocation - Khet2Kitchen"
+    try:
+        return render(request, "core/farmer_orders.html", context)
+    except TemplateDoesNotExist:
+        return JsonResponse({"portal": "Incoming Orders", "status": "Operational"})
+
+
+@role_required(User.Role.FARMER)
+def farmer_wallet_view(request):
+    """
+    5. Agri-Fintech Payouts & Digital Wallet.
+    Displays digital wallet ledger, instant UPI/IMPS withdrawal action, and transaction history.
+    """
+    context = _get_farmer_dashboard_context(request, active_nav="wallet")
+    context["title"] = "Agri-Fintech Payouts & Digital Wallet - Khet2Kitchen"
+    try:
+        return render(request, "core/farmer_wallet.html", context)
+    except TemplateDoesNotExist:
+        return JsonResponse({"portal": "Agri-Fintech Wallet", "status": "Operational"})
+
+
+@role_required(User.Role.FARMER)
+def farmer_logistics_view(request):
+    """
+    6. Dynamic Sweeps & Cold-Chain Fleet.
+    Displays dispatch route plan, Reefer EV vehicle metrics, CO2 savings, and micro-hub headroom.
+    """
+    context = _get_farmer_dashboard_context(request, active_nav="logistics")
+    context["title"] = "Dynamic Sweeps & Cold-Chain Fleet - Khet2Kitchen"
+    try:
+        return render(request, "core/farmer_logistics.html", context)
+    except TemplateDoesNotExist:
+        return JsonResponse({"portal": "Logistics & Cold-Chain", "status": "Operational"})
+
+
+@role_required(User.Role.FARMER)
+def farmer_weather_view(request):
+    """
+    7. Weather & Agronomic Risk.
+    Integrates real-time Open-Meteo telemetry and Google Gemini agronomic intelligence.
+    """
+    context = _get_farmer_dashboard_context(request, active_nav="weather")
+    context["title"] = "Weather & Agronomic Risk Intelligence - Khet2Kitchen"
+    try:
+        return render(request, "core/farmer_weather.html", context)
+    except TemplateDoesNotExist:
+        return JsonResponse({"portal": "Weather & Risk", "status": "Operational"})
 
 
 @role_required(User.Role.RETAILER)
