@@ -1,5 +1,3 @@
----
-
 <h1 align="center"> 🌾 Khet2Kitchen (K2K) </h1>
 <h3 align="center">AI-Powered Direct Farm-to-Fork Agritech Supply Chain with Indic Voice Intelligence & Dual-Channel Marketplaces</h3>
 
