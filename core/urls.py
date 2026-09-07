@@ -45,6 +45,11 @@ urlpatterns = [
 
     # Authentication Routes
     path(
+        "signup/",
+        views.signup_view,
+        name="signup",
+    ),
+    path(
         "login/",
         auth_views.LoginView.as_view(template_name="core/login.html"),
         name="login",

@@ -1173,5 +1173,135 @@ class WeatherAdvisoryAPITests(TestCase):
         self.assertFalse(data["success"])
 
 
+class UserRegistrationTests(TestCase):
+    """
+    Test suite for Khet2Kitchen User Registration (Signup) flow.
+    Verifies multi-role onboarding, name splitting, dual column mirroring,
+    and automatic atomic FarmerWallet provisioning.
+    """
+
+    def test_farmer_signup_success(self):
+        signup_data = {
+            "name": "Rameshwar Rao",
+            "role": "FARMER",
+            "identifier": "+919876543999",
+            "password": "FarmPassword123!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertRedirects(response, reverse("farmer_dashboard"))
+
+        # Verify User creation and fields
+        user = User.objects.get(identifier="+919876543999")
+        self.assertEqual(user.first_name, "Rameshwar")
+        self.assertEqual(user.last_name, "Rao")
+        self.assertEqual(user.phone_number, "+919876543999")
+        self.assertEqual(user.role, User.Role.FARMER)
+        self.assertTrue(user.check_password("FarmPassword123!"))
+
+        # Verify FarmerWallet provisioning with zero balance
+        self.assertTrue(hasattr(user, "wallet"))
+        self.assertEqual(user.wallet.current_balance, Decimal("0.00"))
+
+        # Verify user is logged in
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_retailer_signup_success(self):
+        signup_data = {
+            "name": "Pooja Mehta",
+            "role": "RETAILER",
+            "identifier": "pooja.mehta@freshmart.in",
+            "password": "RetailPass456!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertRedirects(response, reverse("retailer_dashboard"))
+
+        # Verify User creation and email population
+        user = User.objects.get(identifier="pooja.mehta@freshmart.in")
+        self.assertEqual(user.first_name, "Pooja")
+        self.assertEqual(user.last_name, "Mehta")
+        self.assertEqual(user.email, "pooja.mehta@freshmart.in")
+        self.assertEqual(user.role, User.Role.RETAILER)
+        self.assertTrue(user.check_password("RetailPass456!"))
+
+        # Non-farmer user should not have a FarmerWallet
+        self.assertFalse(hasattr(user, "wallet"))
+
+    def test_supplier_signup_success(self):
+        signup_data = {
+            "name": "Kisan Seeds Corp",
+            "role": "SUPPLIER",
+            "identifier": "orders@kisanseeds.com",
+            "password": "SupplierPass789!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertRedirects(response, reverse("supplier_dashboard"))
+
+        user = User.objects.get(identifier="orders@kisanseeds.com")
+        self.assertEqual(user.first_name, "Kisan")
+        self.assertEqual(user.last_name, "Seeds Corp")
+        self.assertEqual(user.email, "orders@kisanseeds.com")
+        self.assertEqual(user.role, User.Role.SUPPLIER)
+
+    def test_farmer_signup_invalid_phone_rejected(self):
+        signup_data = {
+            "name": "Farmer Bad Phone",
+            "role": "FARMER",
+            "identifier": "12345",  # Under 10 digits
+            "password": "Password123!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context["form"],
+            "identifier",
+            "Farmer identifier must be a valid mobile phone number with at least 10 digits.",
+        )
+        self.assertFalse(User.objects.filter(identifier="12345").exists())
+
+    def test_retailer_signup_invalid_email_rejected(self):
+        signup_data = {
+            "name": "Retailer Bad Email",
+            "role": "RETAILER",
+            "identifier": "not-a-valid-email",
+            "password": "Password123!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context["form"],
+            "identifier",
+            "Identifier must be a valid email address for Retailers and Suppliers.",
+        )
+        self.assertFalse(User.objects.filter(identifier="not-a-valid-email").exists())
+
+    def test_duplicate_identifier_rejected(self):
+        User.objects.create_user(
+            phone_number="+919876543210",
+            role=User.Role.FARMER,
+            first_name="Existing",
+            last_name="Farmer",
+        )
+        signup_data = {
+            "name": "Duplicate Farmer",
+            "role": "FARMER",
+            "identifier": "+919876543210",
+            "password": "Password123!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context["form"],
+            "identifier",
+            "An account with this identifier already exists.",
+        )
+
+    def test_signup_page_renders_cleanly(self):
+        response = self.client.get(reverse("signup"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "core/signup.html")
+        self.assertContains(response, "Join Khet2Kitchen")
+        self.assertContains(response, "Complete Registration")
+
+
 
 

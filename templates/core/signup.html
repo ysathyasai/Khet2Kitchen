@@ -1,0 +1,534 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Account - Project Khet2Kitchen (K2K)</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-bg: #133826;
+            --sidebar-hover: #1b4d35;
+            --app-canvas: #F4F6F1;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E9E2;
+            --card-shadow: 0 20px 40px -10px rgba(19, 56, 38, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+            
+            --cta-gold: #F59E0B;
+            --cta-gold-hover: #D97706;
+            
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --emerald-ring: rgba(16, 185, 129, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--app-canvas);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(19, 56, 38, 0.06) 0%, transparent 40%);
+        }
+
+        /* Top Navbar */
+        .signup-navbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.85rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .signup-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--sidebar-bg);
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .top-pilot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #065F46;
+            background: #E6F4EA;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Center Layout */
+        .signup-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2.5rem 1rem;
+        }
+
+        .signup-card {
+            width: 100%;
+            max-width: 520px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1.25rem;
+            padding: 2.5rem 2.25rem;
+            box-shadow: var(--card-shadow);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .signup-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E6F4EA, #D1FAE5);
+            border: 2px solid #A3C2B0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.85rem;
+            margin: 0 auto 1.25rem auto;
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.15);
+        }
+
+        .signup-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--sidebar-bg);
+            text-align: center;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4rem;
+        }
+
+        .signup-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.45;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: #FFFFFF;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.6rem;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: #10B981;
+            box-shadow: 0 0 0 3px var(--emerald-ring);
+        }
+
+        .input-hint {
+            display: block;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        .field-error {
+            color: #DC2626;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-top: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* Warm Gold Submit Button */
+        .btn-submit-gold {
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--cta-gold);
+            color: #1F2937;
+            border: none;
+            border-radius: 0.6rem;
+            font-size: 1rem;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+            margin-top: 0.75rem;
+        }
+
+        .btn-submit-gold:hover {
+            background: var(--cta-gold-hover);
+            color: #111827;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);
+        }
+
+        .alert-danger {
+            background: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            color: #991B1B;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .role-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .role-option-card {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 0.65rem;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #FAFAFA;
+        }
+
+        .role-option-card:hover {
+            border-color: #10B981;
+            background: #F0FDF4;
+        }
+
+        .role-option-card.active {
+            border-color: #059669;
+            background: #E6F4EA;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+
+        .role-option-card .role-icon {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .role-option-card .role-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--sidebar-bg);
+            display: block;
+        }
+
+        .role-option-card .role-desc {
+            font-size: 0.66rem;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 0.15rem;
+            line-height: 1.2;
+        }
+
+        /* Features List */
+        .benefit-badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .benefit-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.74rem;
+            color: #065F46;
+            background: #F0FDF4;
+            border: 1px solid #D1FAE5;
+            padding: 0.3rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 640px) {
+            .signup-navbar {
+                padding: 0.75rem 1rem;
+            }
+            .top-pilot-badge {
+                display: none;
+            }
+            .signup-card {
+                padding: 1.75rem 1.25rem;
+            }
+            .role-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Header -->
+    <header class="signup-navbar">
+        <a href="{% url 'login' %}" class="signup-brand">
+            <div class="brand-icon">🌱</div>
+            <div>
+                <span>Khet2Kitchen</span>
+                <span style="display: block; font-size: 0.65rem; font-weight: 700; color: #059669; letter-spacing: 0.06em; text-transform: uppercase;">
+                    Smart Agri-Supply
+                </span>
+            </div>
+        </a>
+        <div class="top-pilot-badge">
+            <span>🌾</span>
+            <span>NASHIK-PUNE RURAL PILOT • DIRECT AGRI-RAIL</span>
+        </div>
+    </header>
+
+    <!-- Main Registration Container -->
+    <main class="signup-container">
+        <div class="signup-card">
+            <!-- Center Avatar / Logo -->
+            <div class="signup-avatar">
+                🌱
+            </div>
+
+            <h1 class="signup-title">
+                Join Khet2Kitchen
+            </h1>
+            <p class="signup-subtitle">
+                Create your verified account to start direct trading, AI quality grading, and guaranteed payments.
+            </p>
+
+            {% if form.non_field_errors %}
+                <div class="alert-danger">
+                    {% for err in form.non_field_errors %}
+                        <div>⚠️ {{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'signup' %}" id="signupForm" novalidate>
+                {% csrf_token %}
+
+                <!-- Full Name Field -->
+                <div class="form-group">
+                    <label for="id_name" class="form-label">Full Name</label>
+                    <input type="text" name="name" id="id_name" required autofocus
+                        value="{{ form.name.value|default:'' }}"
+                        placeholder="e.g. Ramesh Kumar or Ananya Sharma"
+                        class="form-input">
+                    <span class="input-hint">Your first and last name will be parsed automatically.</span>
+                    {% if form.name.errors %}
+                        <div class="field-error">
+                            <span>⚠️</span>
+                            <span>{{ form.name.errors.0 }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Role Selection -->
+                <div class="form-group">
+                    <label for="id_role_select" class="form-label">Select Your Role</label>
+                    
+                    <!-- Quick Visual Cards for Role Selection -->
+                    <div class="role-cards-grid">
+                        <div class="role-option-card active" onclick="selectRole('FARMER')" id="card_FARMER">
+                            <span class="role-icon">👨‍🌾</span>
+                            <span class="role-title">Farmer</span>
+                            <span class="role-desc">Direct MSP & Instant Payout</span>
+                        </div>
+                        <div class="role-option-card" onclick="selectRole('RETAILER')" id="card_RETAILER">
+                            <span class="role-icon">🏬</span>
+                            <span class="role-title">Retailer</span>
+                            <span class="role-desc">B2B Verified Produce</span>
+                        </div>
+                        <div class="role-option-card" onclick="selectRole('SUPPLIER')" id="card_SUPPLIER">
+                            <span class="role-icon">🚜</span>
+                            <span class="role-title">Supplier</span>
+                            <span class="role-desc">Inputs, Seeds & Fertilizer</span>
+                        </div>
+                    </div>
+
+                    <!-- Hidden or select input that binds to Django Form -->
+                    <select name="role" id="id_role_select" class="form-input" style="display: none;">
+                        <option value="FARMER" {% if form.role.value == 'FARMER' or not form.role.value %}selected{% endif %}>Farmer</option>
+                        <option value="RETAILER" {% if form.role.value == 'RETAILER' %}selected{% endif %}>Retailer</option>
+                        <option value="SUPPLIER" {% if form.role.value == 'SUPPLIER' %}selected{% endif %}>Supplier</option>
+                    </select>
+
+                    {% if form.role.errors %}
+                        <div class="field-error">
+                            <span>⚠️</span>
+                            <span>{{ form.role.errors.0 }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Unified Identifier Field (Phone Number or Email) -->
+                <div class="form-group">
+                    <label for="id_identifier_input" class="form-label" id="identifierLabel">
+                        Mobile Phone Number
+                    </label>
+                    <input type="text" name="identifier" id="id_identifier_input" required
+                        value="{{ form.identifier.value|default:'' }}"
+                        placeholder="+919876543210 (10+ digits)"
+                        class="form-input">
+                    <span class="input-hint" id="identifierHint">
+                        Farmers use their mobile phone number for secure authentication and instant SMS/UPI alerts.
+                    </span>
+                    {% if form.identifier.errors %}
+                        <div class="field-error">
+                            <span>⚠️</span>
+                            <span>{{ form.identifier.errors.0 }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label for="id_password" class="form-label">Password / OTP</label>
+                    <input type="password" name="password" id="id_password" required
+                        placeholder="•••••••• (Min 6 characters)"
+                        class="form-input">
+                    {% if form.password.errors %}
+                        <div class="field-error">
+                            <span>⚠️</span>
+                            <span>{{ form.password.errors.0 }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Warm Gold Submit Button -->
+                <button type="submit" class="btn-submit-gold">
+                    <span>Complete Registration</span>
+                    <span>→</span>
+                </button>
+
+                <!-- Link to Sign In -->
+                <div style="text-align: center; margin-top: 1.25rem; font-size: 0.88rem; color: var(--text-muted);">
+                    Already have an account? <a href="{% url 'login' %}" style="color: var(--primary-dark); font-weight: 700; text-decoration: none;">Sign in here</a>
+                </div>
+            </form>
+
+            <!-- Feature Value Badges -->
+            <div class="benefit-badges">
+                <span class="benefit-badge">✨ Zero Middlemen</span>
+                <span class="benefit-badge">🛡️ Guaranteed MSP Floor</span>
+                <span class="benefit-badge">💳 Instant Digital Wallet</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 1.25rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--card-border); background: #FFFFFF;">
+        &copy; 2026 Project Khet2Kitchen (K2K) • Direct Agri-Supply Disintermediation
+    </footer>
+
+    <script>
+        function selectRole(role) {
+            const roleSelect = document.getElementById('id_role_select');
+            const identLabel = document.getElementById('identifierLabel');
+            const identInput = document.getElementById('id_identifier_input');
+            const identHint = document.getElementById('identifierHint');
+
+            if (roleSelect) {
+                roleSelect.value = role;
+            }
+
+            // Highlight selected visual card
+            document.querySelectorAll('.role-option-card').forEach(card => card.classList.remove('active'));
+            const activeCard = document.getElementById('card_' + role);
+            if (activeCard) activeCard.classList.add('active');
+
+            // Dynamic placeholder and label adaptation
+            if (role === 'FARMER') {
+                identLabel.textContent = 'Mobile Phone Number';
+                identInput.placeholder = '+919876543210 (10+ digits)';
+                identHint.textContent = 'Farmers use their mobile phone number for secure authentication and instant SMS/UPI alerts.';
+            } else if (role === 'RETAILER') {
+                identLabel.textContent = 'Business Email Address';
+                identInput.placeholder = 'procure@freshbazaar.in';
+                identHint.textContent = 'Wholesale retailers authenticate via their verified business email address.';
+            } else if (role === 'SUPPLIER') {
+                identLabel.textContent = 'Supplier Email Address';
+                identInput.placeholder = 'sales@bioagri.com';
+                identHint.textContent = 'Agri-input vendors authenticate via their commercial email address.';
+            }
+        }
+
+        // Initialize state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const roleSelect = document.getElementById('id_role_select');
+            const initialRole = roleSelect ? roleSelect.value : 'FARMER';
+            selectRole(initialRole);
+        });
+    </script>
+</body>
+
+</html>

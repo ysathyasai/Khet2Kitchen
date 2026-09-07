@@ -12,6 +12,7 @@ from django.template.loader import TemplateDoesNotExist
 from django.views.decorators.http import require_POST
 
 from core.decorators import role_required
+from core.forms import UserRegistrationForm
 from core.models import (
     Batch,
     Crop,
@@ -843,3 +844,40 @@ def admin_dashboard_view(request):
             "metrics": context["metrics"],
             "status": "Operational",
         })
+
+
+# ==============================================================================
+# Authentication & Onboarding Views
+# ==============================================================================
+
+def signup_view(request):
+    """
+    Secure User Registration (Signup) view for Project Khet2Kitchen (K2K).
+    Supports FARMER, RETAILER, and SUPPLIER registration with automatic
+    wallet provisioning, credential mirroring, and dynamic role-based dashboard routing.
+    """
+    if request.user.is_authenticated:
+        return redirect(request.user.get_dashboard_url())
+
+    if request.method == "POST":
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user, backend="core.backends.DualAuthBackend")
+            messages.success(
+                request,
+                f"Welcome to Khet2Kitchen, {user.first_name or user.identifier}! Your account has been provisioned.",
+            )
+            # Route dynamically: FARMER -> /farmer/dashboard/, RETAILER -> /retailer/dashboard/, SUPPLIER -> /supplier/dashboard/
+            if user.role == User.Role.FARMER:
+                return redirect("farmer_dashboard")
+            elif user.role == User.Role.RETAILER:
+                return redirect("retailer_dashboard")
+            elif user.role == User.Role.SUPPLIER:
+                return redirect("supplier_dashboard")
+            return redirect(user.get_dashboard_url())
+    else:
+        form = UserRegistrationForm()
+
+    return render(request, "core/signup.html", {"form": form})
+
