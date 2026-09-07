@@ -16,6 +16,7 @@ from core.models import (
     KitItem,
     MicroHub,
     RecipeCombo,
+    RetailerBulkOrder,
     User,
     WalletTransaction,
 )
@@ -114,10 +115,18 @@ class KitItemInline(admin.TabularInline):
 
 @admin.register(Kit)
 class KitAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "category", "discount_percentage", "badge_text", "is_active", "created_at")
-    list_filter = ("category", "is_active")
-    search_fields = ("name", "code")
+    list_display = ("name", "code", "target_audience", "is_wholesale", "bulk_weight_kg", "category", "discount_percentage", "hub", "is_active", "created_at")
+    list_filter = ("target_audience", "is_wholesale", "category", "hub", "is_active")
+    search_fields = ("name", "code", "origin_cluster")
     inlines = [KitItemInline]
+
+
+@admin.register(RetailerBulkOrder)
+class RetailerBulkOrderAdmin(admin.ModelAdmin):
+    list_display = ("order_id", "retailer", "combo", "quantity", "unit_price", "total_price", "total_weight_kg", "status", "payment_status", "created_at")
+    list_filter = ("status", "payment_status", "hub", "created_at")
+    search_fields = ("order_id", "retailer__identifier", "retailer__email", "retailer__first_name", "combo__name", "payment_ref")
+    readonly_fields = ("order_id", "created_at", "updated_at")
 
 
 @admin.register(RecipeCombo)

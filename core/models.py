@@ -1029,14 +1029,60 @@ class HarvestSchedule(models.Model):
 
 class Kit(models.Model):
     """
-    Pre-packaged vegetable/produce bundle offered to consumers at a discounted bundle price.
-    E.g., Leafy Greens Detox Kit, Sambar Essentials Box, Daily Curry Veggie Kit.
+    Pre-packaged vegetable/produce bundle offered to consumers (D2C) or bulk wholesale (B2B).
+    E.g., Consumer Salad Kit vs. 50kg Commercial Leafy Greens Wholesale Pack.
     """
+    class TargetAudience(models.TextChoices):
+        CONSUMER = "CONSUMER", _("Consumer (D2C)")
+        RETAILER = "RETAILER", _("Retailer (B2B Wholesale)")
+
     class Category(models.TextChoices):
         VEGETABLE = "VEGETABLE", _("Fresh Vegetables")
         FRUIT = "FRUIT", _("Seasonal Fruits")
         HERBS = "HERBS", _("Fresh Herbs & Greens")
         COMBO = "COMBO", _("Curated Box / Combo")
+
+    target_audience = models.CharField(
+        max_length=20,
+        choices=TargetAudience.choices,
+        default=TargetAudience.CONSUMER,
+        db_index=True,
+        verbose_name=_("Target Audience"),
+    )
+    is_wholesale = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("Is Wholesale Bulk Combo"),
+        help_text=_("True for B2B wholesale combos designed for retailers, restaurants, and kirana stores."),
+    )
+    hub = models.ForeignKey(
+        "MicroHub",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="curated_combos",
+        verbose_name=_("Source Micro-Hub"),
+        help_text=_("Designated rural aggregation hub supplying this wholesale combo."),
+    )
+    origin_cluster = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name=_("Farm Cluster / FPO Origin"),
+        help_text=_("e.g. Medchal Peri-Urban FPO Cluster, Telangana"),
+    )
+    bulk_weight_kg = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("Pack Bulk Weight (kg)"),
+        help_text=_("Total weight of the bulk wholesale package (e.g., 25.00kg, 50.00kg)."),
+    )
+    tiered_pricing_json = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("Tiered Pricing Tiers"),
+        help_text=_("Volume discount brackets e.g. {'1-4': 2500, '5-9': 2350, '10+': 2200}."),
+    )
 
     name = models.CharField(max_length=150, verbose_name=_("Kit Name"))
     code = models.CharField(max_length=50, unique=True, verbose_name=_("Kit Code"))
@@ -1065,17 +1111,24 @@ class Kit(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = _("Consumer Kit")
-        verbose_name_plural = _("Consumer Kits")
+        verbose_name = _("Produce Kit / Wholesale Combo")
+        verbose_name_plural = _("Produce Kits & Wholesale Combos")
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name} ({self.code}) - ₹{self.calculate_bundle_price()}"
+        prefix = "[B2B Bulk]" if self.is_wholesale else "[D2C Kit]"
+        return f"{prefix} {self.name} ({self.code}) - ₹{self.calculate_bundle_price()}"
 
     def calculate_original_price(self) -> Decimal:
         """Calculates total undiscounted sum of all individual kit items."""
-        total = sum((item.get_standalone_price() for item in self.items.all()), Decimal("0.00"))
-        return total.quantize(Decimal("0.01"))
+        items = list(self.items.all())
+        if items:
+            total = sum((item.get_standalone_price() for item in items), Decimal("0.00"))
+            return total.quantize(Decimal("0.01"))
+        # Fallback if bulk pack with predefined weight but no individual items linked
+        if self.bulk_weight_kg > Decimal("0.00"):
+            return (self.bulk_weight_kg * Decimal("40.00")).quantize(Decimal("0.01"))
+        return Decimal("0.00")
 
     def calculate_bundle_price(self) -> Decimal:
         """Calculates bundle price after applying discount_percentage."""
@@ -1086,16 +1139,44 @@ class Kit(models.Model):
         return orig
 
     def get_savings(self) -> Decimal:
-        """Calculates rupee savings for the consumer."""
+        """Calculates rupee savings for the buyer."""
         return (self.calculate_original_price() - self.calculate_bundle_price()).quantize(Decimal("0.01"))
 
     def total_weight_grams(self) -> int:
         return sum(item.quantity_grams for item in self.items.all())
 
+    def get_total_weight_kg(self) -> Decimal:
+        """Returns total pack weight in kilograms."""
+        if self.bulk_weight_kg > Decimal("0.00"):
+            return self.bulk_weight_kg
+        grams = self.total_weight_grams()
+        return (Decimal(str(grams)) / Decimal("1000.00")).quantize(Decimal("0.01"))
+
+    def get_price_for_quantity(self, quantity: int = 1) -> Decimal:
+        """Returns unit price considering tiered volume discounts, if configured."""
+        base_unit = self.calculate_bundle_price()
+        if not self.tiered_pricing_json:
+            return base_unit
+        for tier_key, tier_price in self.tiered_pricing_json.items():
+            try:
+                tier_price_dec = Decimal(str(tier_price))
+                if tier_key.endswith("+"):
+                    min_q = int(tier_key.replace("+", "").strip())
+                    if quantity >= min_q:
+                        return tier_price_dec
+                elif "-" in tier_key:
+                    parts = tier_key.split("-")
+                    min_q, max_q = int(parts[0].strip()), int(parts[1].strip())
+                    if min_q <= quantity <= max_q:
+                        return tier_price_dec
+            except (ValueError, TypeError):
+                continue
+        return base_unit
+
 
 class KitItem(models.Model):
-    """Individual crop/produce component inside a Kit."""
-    kit = models.ForeignKey(Kit, on_delete=models.CASCADE, related_name="items", verbose_name=_("Kit"))
+    """Individual crop/produce component inside a Kit or Wholesale Combo."""
+    kit = models.ForeignKey(Kit, on_delete=models.CASCADE, related_name="items", verbose_name=_("Kit / Combo"))
     crop = models.ForeignKey(Crop, on_delete=models.CASCADE, related_name="kit_appearances", verbose_name=_("Crop Produce"))
     quantity_grams = models.PositiveIntegerField(
         default=500,
@@ -1112,10 +1193,105 @@ class KitItem(models.Model):
     def __str__(self):
         return f"{self.quantity_grams}g {self.crop.name} in {self.kit.name}"
 
+    @property
+    def quantity_kg(self) -> Decimal:
+        return (Decimal(str(self.quantity_grams)) / Decimal("1000.00")).quantize(Decimal("0.01"))
+
     def get_standalone_price(self) -> Decimal:
         """Computes standalone value based on crop base price per kg."""
         kg = Decimal(str(self.quantity_grams)) / Decimal("1000.00")
         return (kg * self.crop.base_price).quantize(Decimal("0.01"))
+
+
+class RetailerBulkOrder(models.Model):
+    """
+    Tracks bulk curated wholesale combo orders placed by registered retailers,
+    restaurants, and kirana stores directly from farmer collectives and micro-hubs.
+    """
+    class Status(models.TextChoices):
+        PLACED = "PLACED", _("Order Placed")
+        ALLOCATED = "ALLOCATED", _("Stock Allocated at Micro-Hub")
+        DISPATCHED = "DISPATCHED", _("Dispatched in Bulk Cold-Chain")
+        DELIVERED = "DELIVERED", _("Delivered to Retailer")
+        CANCELLED = "CANCELLED", _("Cancelled")
+
+    order_id = models.CharField(max_length=50, unique=True, editable=False, db_index=True)
+    retailer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="retailer_bulk_orders",
+        limit_choices_to={"role": User.Role.RETAILER},
+        verbose_name=_("Retailer / Buyer"),
+    )
+    combo = models.ForeignKey(
+        Kit,
+        on_delete=models.PROTECT,
+        related_name="retailer_orders",
+        verbose_name=_("Wholesale Combo"),
+    )
+    quantity = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        verbose_name=_("Quantity (Packs)"),
+    )
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name=_("Unit Price (₹)"),
+    )
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name=_("Total Price (₹)"),
+    )
+    total_weight_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name=_("Total Weight (kg)"),
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.ALLOCATED,
+        verbose_name=_("Order Status"),
+    )
+    demand_order = models.ForeignKey(
+        DemandOrder,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="bulk_orders",
+        verbose_name=_("Linked Demand Order"),
+    )
+    hub = models.ForeignKey(
+        MicroHub,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="retailer_bulk_orders",
+        verbose_name=_("Dispatch Micro-Hub"),
+    )
+    payment_status = models.CharField(max_length=30, default="PAID_INSTANT", verbose_name=_("Payment Status"))
+    payment_ref = models.CharField(max_length=100, blank=True, verbose_name=_("Payment Reference / UPI TXN"))
+    delivery_address = models.TextField(blank=True, verbose_name=_("Delivery Address"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Retailer Bulk Combo Order")
+        verbose_name_plural = _("Retailer Bulk Combo Orders")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.order_id} - {self.retailer.get_full_name() or self.retailer.identifier} ({self.quantity}x {self.combo.name})"
+
+    def save(self, *args, **kwargs):
+        if not self.order_id:
+            date_str = timezone.now().strftime("%Y%m%d")
+            token = uuid.uuid4().hex[:6].upper()
+            self.order_id = f"K2K-BLK-{date_str}-{token}"
+        super().save(*args, **kwargs)
+
 
 
 class RecipeCombo(models.Model):

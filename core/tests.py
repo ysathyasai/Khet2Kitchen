@@ -22,6 +22,7 @@ from core.models import (
     KitItem,
     MicroHub,
     RecipeCombo,
+    RetailerBulkOrder,
     User,
     WalletTransaction,
 )
@@ -2109,4 +2110,156 @@ class ConsumerAccountAndFeedbackTests(TestCase):
 
         # Confirm no feedback was created
         self.assertFalse(ConsumerFeedback.objects.filter(order=order).exists())
+
+
+class RetailerWholesaleComboTests(TestCase):
+    """Verifies B2B Retailer Hub Curated Wholesale Combos and 1-Click Procurement."""
+
+    def setUp(self):
+        self.client = Client()
+        self.farmer = User.objects.create_user(
+            identifier="+919876543210",
+            phone_number="+919876543210",
+            role=User.Role.FARMER,
+            first_name="Ramesh",
+            last_name="Kumar",
+        )
+        self.retailer = User.objects.create_user(
+            identifier="retailer@freshbazaar.in",
+            email="retailer@freshbazaar.in",
+            role=User.Role.RETAILER,
+            first_name="Suresh",
+            last_name="Reddy",
+            address="FreshBazaar Mega Warehouse, Begumpet, Hyderabad",
+        )
+        self.consumer = User.objects.create_user(
+            identifier="consumer@k2k.in",
+            email="consumer@k2k.in",
+            role=User.Role.CONSUMER,
+            first_name="Priya",
+        )
+        self.hub = MicroHub.objects.create(
+            name="Shamshabad Agritech Micro-Hub",
+            code="HUB-HYD-01",
+            location="Shamshabad",
+            district="Rangareddy",
+            state="Telangana",
+            pincode="501218",
+            capacity_kg=Decimal("50000.00"),
+        )
+        self.crop_tomato = Crop.objects.create(
+            farmer=self.farmer,
+            name="Field Tomato",
+            code="CROP-TOM-TEST",
+            category=Crop.Category.VEGETABLE,
+            base_price=Decimal("30.00"),
+            shelf_life_days=10,
+        )
+        self.crop_palak = Crop.objects.create(
+            farmer=self.farmer,
+            name="Spinach Palak",
+            code="CROP-PLK-TEST",
+            category=Crop.Category.VEGETABLE,
+            base_price=Decimal("25.00"),
+            shelf_life_days=6,
+        )
+        self.wholesale_combo = Kit.objects.create(
+            code="KIT-B2B-TEST-50",
+            name="Commercial Leafy Greens & Salad Pack (50kg)",
+            category=Kit.Category.HERBS,
+            description="High-turnover daily greens for supermarkets and hotel kitchens.",
+            badge_text="20% WHOLESALE MARGIN",
+            discount_percentage=Decimal("20.00"),
+            bulk_weight_kg=Decimal("50.00"),
+            origin_cluster="Medchal Peri-Urban FPO Cluster, Telangana",
+            hub=self.hub,
+            target_audience=Kit.TargetAudience.RETAILER,
+            is_wholesale=True,
+            is_active=True,
+            tiered_pricing_json={"1-4": 1800, "5-9": 1650, "10+": 1500},
+        )
+        KitItem.objects.create(kit=self.wholesale_combo, crop=self.crop_palak, quantity_grams=30000)
+        KitItem.objects.create(kit=self.wholesale_combo, crop=self.crop_tomato, quantity_grams=20000)
+
+    def test_wholesale_combo_model_properties_and_tiers(self):
+        """Verifies bulk weight, pricing tiers, and savings calculations."""
+        combo = self.wholesale_combo
+        self.assertTrue(combo.is_wholesale)
+        self.assertEqual(combo.target_audience, Kit.TargetAudience.RETAILER)
+        self.assertEqual(combo.get_total_weight_kg(), Decimal("50.00"))
+
+        # Original: (30kg * 25) + (20kg * 30) = 750 + 600 = 1350.00
+        self.assertEqual(combo.calculate_original_price(), Decimal("1350.00"))
+        # Bundle: 1350 - 20% = 1080.00
+        self.assertEqual(combo.calculate_bundle_price(), Decimal("1080.00"))
+        self.assertEqual(combo.get_savings(), Decimal("270.00"))
+
+        # Tiered pricing lookup
+        self.assertEqual(combo.get_price_for_quantity(2), Decimal("1800.00"))
+        self.assertEqual(combo.get_price_for_quantity(6), Decimal("1650.00"))
+        self.assertEqual(combo.get_price_for_quantity(15), Decimal("1500.00"))
+        self.assertIn("[B2B Bulk]", str(combo))
+
+    def test_retailer_combos_view_access_control(self):
+        """Ensures non-retailers cannot view the wholesale catalog, but retailers can."""
+        url = reverse("retailer_combos")
+
+        # Anonymous user redirected to login
+        res_anon = self.client.get(url)
+        self.assertEqual(res_anon.status_code, 302)
+
+        # Consumer user denied (403 Forbidden)
+        self.client.force_login(self.consumer)
+        res_consumer = self.client.get(url)
+        self.assertEqual(res_consumer.status_code, 403)
+
+        # Authenticated Retailer granted access
+        self.client.force_login(self.retailer)
+        res_retailer = self.client.get(url)
+        self.assertEqual(res_retailer.status_code, 200)
+        self.assertContains(res_retailer, "Commercial Leafy Greens &amp; Salad Pack (50kg)")
+        self.assertContains(res_retailer, "Medchal Peri-Urban FPO Cluster")
+
+    def test_retailer_1click_purchase_bulk_combo(self):
+        """Verifies 1-click bulk procurement creates RetailerBulkOrder, DemandOrder, and settles farmer."""
+        self.client.force_login(self.retailer)
+        url = reverse("retailer_purchase_combo", args=[self.wholesale_combo.id])
+
+        res = self.client.post(url, {"quantity": 2})
+        self.assertRedirects(res, reverse("retailer_combos"))
+
+        # Verify RetailerBulkOrder
+        bulk_order = RetailerBulkOrder.objects.filter(retailer=self.retailer).first()
+        self.assertIsNotNone(bulk_order)
+        self.assertEqual(bulk_order.combo, self.wholesale_combo)
+        self.assertEqual(bulk_order.quantity, 2)
+        self.assertEqual(bulk_order.unit_price, Decimal("1800.00"))
+        self.assertEqual(bulk_order.total_price, Decimal("3600.00"))
+        self.assertEqual(bulk_order.total_weight_kg, Decimal("100.00"))
+        self.assertEqual(bulk_order.status, RetailerBulkOrder.Status.ALLOCATED)
+        self.assertTrue(bulk_order.order_id.startswith("K2K-BLK-"))
+
+        # Verify linked DemandOrder
+        demand_order = bulk_order.demand_order
+        self.assertIsNotNone(demand_order)
+        self.assertEqual(demand_order.channel, DemandOrder.Channel.B2B)
+        self.assertEqual(demand_order.required_volume_kg, Decimal("100.00"))
+        self.assertEqual(demand_order.status, DemandOrder.Status.ALLOCATED)
+
+        # Verify farmer wallet credited
+        wallet = FarmerWallet.objects.get(farmer=self.farmer)
+        self.assertGreater(wallet.current_balance, Decimal("0.00"))
+        tx = WalletTransaction.objects.filter(wallet=wallet, description__contains=bulk_order.order_id).first()
+        self.assertIsNotNone(tx)
+        self.assertIn("B2B Wholesale Settlement", tx.description)
+
+    def test_retailer_dashboard_displays_wholesale_combos(self):
+        """Verifies the Retailer Dashboard includes the Curated Wholesale Combos grid."""
+        self.client.force_login(self.retailer)
+        res = self.client.get(reverse("retailer_dashboard"))
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("wholesale_combos", res.context)
+        self.assertContains(res, "Wholesale Curated Combos")
+        self.assertContains(res, "Commercial Leafy Greens &amp; Salad Pack (50kg)")
+
 

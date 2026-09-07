@@ -1,0 +1,315 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}Curated Wholesale Combos - B2B Retailer Hub - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<!-- Flash Messages -->
+{% if messages %}
+    <div style="margin-bottom: 1.5rem;">
+        {% for message in messages %}
+            <div class="card" style="padding: 0.85rem 1.25rem; margin-bottom: 0.75rem; border-left: 4px solid #10B981; background: #ECFDF5; color: #065F46; font-size: 0.9rem; font-weight: 500;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- =========================================================================
+     HERO SECTION: CURATED WHOLESALE COMBOS
+     ========================================================================= -->
+<div style="background: linear-gradient(135deg, #133826 0%, #1B4D3E 50%, #0F2D1F 100%); border-radius: 1.25rem; padding: 2.25rem 2rem; color: #FFFFFF; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(19, 56, 38, 0.25); border: 1px solid rgba(245, 158, 11, 0.25);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
+        <div>
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #FBBF24; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.85rem;">
+                <span>📦</span> B2B Curated Wholesale Produce Packs
+            </div>
+            <h1 style="font-size: 2.15rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; color: #FFFFFF;">
+                Curated Wholesale Combos
+            </h1>
+            <p style="color: #D1E0D7; font-size: 0.95rem; max-width: 680px; line-height: 1.55;">
+                Direct-from-farm aggregated bulk crates (25kg – 150kg) tailored for urban restaurants, supermarkets, and kirana stores. Pre-graded at rural micro-hubs with guaranteed cold transit and up to <strong>25% margin savings</strong> compared to traditional APMC mandis.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="{% url 'retailer_dashboard' %}" class="btn" style="background: rgba(255, 255, 255, 0.15); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.3); font-weight: 600; padding: 0.55rem 1.15rem; font-size: 0.85rem;">
+                ← Back to Retailer Hub
+            </a>
+            <span class="status-pill status-growing" style="padding: 0.45rem 1rem; font-size: 0.82rem; background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;">
+                ⚡ 1-Click Wholesale Checkout Active
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     SUMMARY METRICS
+     ========================================================================= -->
+<div class="grid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <!-- Metric 1: Total Combos Available -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #10B981;">
+        <div class="card-header">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Available Bulk Packs
+            </span>
+            <span style="font-size: 1.5rem;">🥗</span>
+        </div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #10B981; line-height: 1.1; margin: 0.35rem 0;">
+            {{ combos.count }}
+        </div>
+        <div style="font-size: 0.82rem; color: #059669; font-weight: 600;">
+            Curated farmer collective combos
+        </div>
+    </div>
+
+    <!-- Metric 2: Disintermediation Margin -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #F59E0B;">
+        <div class="card-header">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Wholesale Price Margin
+            </span>
+            <span style="font-size: 1.5rem;">💰</span>
+        </div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #D97706; line-height: 1.1; margin: 0.35rem 0;">
+            15% – 25%
+        </div>
+        <div style="font-size: 0.82rem; color: #B45309; font-weight: 600;">
+            Savings vs Mandi commission agents
+        </div>
+    </div>
+
+    <!-- Metric 3: Total Retailer Savings -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #0284C7;">
+        <div class="card-header">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                My Realized Savings
+            </span>
+            <span style="font-size: 1.5rem;">📊</span>
+        </div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #0284C7; line-height: 1.1; margin: 0.35rem 0;">
+            ₹{{ total_savings_so_far|floatformat:2 }}
+        </div>
+        <div style="font-size: 0.82rem; color: #0369A1; font-weight: 600;">
+            On past {{ my_bulk_orders.count }} wholesale bulk orders
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     FILTERS & SEARCH
+     ========================================================================= -->
+<div class="card" style="padding: 1.25rem 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <!-- Category Filter Pills -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+            <a href="?category=ALL{% if search_query %}&q={{ search_query }}{% endif %}"
+               class="btn"
+               style="font-size: 0.8rem; padding: 0.4rem 0.85rem; border-radius: 9999px; {% if selected_category == 'ALL' %}background: #133826; color: #FFFFFF; font-weight: 700;{% else %}background: #F3F4F6; color: #4B5563;{% endif %}">
+                All Combos
+            </a>
+            {% for cat_val, cat_label in categories %}
+            <a href="?category={{ cat_val }}{% if search_query %}&q={{ search_query }}{% endif %}"
+               class="btn"
+               style="font-size: 0.8rem; padding: 0.4rem 0.85rem; border-radius: 9999px; {% if selected_category == cat_val %}background: #133826; color: #FFFFFF; font-weight: 700;{% else %}background: #F3F4F6; color: #4B5563;{% endif %}">
+                {{ cat_label }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Search Bar -->
+        <form method="get" style="display: flex; gap: 0.5rem; align-items: center;">
+            {% if selected_category != 'ALL' %}
+                <input type="hidden" name="category" value="{{ selected_category }}">
+            {% endif %}
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search combos, crops, origin..."
+                   style="padding: 0.45rem 0.9rem; border: 1px solid var(--card-border); border-radius: 0.5rem; font-size: 0.85rem; width: 220px; outline: none;">
+            <button type="submit" class="btn btn-forest" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                🔍
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================================
+     WHOLESALE COMBOS CATALOG GRID
+     ========================================================================= -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+    {% for combo in combos %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-radius: 1rem; overflow: hidden; border: 1px solid var(--card-border); transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 0;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 24px rgba(19, 56, 38, 0.12)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--card-shadow)';">
+        <!-- Top Badges -->
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <span style="background: #133826; color: #F59E0B; font-weight: 800; font-size: 0.75rem; padding: 0.3rem 0.75rem; border-radius: 9999px; letter-spacing: 0.04em;">
+                    ⚖️ {{ combo.get_total_weight_kg }} kg Bulk Pack
+                </span>
+                <span style="background: #FEF3C7; color: #92400E; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.75rem; border-radius: 9999px; border: 1px solid #FCD34D;">
+                    {{ combo.badge_text|default:"WHOLESALE SAVINGS" }}
+                </span>
+            </div>
+
+            <!-- Title & Origin -->
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: #133826; margin-bottom: 0.35rem;">
+                {{ combo.name }}
+            </h3>
+            <div style="font-size: 0.8rem; color: #6B7280; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
+                <span>📍</span> <strong>{{ combo.origin_cluster|default:"Peri-Urban Farmer Collective" }}</strong>
+                {% if combo.hub %}
+                    • <span style="color: #0284C7; font-weight: 600;">{{ combo.hub.code }}</span>
+                {% endif %}
+            </div>
+
+            <p style="font-size: 0.85rem; color: #4B5563; line-height: 1.5; margin-bottom: 1rem;">
+                {{ combo.description }}
+            </p>
+
+            <!-- Produce Contents Breakdown -->
+            <div style="background: #F9FAF7; border: 1px solid var(--card-border); border-radius: 0.65rem; padding: 0.85rem; margin-bottom: 1rem;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #133826; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                    <span>Produce Breakdown</span>
+                    <span>Direct Attribution</span>
+                </div>
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.82rem;">
+                    {% for item in combo.items.all %}
+                    <li style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px dashed rgba(0, 0, 0, 0.08);">
+                        <span>
+                            🥬 <strong>{{ item.crop.name }}</strong>
+                        </span>
+                        <span style="color: #065F46; font-weight: 700;">
+                            {{ item.quantity_kg }} kg
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li style="color: var(--text-muted); font-size: 0.8rem;">Pre-aggregated uniform harvest batch.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Pricing & Tiered Volume Breakdown -->
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem; padding: 0.75rem 0.85rem; background: #FFFFFF; border-radius: 0.5rem; border: 1px solid var(--card-border);">
+                <div>
+                    <div style="font-size: 0.72rem; color: #6B7280; text-transform: uppercase; font-weight: 700;">Wholesale Pack Rate</div>
+                    <div style="font-size: 1.45rem; font-weight: 800; color: #065F46;">
+                        ₹{{ combo.calculate_bundle_price|floatformat:2 }}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.75rem; color: #9CA3AF; text-decoration: line-through;">
+                        Mandi Spot: ₹{{ combo.calculate_original_price|floatformat:2 }}
+                    </div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: #D97706;">
+                        Save ₹{{ combo.get_savings|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+
+            {% if combo.tiered_pricing_json %}
+            <div style="font-size: 0.75rem; color: #4B5563; background: #FEF9C3; border: 1px solid #FDE047; padding: 0.4rem 0.65rem; border-radius: 0.35rem; margin-bottom: 1rem;">
+                <strong>Volume Tiers:</strong>
+                {% for t_k, t_v in combo.tiered_pricing_json.items %}
+                    <span style="margin-left: 0.35rem;">{{ t_k }} packs: <strong>₹{{ t_v }}</strong></span>{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 1-Click Purchase Form -->
+        <div style="border-top: 1px solid var(--card-border); padding-top: 1rem; margin-top: 0.5rem;">
+            <form action="{% url 'retailer_purchase_combo' combo.id %}" method="post">
+                {% csrf_token %}
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.65rem;">
+                    <label style="font-size: 0.78rem; font-weight: 700; color: #374151; white-space: nowrap;">
+                        Qty (Packs):
+                    </label>
+                    <input type="number" name="quantity" value="1" min="1" max="100"
+                           style="width: 70px; padding: 0.35rem 0.5rem; border: 1px solid var(--card-border); border-radius: 0.35rem; font-weight: 700; text-align: center;">
+                    <button type="submit" class="btn btn-forest" style="flex: 1; padding: 0.45rem 0.85rem; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; box-shadow: 0 4px 6px rgba(19, 56, 38, 0.2);">
+                        <span>⚡</span> 1-Click Purchase
+                    </button>
+                </div>
+            </form>
+            <div style="font-size: 0.72rem; color: #6B7280; text-align: center;">
+                ✓ Auto-allocates stock at rural micro-hub • Instant UPI settlement
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: #FFFFFF; border-radius: 1rem; border: 1px dashed var(--card-border);">
+        <span style="font-size: 3rem;">📦</span>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #133826; margin-top: 0.75rem;">No Combos Found</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">No wholesale combos match your active filter criteria. Clear filters to view all packs.</p>
+        <a href="{% url 'retailer_combos' %}" class="btn btn-forest" style="margin-top: 1rem;">View All Wholesale Combos</a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- =========================================================================
+     RECENT WHOLESALE BULK ORDERS TABLE
+     ========================================================================= -->
+<div class="card" id="recent-orders" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📋</span> My Wholesale Combo Procurement Orders
+            </h2>
+            <p class="card-subtitle">
+                Track real-time dispatch, cold-chain transit, and micro-hub fulfillment for curated bulk orders.
+            </p>
+        </div>
+        <span class="status-pill status-hub">
+            ● B2B Digital Ledger Active
+        </span>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Combo Package</th>
+                    <th>Packs</th>
+                    <th>Total Weight</th>
+                    <th>Total Price</th>
+                    <th>Source Hub</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in my_bulk_orders %}
+                <tr>
+                    <td>
+                        <span style="font-family: monospace; font-weight: 700; background: #F3F4F6; padding: 0.25rem 0.5rem; border-radius: 0.35rem; color: #1F2937;">
+                            {{ order.order_id }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="color: #133826;">{{ order.combo.name }}</strong>
+                    </td>
+                    <td><span style="font-weight: 700;">{{ order.quantity }}</span></td>
+                    <td><span style="color: #065F46; font-weight: 600;">{{ order.total_weight_kg }} kg</span></td>
+                    <td><strong style="color: #059669;">₹{{ order.total_price|floatformat:2 }}</strong></td>
+                    <td>
+                        <span style="font-size: 0.8rem; color: #4B5563;">
+                            {{ order.hub.code|default:"Shamshabad Hub" }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-pill {% if order.status == 'DELIVERED' %}status-growing{% elif order.status == 'ALLOCATED' %}status-hub{% else %}status-planting{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </td>
+                    <td style="font-size: 0.8rem; color: #6B7280;">
+                        {{ order.created_at|date:"d M Y, H:i" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No bulk combo orders placed yet. Choose any curated wholesale combo above to place your first direct-from-farm procurement order!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

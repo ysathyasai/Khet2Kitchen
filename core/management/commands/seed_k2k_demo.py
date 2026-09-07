@@ -17,6 +17,7 @@ from core.models import (
     KitItem,
     MicroHub,
     RecipeCombo,
+    RetailerBulkOrder,
     User,
     WalletTransaction,
 )
@@ -241,7 +242,88 @@ class Command(BaseCommand):
                 "shelf_life_days": 60,
             },
         )
-        self.stdout.write(self.style.SUCCESS("[OK] Seeded Master Catalog Produce: Onion, Tomato, Mango, Chilli"))
+        potato, _ = Crop.objects.get_or_create(
+            code="CROP-POTATO-05",
+            defaults={
+                "name": "Jyoti Field Potato",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("24.00"),
+                "shelf_life_days": 40,
+            },
+        )
+        cucumber, _ = Crop.objects.get_or_create(
+            code="CROP-CUCUMBER-06",
+            defaults={
+                "name": "English Crisp Cucumber",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("26.00"),
+                "shelf_life_days": 12,
+            },
+        )
+        carrot, _ = Crop.objects.get_or_create(
+            code="CROP-CARROT-07",
+            defaults={
+                "name": "Red Ooty Carrot",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("35.00"),
+                "shelf_life_days": 20,
+            },
+        )
+        capsicum, _ = Crop.objects.get_or_create(
+            code="CROP-CAPSICUM-08",
+            defaults={
+                "name": "Green Bell Capsicum",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("45.00"),
+                "shelf_life_days": 14,
+            },
+        )
+        palak, _ = Crop.objects.get_or_create(
+            code="CROP-PALAK-09",
+            defaults={
+                "name": "Fresh Farm Palak (Spinach)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("25.00"),
+                "shelf_life_days": 6,
+            },
+        )
+        coriander, _ = Crop.objects.get_or_create(
+            code="CROP-CORIANDER-10",
+            defaults={
+                "name": "Aromatic Coriander Greens",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("40.00"),
+                "shelf_life_days": 5,
+            },
+        )
+        mint, _ = Crop.objects.get_or_create(
+            code="CROP-MINT-11",
+            defaults={
+                "name": "Field Fresh Pudina (Mint)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("38.00"),
+                "shelf_life_days": 6,
+            },
+        )
+        ginger, _ = Crop.objects.get_or_create(
+            code="CROP-GINGER-12",
+            defaults={
+                "name": "Mahabaleshwar Fresh Ginger",
+                "category": Crop.Category.SPICE,
+                "base_price": Decimal("90.00"),
+                "shelf_life_days": 45,
+            },
+        )
+        garlic, _ = Crop.objects.get_or_create(
+            code="CROP-GARLIC-13",
+            defaults={
+                "name": "Mandsaur Grade-A Garlic",
+                "category": Crop.Category.SPICE,
+                "base_price": Decimal("120.00"),
+                "shelf_life_days": 60,
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("[OK] Seeded Master Catalog Produce: Onion, Tomato, Mango, Chilli, Potato, Cucumber, Carrot, Capsicum, Palak, Coriander, Mint, Ginger, Garlic"))
 
         # 7. Demo Farmer's My Crops (Strictly Isolated to Demo Farmer 1)
         farmer_crops_data = [
@@ -530,6 +612,238 @@ class Command(BaseCommand):
         KitItem.objects.get_or_create(kit=kit_fruit, crop=onion, defaults={"quantity_grams": 300})
 
         self.stdout.write(self.style.SUCCESS("[OK] Seeded 4 D2C Consumer Kits (Sambar, Curry Box, Leafy Greens, Fruit Box)"))
+
+        # 14. Curated B2B Wholesale Combos for Retailers, Restaurants & Kiranas (12 Curated Packs)
+        wholesale_combos_catalog = [
+            {
+                "code": "KIT-B2B-GRN-50",
+                "name": "Commercial Leafy Greens Bulk Pack (50kg)",
+                "category": Kit.Category.HERBS,
+                "description": "High-turnover daily greens for supermarkets and hotel kitchens: fresh Palak, Mint, and Coriander harvested 4 hours prior to micro-hub aggregation.",
+                "badge_text": "20% WHOLESALE MARGIN",
+                "discount_percentage": Decimal("20.00"),
+                "bulk_weight_kg": Decimal("50.00"),
+                "origin_cluster": "Medchal Peri-Urban FPO Cluster, Telangana",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 1800, "5-9": 1650, "10+": 1500},
+                "items": [(palak, 25000), (coriander, 15000), (mint, 10000)],
+            },
+            {
+                "code": "KIT-B2B-SLD-40",
+                "name": "Hotel & Restaurant Salad Essentials (40kg)",
+                "category": Kit.Category.VEGETABLE,
+                "description": "Crisp salad-grade cucumbers, firm Roma tomatoes, and green capsicums tailored for QSR burger, sandwich, and buffet salad bars.",
+                "badge_text": "QSR & Hotel Choice",
+                "discount_percentage": Decimal("18.00"),
+                "bulk_weight_kg": Decimal("40.00"),
+                "origin_cluster": "Shamshabad Greenhouse Hub, Hyderabad",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 2200, "5-9": 2050, "10+": 1900},
+                "items": [(cucumber, 15000), (tomato, 15000), (capsicum, 10000)],
+            },
+            {
+                "code": "KIT-B2B-ROOT-100",
+                "name": "Daily Kirana Root Veggie Crate (100kg)",
+                "category": Kit.Category.VEGETABLE,
+                "description": "High-durability commercial crate of red onions, Jyoti potatoes, and fresh carrots. Zero grading loss with uniform size distribution.",
+                "badge_text": "High Volume Staple",
+                "discount_percentage": Decimal("22.00"),
+                "bulk_weight_kg": Decimal("100.00"),
+                "origin_cluster": "Niphad Onion-Potato Collective, Maharashtra",
+                "hub": hub1,
+                "tiered_pricing_json": {"1-4": 2600, "5-9": 2400, "10+": 2250},
+                "items": [(onion, 50000), (potato, 35000), (carrot, 15000)],
+            },
+            {
+                "code": "KIT-B2B-SPICE-30",
+                "name": "Biryani & Curry Masala Aromatics Bulk Pack (30kg)",
+                "category": Kit.Category.HERBS,
+                "description": "Essential aromatics for cloud kitchens and caterers: potent Warangal green chillies, aromatic mint, garlic, and ginger.",
+                "badge_text": "Caterer Favorite",
+                "discount_percentage": Decimal("15.00"),
+                "bulk_weight_kg": Decimal("30.00"),
+                "origin_cluster": "Warangal & Ranga Reddy Spices Cluster",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 3400, "5-9": 3200, "10+": 3000},
+                "items": [(chilli, 10000), (mint, 8000), (ginger, 6000), (garlic, 6000)],
+            },
+            {
+                "code": "KIT-B2B-QSR-35",
+                "name": "QSR Burger & Sandwich Veggie Bundle (35kg)",
+                "category": Kit.Category.COMBO,
+                "description": "Selected uniform slicing tomatoes, crunchy salad cucumbers, and bell capsicum for fast-food chains and urban cafes.",
+                "badge_text": "Grade-A Crisp",
+                "discount_percentage": Decimal("17.00"),
+                "bulk_weight_kg": Decimal("35.00"),
+                "origin_cluster": "Patancheru Hydroponic Corridor",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 2100, "5-9": 1950, "10+": 1800},
+                "items": [(tomato, 15000), (cucumber, 12000), (capsicum, 8000)],
+            },
+            {
+                "code": "KIT-B2B-SBR-60",
+                "name": "South Indian Tiffin & Sambar Bulk Crate (60kg)",
+                "category": Kit.Category.VEGETABLE,
+                "description": "Designed for tiffin centers and breakfast joints: heavy-pulp tomatoes, sambar onions, green chillies, and fresh coriander.",
+                "badge_text": "Tiffin Center Special",
+                "discount_percentage": Decimal("20.00"),
+                "bulk_weight_kg": Decimal("60.00"),
+                "origin_cluster": "Mahbubnagar FPO Cluster, Telangana",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 2400, "5-9": 2250, "10+": 2100},
+                "items": [(tomato, 25000), (onion, 20000), (chilli, 5000), (coriander, 10000)],
+            },
+            {
+                "code": "KIT-B2B-STREET-80",
+                "name": "Poha, Chaat & Street Food Staples (80kg)",
+                "category": Kit.Category.VEGETABLE,
+                "description": "Bulk street-food cart and chaat essentials: bulk potatoes, chopped-ready onions, piquant chillies, and coriander bundles.",
+                "badge_text": "25% Wholesale Margin",
+                "discount_percentage": Decimal("25.00"),
+                "bulk_weight_kg": Decimal("80.00"),
+                "origin_cluster": "Vikarabad Agro-Cluster, Telangana",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 2200, "5-9": 2000, "10+": 1850},
+                "items": [(potato, 40000), (onion, 30000), (chilli, 5000), (coriander, 5000)],
+            },
+            {
+                "code": "KIT-B2B-JUICE-50",
+                "name": "Juice Bar & Café Seasonal Fruit Bulk Box (50kg)",
+                "category": Kit.Category.FRUIT,
+                "description": "Sweet, naturally ripened Ratnagiri and Jagtial mangoes and seasonal fruits directly from certified farmer orchards.",
+                "badge_text": "Direct Orchard Sourced",
+                "discount_percentage": Decimal("15.00"),
+                "bulk_weight_kg": Decimal("50.00"),
+                "origin_cluster": "Jagtial Fruit Farmers Producer Co",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 4500, "5-9": 4200, "10+": 3900},
+                "items": [(mango, 35000), (carrot, 15000)],
+            },
+            {
+                "code": "KIT-B2B-EXOTIC-25",
+                "name": "Exotic Kitchen & Continental Veg Pack (25kg)",
+                "category": Kit.Category.COMBO,
+                "description": "Specialty produce for continental restaurants: bell capsicums, crisp cucumbers, carrots, and hydroponic herbs.",
+                "badge_text": "Fine Dining Choice",
+                "discount_percentage": Decimal("18.00"),
+                "bulk_weight_kg": Decimal("25.00"),
+                "origin_cluster": "Ooty-Shadnagar Cold-Chain Hub",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 2800, "5-9": 2600, "10+": 2400},
+                "items": [(capsicum, 10000), (cucumber, 8000), (carrot, 7000)],
+            },
+            {
+                "code": "KIT-B2B-DIET-30",
+                "name": "Diet & Health Food Kitchens Bundle (30kg)",
+                "category": Kit.Category.VEGETABLE,
+                "description": "Nutrient-dense spinach greens, organic carrots, salad tomatoes, and mint for modern health cafes and meal-prep businesses.",
+                "badge_text": "Organic Certified Batch",
+                "discount_percentage": Decimal("16.00"),
+                "bulk_weight_kg": Decimal("30.00"),
+                "origin_cluster": "Medak Organic Farmer Collective",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 1900, "5-9": 1750, "10+": 1600},
+                "items": [(palak, 12000), (carrot, 10000), (tomato, 5000), (mint, 3000)],
+            },
+            {
+                "code": "KIT-B2B-MEGA-150",
+                "name": "Dhaba & Caterers Mega Onion-Tomato-Potato Base (150kg)",
+                "category": Kit.Category.VEGETABLE,
+                "description": "Heavy-volume base produce for large wedding caterers, canteens, and dhabas. Pre-palletized for fast forklift handling.",
+                "badge_text": "Mega Bulk Value",
+                "discount_percentage": Decimal("24.00"),
+                "bulk_weight_kg": Decimal("150.00"),
+                "origin_cluster": "Nizamabad & Nashik Aggregation Belt",
+                "hub": hub1,
+                "tiered_pricing_json": {"1-4": 3800, "5-9": 3500, "10+": 3200},
+                "items": [(onion, 60000), (potato, 60000), (tomato, 30000)],
+            },
+            {
+                "code": "KIT-B2B-HERB-15",
+                "name": "Fresh Herbs & Microgreens Gourmet Pack (15kg)",
+                "category": Kit.Category.HERBS,
+                "description": "Hyper-fresh fragrant herbs including fresh coriander, field mint, and green chillies packed in humidity-retaining bio-crates.",
+                "badge_text": "Ultra Fresh 4hr Harvest",
+                "discount_percentage": Decimal("20.00"),
+                "bulk_weight_kg": Decimal("15.00"),
+                "origin_cluster": "Hyderabad Peri-Urban Hydroponic Greens",
+                "hub": hub_hyd,
+                "tiered_pricing_json": {"1-4": 1400, "5-9": 1300, "10+": 1200},
+                "items": [(coriander, 7000), (mint, 5000), (chilli, 3000)],
+            },
+        ]
+
+        first_wholesale_combo = None
+        for c_data in wholesale_combos_catalog:
+            combo_obj, _ = Kit.objects.update_or_create(
+                code=c_data["code"],
+                defaults={
+                    "name": c_data["name"],
+                    "category": c_data["category"],
+                    "description": c_data["description"],
+                    "badge_text": c_data["badge_text"],
+                    "discount_percentage": c_data["discount_percentage"],
+                    "bulk_weight_kg": c_data["bulk_weight_kg"],
+                    "origin_cluster": c_data["origin_cluster"],
+                    "hub": c_data["hub"],
+                    "tiered_pricing_json": c_data["tiered_pricing_json"],
+                    "target_audience": Kit.TargetAudience.RETAILER,
+                    "is_wholesale": True,
+                    "is_active": True,
+                },
+            )
+            if not first_wholesale_combo:
+                first_wholesale_combo = combo_obj
+            for item_crop, qty_g in c_data["items"]:
+                KitItem.objects.update_or_create(
+                    kit=combo_obj,
+                    crop=item_crop,
+                    defaults={"quantity_grams": qty_g},
+                )
+
+        self.stdout.write(self.style.SUCCESS(f"[OK] Seeded {len(wholesale_combos_catalog)} Curated B2B Wholesale Combos for Retailers"))
+
+        # Seed sample RetailerBulkOrder for Suresh Reddy (retailer1)
+        if first_wholesale_combo:
+            unit_price = first_wholesale_combo.get_price_for_quantity(2)
+            total_price = (unit_price * Decimal("2.00")).quantize(Decimal("0.01"))
+            total_weight = (first_wholesale_combo.get_total_weight_kg() * Decimal("2.00")).quantize(Decimal("0.01"))
+
+            # Create linked DemandOrder
+            demand_b2b_sample, _ = DemandOrder.objects.update_or_create(
+                order_id="K2K-ORD-B2B-DEMO-BLK1",
+                defaults={
+                    "retailer": retailer1,
+                    "crop": tomato,
+                    "channel": DemandOrder.Channel.B2B,
+                    "required_volume_kg": total_weight,
+                    "target_price_per_kg": (total_price / total_weight).quantize(Decimal("0.01")),
+                    "delivery_community_name": first_wholesale_combo.origin_cluster,
+                    "num_households": 1,
+                    "required_date": timezone.now().date() + timedelta(days=2),
+                    "status": DemandOrder.Status.ALLOCATED,
+                    "delivery_address": "FreshBazaar Central Warehouse, Begumpet, Hyderabad",
+                },
+            )
+
+            RetailerBulkOrder.objects.update_or_create(
+                order_id="K2K-BLK-DEMO-001",
+                defaults={
+                    "retailer": retailer1,
+                    "combo": first_wholesale_combo,
+                    "quantity": 2,
+                    "unit_price": unit_price,
+                    "total_price": total_price,
+                    "total_weight_kg": total_weight,
+                    "status": RetailerBulkOrder.Status.ALLOCATED,
+                    "demand_order": demand_b2b_sample,
+                    "hub": first_wholesale_combo.hub,
+                    "payment_status": "PAID_INSTANT",
+                    "payment_ref": "UPI-B2B-HYD-981245",
+                    "delivery_address": "FreshBazaar Central Warehouse, Begumpet, Hyderabad",
+                },
+            )
+            self.stdout.write(self.style.SUCCESS("[OK] Seeded Sample B2B Retailer Bulk Order for FreshBazaar Retailer"))
 
         # 14. Demo Pre-Generated Recipe Combo
         RecipeCombo.objects.get_or_create(

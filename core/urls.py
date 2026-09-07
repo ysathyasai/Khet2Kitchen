@@ -28,6 +28,8 @@ urlpatterns = [
     # Dynamic Retailer Actions
     path("retailer/orders/create/", views.add_demand_order_view, name="add_demand_order"),
     path("retailer/orders/<str:order_id>/allocate/", views.allocate_order_view, name="allocate_order"),
+    path("retailer/combos/", views.retailer_combos_view, name="retailer_combos"),
+    path("retailer/combos/<int:combo_id>/purchase/", views.retailer_purchase_combo_view, name="retailer_purchase_combo"),
 
     # Dynamic Supplier Actions
     path("supplier/inputs/add/", views.add_input_supply_view, name="add_input_supply"),

@@ -155,6 +155,98 @@
 </div>
 
 <!-- =========================================================================
+     FEATURE: CURATED WHOLESALE COMBOS (B2B BULK SOURCING)
+     ========================================================================= -->
+<div class="card" id="wholesale-combos" style="margin-bottom: 2rem; border-top: 4px solid #F59E0B;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📦</span> Wholesale Curated Combos & 1-Click Sourcing
+            </h2>
+            <p class="card-subtitle">
+                Pre-packaged 25kg–150kg crates directly from farmer collectives and micro-hubs with guaranteed cold transit.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="{% url 'retailer_combos' %}" class="btn btn-gold" style="padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; color: #133826;">
+                <span>🛒</span> Browse All Combos ({{ wholesale_combos|length }}+) →
+            </a>
+            <span class="status-pill status-growing">
+                ● Tiered Bulk Discounts Active
+            </span>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+        {% for combo in wholesale_combos %}
+        <div style="background: #FAFCF9; border: 1px solid var(--card-border); border-radius: 0.75rem; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="background: #133826; color: #F59E0B; font-weight: 800; font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 9999px;">
+                        ⚖️ {{ combo.get_total_weight_kg }} kg Pack
+                    </span>
+                    <span style="background: #FEF3C7; color: #92400E; font-weight: 700; font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 9999px; border: 1px solid #FCD34D;">
+                        {{ combo.badge_text|default:"WHOLESALE" }}
+                    </span>
+                </div>
+
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #133826; margin-bottom: 0.25rem;">
+                    {{ combo.name }}
+                </h3>
+                <div style="font-size: 0.78rem; color: #6B7280; margin-bottom: 0.75rem;">
+                    📍 <strong>{{ combo.origin_cluster|default:"Peri-Urban Farmer Collective" }}</strong>
+                    {% if combo.hub %}• <span style="color: #0284C7; font-weight: 600;">{{ combo.hub.code }}</span>{% endif %}
+                </div>
+
+                <p style="font-size: 0.82rem; color: #4B5563; line-height: 1.45; margin-bottom: 0.85rem;">
+                    {{ combo.description|truncatewords:16 }}
+                </p>
+
+                <!-- Contents snippet -->
+                <div style="background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; padding: 0.65rem 0.85rem; margin-bottom: 0.85rem; font-size: 0.78rem;">
+                    <div style="font-weight: 700; color: #133826; margin-bottom: 0.35rem;">Produce Breakdown:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                        {% for item in combo.items.all|slice:":4" %}
+                        <span style="background: #E8F5E9; color: #1B5E20; padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-weight: 600;">
+                            {{ item.crop.name }} ({{ item.quantity_kg }}kg)
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Price -->
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; background: #FFFFFF; border-radius: 0.5rem; border: 1px solid var(--card-border);">
+                    <div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Wholesale Rate:</span>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #065F46;">₹{{ combo.calculate_bundle_price|floatformat:2 }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.75rem; color: #9CA3AF; text-decoration: line-through;">₹{{ combo.calculate_original_price|floatformat:2 }}</span>
+                        <div style="font-size: 0.78rem; font-weight: 700; color: #D97706;">Save ₹{{ combo.get_savings|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{% url 'retailer_purchase_combo' combo.id %}" method="post" style="border-top: 1px solid var(--card-border); padding-top: 0.75rem; margin-top: 0.25rem;">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'retailer_dashboard' %}#wholesale-combos">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" name="quantity" value="1" min="1" max="100" style="width: 60px; padding: 0.35rem; text-align: center; border: 1px solid var(--card-border); border-radius: 0.35rem; font-weight: 700; font-size: 0.82rem;">
+                    <button type="submit" class="btn btn-forest" style="flex: 1; padding: 0.4rem 0.75rem; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;">
+                        <span>⚡</span> Purchase Bulk Combo
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); font-size: 0.875rem; padding: 1rem;">
+            Curated wholesale combos are currently being assembled for the upcoming harvest cycle.
+        </p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- =========================================================================
      FEATURE 2: DEMAND ORDERS (PRE-ORDERS) & SUPPLY ALLOCATION
      ======================================================================== -->
 <div class="card" id="pre-orders" style="margin-bottom: 2rem;">

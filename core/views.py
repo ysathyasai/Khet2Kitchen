@@ -1,6 +1,8 @@
+from datetime import timedelta
 from decimal import Decimal
 import json
 import logging
+import uuid
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -9,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import TemplateDoesNotExist
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from django.db.models import Q
@@ -37,6 +40,7 @@ from core.models import (
     KitItem,
     MicroHub,
     RecipeCombo,
+    RetailerBulkOrder,
     User,
     WalletTransaction,
 )
@@ -771,6 +775,13 @@ def retailer_dashboard_view(request):
     # Active batches available for provenance demonstration
     recent_active_batches = Batch.objects.select_related("crop", "farmer").order_by("-received_at")[:5]
 
+    # Pre-curated B2B wholesale combos for 1-click bulk procurement
+    wholesale_combos = (
+        Kit.objects.filter(is_wholesale=True, is_active=True)
+        .prefetch_related("items__crop", "hub")
+        .order_by("-created_at")[:6]
+    )
+
     context = {
         "title": "Khet2Kitchen - Retailer Procurement",
         "role": "RETAILER",
@@ -781,6 +792,7 @@ def retailer_dashboard_view(request):
         "market_catalog": market_catalog,
         "ai_recommended_orders": ai_recommended_orders,
         "recent_active_batches": recent_active_batches,
+        "wholesale_combos": wholesale_combos,
     }
 
     try:
@@ -791,8 +803,146 @@ def retailer_dashboard_view(request):
             "user": retailer.get_full_name() or retailer.identifier,
             "orders_count": demand_orders.count(),
             "ai_recommendations_count": len(ai_recommended_orders),
+            "wholesale_combos_count": wholesale_combos.count(),
             "status": "Operational",
         })
+
+
+@role_required(User.Role.RETAILER)
+def retailer_combos_view(request):
+    """
+    Dedicated Wholesale Curated Combos Store for Retailers, Restaurants, and Kirana Stores.
+    Browse curated bulk packs (25kg - 150kg) with tiered wholesale discounts,
+    farm origin attribution, and 1-Click B2B procurement.
+    """
+    retailer = request.user
+    category = request.GET.get("category", "").strip().upper()
+    search_query = request.GET.get("q", "").strip()
+
+    combos_qs = (
+        Kit.objects.filter(is_wholesale=True, is_active=True)
+        .prefetch_related("items__crop", "hub")
+        .order_by("-created_at")
+    )
+    if category and category != "ALL":
+        combos_qs = combos_qs.filter(category=category)
+    if search_query:
+        combos_qs = combos_qs.filter(
+            Q(name__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(origin_cluster__icontains=search_query)
+        )
+
+    my_bulk_orders = (
+        retailer.retailer_bulk_orders.select_related("combo", "hub")
+        .order_by("-created_at")[:10]
+    )
+
+    total_savings_so_far = sum(
+        (order.combo.get_savings() * order.quantity for order in my_bulk_orders),
+        Decimal("0.00")
+    )
+
+    context = {
+        "title": "Khet2Kitchen - Curated Wholesale Combos",
+        "role": "RETAILER",
+        "user": retailer,
+        "active_nav": "retailer_combos",
+        "combos": combos_qs,
+        "selected_category": category or "ALL",
+        "search_query": search_query,
+        "my_bulk_orders": my_bulk_orders,
+        "total_savings_so_far": total_savings_so_far,
+        "categories": Kit.Category.choices,
+    }
+    return render(request, "core/retailer_combos.html", context)
+
+
+@require_POST
+@role_required(User.Role.RETAILER)
+def retailer_purchase_combo_view(request, combo_id):
+    """
+    1-Click Bulk Checkout for Retailers:
+    Purchases a curated wholesale combo, generates a RetailerBulkOrder,
+    links to DemandOrder, allocates stock, and settles farmer digital wallets.
+    """
+    retailer = request.user
+    combo = get_object_or_404(Kit, id=combo_id, is_wholesale=True, is_active=True)
+
+    try:
+        quantity = int(request.POST.get("quantity", 1))
+        if quantity < 1:
+            quantity = 1
+    except (ValueError, TypeError):
+        quantity = 1
+
+    delivery_address = request.POST.get("delivery_address", "").strip() or retailer.address or "Retailer Store Dispatch Dock"
+
+    unit_price = combo.get_price_for_quantity(quantity)
+    total_price = (unit_price * Decimal(str(quantity))).quantize(Decimal("0.01"))
+    pack_weight = combo.get_total_weight_kg()
+    total_weight_kg = (pack_weight * Decimal(str(quantity))).quantize(Decimal("0.01"))
+
+    # Link to primary crop or fallback
+    primary_item = combo.items.first()
+    primary_crop = primary_item.crop if primary_item else Crop.objects.filter(is_active=True).first()
+
+    # Create linked DemandOrder for B2B supply chain visibility
+    unit_kg_rate = (total_price / total_weight_kg).quantize(Decimal("0.01")) if total_weight_kg > 0 else Decimal("30.00")
+    demand_order = DemandOrder.objects.create(
+        retailer=retailer,
+        crop=primary_crop,
+        channel=DemandOrder.Channel.B2B,
+        required_volume_kg=total_weight_kg,
+        target_price_per_kg=unit_kg_rate,
+        delivery_community_name=combo.origin_cluster or "Institutional Wholesale Client",
+        num_households=1,
+        required_date=timezone.now().date() + timedelta(days=2),
+        status=DemandOrder.Status.ALLOCATED,
+        delivery_address=delivery_address,
+    )
+
+    # Create RetailerBulkOrder
+    bulk_order = RetailerBulkOrder.objects.create(
+        retailer=retailer,
+        combo=combo,
+        quantity=quantity,
+        unit_price=unit_price,
+        total_price=total_price,
+        total_weight_kg=total_weight_kg,
+        status=RetailerBulkOrder.Status.ALLOCATED,
+        demand_order=demand_order,
+        hub=combo.hub,
+        payment_status="PAID_INSTANT",
+        payment_ref=f"UPI-B2B-{uuid.uuid4().hex[:8].upper()}",
+        delivery_address=delivery_address,
+    )
+
+    # Settle participating farmer wallets
+    for item in combo.items.select_related("crop__farmer"):
+        if item.crop and item.crop.farmer:
+            farmer = item.crop.farmer
+            item_weight_kg = (Decimal(str(item.quantity_grams)) / Decimal("1000.00")) * Decimal(str(quantity))
+            farmer_rate = (item.crop.base_price * Decimal("0.80")).quantize(Decimal("0.01"))
+            payout_amount = (item_weight_kg * farmer_rate).quantize(Decimal("0.01"))
+
+            if payout_amount > Decimal("0.00"):
+                wallet, _ = FarmerWallet.objects.get_or_create(farmer=farmer)
+                wallet.credit(
+                    amount=payout_amount,
+                    description=f"B2B Wholesale Settlement for {quantity}x {combo.name} ({item_weight_kg:.1f}kg {item.crop.name}) - Order {bulk_order.order_id}",
+                )
+
+    messages.success(
+        request,
+        f"Order Placed! Successfully procured {quantity}x '{combo.name}' ({total_weight_kg}kg bulk produce) for ₹{total_price:,.2f}. "
+        f"B2B Shipment {bulk_order.order_id} allocated from {combo.hub.name if combo.hub else 'Micro-Hub'}."
+    )
+
+    next_url = request.POST.get("next")
+    if next_url:
+        return redirect(next_url)
+    return redirect("retailer_combos")
 
 
 @require_POST

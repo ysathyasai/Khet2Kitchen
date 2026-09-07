@@ -769,6 +769,10 @@
                         <span class="nav-link-icon">🏬</span>
                         <span>Retailer B2B Hub</span>
                     </a>
+                    <a href="{% url 'retailer_combos' %}" class="nav-link {% if active_nav == 'retailer_combos' %}active{% endif %}">
+                        <span class="nav-link-icon">📦</span>
+                        <span>Wholesale Combos</span>
+                    </a>
                     <a href="{% url 'retailer_dashboard' %}#pre-orders" class="nav-link">
                         <span class="nav-link-icon">📋</span>
                         <span>My Pre-Orders</span>
