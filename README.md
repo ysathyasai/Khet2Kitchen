@@ -435,7 +435,7 @@ Khet2Kitchen/
 ├── build.sh                            # Render production deployment build script
 ├── render.yaml                         # Infrastructure-as-code specification
 ├── requirements.txt                    # Production Python dependencies
-├── SIH26033_PRESENTATION_SCRIPT.md     # 5-minute hackathon pitch script
+├── TEAM_PRESENTATION_SCRIPT.md         # 5-minute hackathon pitch script
 └── README.md                           # Project documentation
 ```
 
