@@ -159,3 +159,8 @@ SARVAM_API_BASE_URL = os.getenv('SARVAM_API_BASE_URL', 'https://api.sarvam.ai').
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
 GEMINI_MODEL_NAME = os.getenv('GEMINI_MODEL_NAME', 'gemini-3.6-flash').strip()
 
+# Authentication & Redirect Settings
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard_dispatch'
+LOGOUT_REDIRECT_URL = 'home'
+

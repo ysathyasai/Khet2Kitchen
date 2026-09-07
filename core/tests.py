@@ -1579,3 +1579,20 @@ class LandingPageViewTests(TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("retailer_dashboard"))
+
+    def test_anonymous_user_can_access_login_and_signup(self):
+        """Anonymous user can access /login/ and /signup/ without getting redirected to root or blocked."""
+        login_res = self.client.get(reverse("login"))
+        self.assertEqual(login_res.status_code, 200)
+        self.assertTemplateUsed(login_res, "core/login.html")
+
+        signup_res = self.client.get(reverse("signup"))
+        self.assertEqual(signup_res.status_code, 200)
+        self.assertTemplateUsed(signup_res, "core/signup.html")
+
+    def test_authenticated_user_accessing_login_redirects_to_dashboard(self):
+        """Authenticated user visiting /login/ is redirected to their respective dashboard."""
+        self.client.login(username="+919876543290", password="FarmerPassword1!")
+        res = self.client.get(reverse("login"))
+        self.assertEqual(res.status_code, 302)
+        self.assertRedirects(res, reverse("farmer_dashboard"))

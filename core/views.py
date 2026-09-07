@@ -509,10 +509,20 @@ def landing_page_view(request):
     Public-facing landing page for Project Khet2Kitchen (K2K).
     Smart Redirect: If the user is authenticated, automatically route them
     to their respective dashboard based on their role (FARMER, RETAILER, SUPPLIER, or Admin).
-    If anonymous, render templates/core/landing.html.
+    If anonymous / unauthenticated, strictly render templates/core/landing.html.
     """
     if request.user.is_authenticated:
+        role = getattr(request.user, "role", None)
+        if role == User.Role.FARMER:
+            return redirect("farmer_dashboard")
+        elif role == User.Role.RETAILER:
+            return redirect("retailer_dashboard")
+        elif role == User.Role.SUPPLIER:
+            return redirect("supplier_dashboard")
+        elif role == User.Role.ADMIN or request.user.is_staff:
+            return redirect("admin_command_dashboard")
         return redirect(request.user.get_dashboard_url())
+
     return render(request, "core/landing.html")
 
 
@@ -869,6 +879,23 @@ def admin_dashboard_view(request):
 # ==============================================================================
 # Authentication & Onboarding Views
 # ==============================================================================
+
+def login_view(request):
+    """
+    Dedicated Login view for Project Khet2Kitchen (K2K).
+    Smart Redirect: If the user is already authenticated, routes them directly
+    to their role-based dashboard.
+    If anonymous, delegates to Django's standard LoginView to render login.html.
+    """
+    if request.user.is_authenticated:
+        return redirect(request.user.get_dashboard_url())
+
+    from django.contrib.auth.views import LoginView
+    return LoginView.as_view(
+        template_name="core/login.html",
+        redirect_authenticated_user=True,
+    )(request)
+
 
 def signup_view(request):
     """
