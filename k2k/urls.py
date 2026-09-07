@@ -11,5 +11,6 @@ admin.site.index_title = "K2K Supply Chain Operations"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/supply-chain/", include("supply_chain.urls")),
     path("", include("core.urls")),
 ]

@@ -48,8 +48,10 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     
-    # Khet2Kitchen Core App
+    # Khet2Kitchen Apps & REST Framework
+    'rest_framework',
     'core.apps.CoreConfig',
+    'supply_chain.apps.SupplyChainConfig',
 ]
 
 MIDDLEWARE = [

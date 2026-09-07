@@ -485,9 +485,15 @@ class Batch(models.Model):
 
 class DemandOrder(models.Model):
     """
-    Represents an urban retailer's pre-order on the platform, establishing
-    demand visibility before produce leaves the micro-hub.
+    Represents demand visibility on the platform before produce leaves the micro-hub.
+    Supports dual distribution channels:
+    - B2B Wholesale: Bulk institutional and restaurant pre-orders.
+    - COMMUNITY: Weekly RWA gated-society pre-orders with high platform net margin (~28.5%).
     """
+    class Channel(models.TextChoices):
+        B2B = "B2B", _("B2B Wholesale (Institutional / Restaurant Bulk)")
+        COMMUNITY = "COMMUNITY", _("Community Weekly Markets (RWA Pre-Order)")
+
     class Status(models.TextChoices):
         PENDING = "PENDING", _("Pending Matching")
         ALLOCATED = "ALLOCATED", _("Batches Allocated")
@@ -503,12 +509,20 @@ class DemandOrder(models.Model):
         verbose_name=_("Order Identifier"),
     )
 
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.choices,
+        default=Channel.B2B,
+        db_index=True,
+        verbose_name=_("Distribution Channel"),
+        help_text=_("B2B for institutional wholesale or COMMUNITY for weekly apartment subscription drops."),
+    )
+
     retailer = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        limit_choices_to={"role": User.Role.RETAILER},
         related_name="demand_orders",
-        verbose_name=_("Retailer"),
+        verbose_name=_("Buyer / Retailer / Coordinator"),
     )
 
     crop = models.ForeignKey(
@@ -525,9 +539,46 @@ class DemandOrder(models.Model):
         verbose_name=_("Required Volume (kg)"),
     )
 
+    target_price_per_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("Agreed Price per kg (₹)"),
+        help_text=_("Wholesale rate (e.g. ₹30/kg) for B2B or premium retail rate (e.g. ₹45/kg) for community boxes."),
+    )
+
+    delivery_community_name = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name=_("RWA Community / Society Name"),
+        help_text=_("e.g. Green Meadows Pavilion, Jubilee Hills (for Community Drops)"),
+    )
+
+    num_households = models.PositiveIntegerField(
+        default=1,
+        verbose_name=_("Household Count"),
+        help_text=_("Number of participating families for community aggregated drops."),
+    )
+
+    input_advance_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("Input Advance Deduction (₹)"),
+        help_text=_("Retail value of seeds/fertilizers advanced to farmer to be cleared upon harvest."),
+    )
+
+    supplier_cost_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("Supplier Wholesale Cost (₹)"),
+        help_text=_("Platform procurement cost owed back to input manufacturer."),
+    )
+
     required_date = models.DateField(
         verbose_name=_("Required Delivery Date"),
-        help_text=_("The date by which the retailer needs produce delivered."),
+        help_text=_("The date by which produce needs to be delivered."),
     )
 
     status = models.CharField(
@@ -548,24 +599,166 @@ class DemandOrder(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.order_id} - {self.retailer.get_full_name()} ({self.required_volume_kg}kg {self.crop.name})"
+        return f"[{self.get_channel_display()}] {self.order_id} - {self.retailer.get_full_name() or self.retailer.identifier} ({self.required_volume_kg}kg {self.crop.name})"
 
     def clean(self):
         super().clean()
-        if getattr(self, "retailer_id", None) and self.retailer and self.retailer.role != User.Role.RETAILER:
-            raise ValidationError({"retailer": _("Only registered retailers can place demand orders.")})
+        if getattr(self, "retailer_id", None) and self.retailer:
+            if self.channel == self.Channel.B2B and self.retailer.role not in (User.Role.RETAILER, User.Role.ADMIN):
+                raise ValidationError({"retailer": _("Only registered retailers can place B2B wholesale demand orders.")})
 
     def save(self, *args, **kwargs):
         if not self.order_id:
             date_str = timezone.now().strftime("%Y%m%d")
             unique_token = uuid.uuid4().hex[:6].upper()
-            self.order_id = f"K2K-ORD-{date_str}-{unique_token}"
+            prefix = "K2K-ORD-COM" if self.channel == self.Channel.COMMUNITY else "K2K-ORD-B2B"
+            self.order_id = f"{prefix}-{date_str}-{unique_token}"
         super().save(*args, **kwargs)
 
-    # Fat Model Logic
+    # Fat Model Financial & Pricing Intelligence
     def calculate_estimated_cost(self) -> Decimal:
-        """Estimates order cost based on required volume and crop base price."""
-        return (self.required_volume_kg * self.crop.base_price).quantize(Decimal("0.01"))
+        """Estimates order cost based on required volume and target price per kg."""
+        unit_price = self.target_price_per_kg if self.target_price_per_kg > Decimal("0.00") else self.crop.base_price
+        return (self.required_volume_kg * unit_price).quantize(Decimal("0.01"))
+
+    def calculate_financial_breakdown(self) -> dict:
+        """
+        Calculates end-to-end supply chain economics factoring in channel type:
+        - B2B Wholesale: Bulk institutional volume margin with standard point-to-point transit.
+        - COMMUNITY: RWA pre-order drop with upfront payment inflow, automated input debt deduction,
+          single-truck transit, eco-packaging, and ~28.5% net profit margin.
+        """
+        vol = self.required_volume_kg
+        price_per_kg = self.target_price_per_kg if self.target_price_per_kg > Decimal("0.00") else (
+            Decimal("45.00") if self.channel == self.Channel.COMMUNITY else Decimal("30.00")
+        )
+        gross_inflow = (vol * price_per_kg).quantize(Decimal("0.01"))
+
+        if self.channel == self.Channel.COMMUNITY:
+            # 1. Upfront Payment Gateway Fee (2% of gross consumer inflow)
+            gateway_fee = (gross_inflow * Decimal("0.02")).quantize(Decimal("0.01"))
+            net_inflow = (gross_inflow - gateway_fee).quantize(Decimal("0.01"))
+
+            # 2. Farmer Gross Valuation (₹26.75/kg baseline for premium harvested batch)
+            gross_farmer_rate = Decimal("26.75")
+            gross_farmer_payout = (vol * gross_farmer_rate).quantize(Decimal("0.01"))
+
+            # 3. Input Advance Debt Deduction (e.g. ₹3.00/kg retail value)
+            input_deduction = (
+                self.input_advance_amount if self.input_advance_amount > Decimal("0.00")
+                else (vol * Decimal("3.00")).quantize(Decimal("0.01"))
+            )
+            farmer_net_upi = max(Decimal("0.00"), gross_farmer_payout - input_deduction).quantize(Decimal("0.01"))
+
+            # 4. Supplier Wholesale Cost Repayment (e.g. ₹2.50/kg)
+            supplier_repayment = (
+                self.supplier_cost_amount if self.supplier_cost_amount > Decimal("0.00")
+                else (vol * Decimal("2.50")).quantize(Decimal("0.01"))
+            )
+
+            # 5. Point-to-Point Bulk Truck Transit to Apartment Complex Pavilion
+            transit_cost = (
+                Decimal("2500.00") if vol >= Decimal("800.00")
+                else (vol * Decimal("2.50")).quantize(Decimal("0.01"))
+            )
+
+            # 6. Eco-Friendly Community Crates & Reusable Packaging
+            packaging_cost = (
+                Decimal("1500.00") if vol >= Decimal("800.00")
+                else (vol * Decimal("1.50")).quantize(Decimal("0.01"))
+            )
+
+            # 7. Rural Micro-Hub & Technology Operations
+            hub_tech_ops = (
+                Decimal("1000.00") if vol >= Decimal("800.00")
+                else (vol * Decimal("1.00")).quantize(Decimal("0.01"))
+            )
+
+            # Total Platform Outflows & Net Margin
+            total_outflows = (
+                farmer_net_upi + supplier_repayment + transit_cost + packaging_cost + hub_tech_ops + gateway_fee
+            ).quantize(Decimal("0.01"))
+            net_platform_profit = (gross_inflow - total_outflows).quantize(Decimal("0.01"))
+            net_margin_pct = (
+                ((net_platform_profit / gross_inflow) * Decimal("100.0")).quantize(Decimal("0.10"))
+                if gross_inflow > Decimal("0.00") else Decimal("0.00")
+            )
+
+            return {
+                "order_id": self.order_id,
+                "channel": self.Channel.COMMUNITY,
+                "channel_display": "Community Weekly Markets (RWA Pre-Order)",
+                "volume_kg": float(vol),
+                "price_per_kg": float(price_per_kg),
+                "gross_inflow": float(gross_inflow),
+                "payment_gateway_fee": float(gateway_fee),
+                "net_inflow": float(net_inflow),
+                "gross_farmer_payout": float(gross_farmer_payout),
+                "input_debt_deduction": float(input_deduction),
+                "farmer_net_upi_settlement": float(farmer_net_upi),
+                "supplier_input_repayment": float(supplier_repayment),
+                "single_truck_transit_cost": float(transit_cost),
+                "eco_packaging_cost": float(packaging_cost),
+                "hub_and_tech_ops_cost": float(hub_tech_ops),
+                "total_platform_operating_costs": float(transit_cost + packaging_cost + hub_tech_ops + gateway_fee + supplier_repayment),
+                "total_outflows": float(total_outflows),
+                "net_platform_profit": float(net_platform_profit),
+                "net_profit_margin_pct": float(net_margin_pct),
+                "households": self.num_households or 100,
+                "community_name": self.delivery_community_name or "Partnered Gated Society Pavilion",
+            }
+        else:
+            # B2B Wholesale institutional model
+            gateway_fee = Decimal("0.00")
+            net_inflow = gross_inflow
+            # Farmer paid ~80% of wholesale price
+            farmer_rate = (price_per_kg * Decimal("0.80")).quantize(Decimal("0.01"))
+            farmer_net_upi = (vol * farmer_rate).quantize(Decimal("0.01"))
+            supplier_repayment = Decimal("0.00")
+            input_deduction = Decimal("0.00")
+            gross_farmer_payout = farmer_net_upi
+
+            # Bulk point-to-point transit
+            transit_cost = (
+                Decimal("2000.00") if vol >= Decimal("800.00")
+                else (vol * Decimal("2.00")).quantize(Decimal("0.01"))
+            )
+            eco_packaging = Decimal("0.00")  # Returnable wholesale crates
+            hub_tech_ops = (
+                Decimal("1000.00") if vol >= Decimal("800.00")
+                else (vol * Decimal("1.00")).quantize(Decimal("0.01"))
+            )
+
+            total_outflows = (farmer_net_upi + transit_cost + eco_packaging + hub_tech_ops + gateway_fee).quantize(Decimal("0.01"))
+            net_platform_profit = (gross_inflow - total_outflows).quantize(Decimal("0.01"))
+            net_margin_pct = (
+                ((net_platform_profit / gross_inflow) * Decimal("100.0")).quantize(Decimal("0.10"))
+                if gross_inflow > Decimal("0.00") else Decimal("0.00")
+            )
+
+            return {
+                "order_id": self.order_id,
+                "channel": self.Channel.B2B,
+                "channel_display": "B2B Wholesale / Institutional Bulk",
+                "volume_kg": float(vol),
+                "price_per_kg": float(price_per_kg),
+                "gross_inflow": float(gross_inflow),
+                "payment_gateway_fee": float(gateway_fee),
+                "net_inflow": float(net_inflow),
+                "gross_farmer_payout": float(gross_farmer_payout),
+                "input_debt_deduction": float(input_deduction),
+                "farmer_net_upi_settlement": float(farmer_net_upi),
+                "supplier_input_repayment": float(supplier_repayment),
+                "single_truck_transit_cost": float(transit_cost),
+                "eco_packaging_cost": float(eco_packaging),
+                "hub_and_tech_ops_cost": float(hub_tech_ops),
+                "total_platform_operating_costs": float(transit_cost + hub_tech_ops),
+                "total_outflows": float(total_outflows),
+                "net_platform_profit": float(net_platform_profit),
+                "net_profit_margin_pct": float(net_margin_pct),
+                "households": 1,
+                "community_name": "Institutional Wholesale Client",
+            }
 
     def mark_fulfilled(self):
         """Marks order as delivered and fulfilled."""

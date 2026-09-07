@@ -70,9 +70,9 @@ class BatchAdmin(admin.ModelAdmin):
 
 @admin.register(DemandOrder)
 class DemandOrderAdmin(admin.ModelAdmin):
-    list_display = ("order_id", "retailer", "crop", "required_volume_kg", "required_date", "status", "created_at")
-    list_filter = ("status", "crop", "required_date")
-    search_fields = ("order_id", "retailer__identifier", "retailer__email", "crop__name")
+    list_display = ("order_id", "channel", "retailer", "crop", "required_volume_kg", "target_price_per_kg", "required_date", "status", "created_at")
+    list_filter = ("channel", "status", "crop", "required_date")
+    search_fields = ("order_id", "delivery_community_name", "retailer__identifier", "retailer__email", "crop__name")
     readonly_fields = ("order_id", "created_at", "updated_at")
 
 
