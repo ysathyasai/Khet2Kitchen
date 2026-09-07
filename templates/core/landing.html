@@ -603,7 +603,7 @@
             transform: translateY(-1px);
         }
 
-        /* Floating Quick Action Button */
+        /* Floating Quick Action Button (Gmail) */
         .floating-action-btn {
             position: fixed;
             bottom: 4.5rem;
@@ -612,20 +612,20 @@
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: #25D366;
-            color: white;
+            background: #EA4335;
+            color: #FFFFFF;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
-            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+            box-shadow: 0 8px 20px rgba(234, 67, 53, 0.45);
             text-decoration: none;
             transition: all 0.3s ease;
         }
 
         .floating-action-btn:hover {
+            background: #D93025;
             transform: scale(1.08);
-            box-shadow: 0 10px 25px rgba(37, 211, 102, 0.6);
+            box-shadow: 0 10px 25px rgba(234, 67, 53, 0.65);
         }
 
         /* Footer */
@@ -948,9 +948,12 @@
         </div>
     </div>
 
-    <!-- Floating Support Quick Trigger Button (WhatsApp style) -->
-    <a href="https://wa.me/919876543210?text=Hello%20Khet2Kitchen%20Team" target="_blank" rel="noopener noreferrer" class="floating-action-btn" title="Chat with K2K Support on WhatsApp">
-        💬
+    <!-- Floating Support Quick Trigger Button (Gmail) -->
+    <a href="mailto:ysathyasai.dev@gmail.com?subject=Project%20Khet2Kitchen%20Inquiry" class="floating-action-btn" title="Email ysathyasai.dev@gmail.com">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+        </svg>
     </a>
 
     <!-- Footer -->
@@ -961,12 +964,16 @@
             <a href="{% url 'login' %}" class="footer-link">Retailer Hub</a>
             <a href="{% url 'login' %}" class="footer-link">Supplier Hub</a>
             <a href="{% url 'signup' %}" class="footer-link">Register New Account</a>
+            <a href="mailto:ysathyasai.dev@gmail.com" class="footer-link">Contact Support</a>
         </div>
         <p style="margin-bottom: 0.5rem;">
             Project <strong>Khet2Kitchen (K2K)</strong> — Smart India Hackathon (SIH 2026) | Problem Statement: SIH26033
         </p>
         <p style="font-size: 0.78rem; color: #6B7280;">
             Aligned with the Ministry of Consumer Affairs, Food & Public Distribution (DoCA) • Built with Django, Sarvam AI, Leaflet & Google Gemini
+        </p>
+        <p style="font-size: 0.8rem; color: #A3B8AD; margin-top: 0.5rem;">
+            Direct Inquiries: <a href="mailto:ysathyasai.dev@gmail.com" style="color: #F59E0B; text-decoration: none; font-weight: 600;">ysathyasai.dev@gmail.com</a>
         </p>
     </footer>
 

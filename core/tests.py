@@ -1565,6 +1565,7 @@ class LandingPageViewTests(TestCase):
         self.assertContains(response, "AI Optical Grading")
         self.assertContains(response, "Dynamic Route Optimization")
         self.assertContains(response, "Join as a Farmer")
+        self.assertContains(response, "mailto:ysathyasai.dev@gmail.com")
 
     def test_authenticated_farmer_redirects_to_farmer_dashboard(self):
         """Authenticated farmer requesting GET / is redirected to /farmer/dashboard/."""
