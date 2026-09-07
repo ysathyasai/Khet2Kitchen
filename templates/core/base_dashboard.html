@@ -247,18 +247,40 @@
         .top-left {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.85rem;
         }
 
         .mobile-menu-btn {
             display: none;
-            background: none;
+            background: #F4F6F1;
             border: 1px solid var(--card-border);
             border-radius: 0.5rem;
-            padding: 0.4rem 0.6rem;
+            padding: 0.45rem 0.7rem;
             font-size: 1.25rem;
-            color: var(--text-main);
+            color: var(--sidebar-bg);
             cursor: pointer;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-btn:hover {
+            background: #E6F4EA;
+        }
+
+        .sidebar-close-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: #A3C2B0;
+            font-size: 1.35rem;
+            padding: 0.5rem 0.85rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s ease;
+        }
+
+        .sidebar-close-btn:hover {
+            color: #FFFFFF;
         }
 
         .top-pilot-badge {
@@ -273,6 +295,7 @@
             padding: 0.35rem 0.85rem;
             border-radius: 9999px;
             border: 1px solid rgba(16, 185, 129, 0.3);
+            white-space: nowrap;
         }
 
         .top-cluster-info {
@@ -281,38 +304,20 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            white-space: nowrap;
         }
 
-        .top-quick-hubs {
-            display: flex;
+        .top-user-pill {
+            display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-        }
-
-        .hub-pill {
-            padding: 0.3rem 0.75rem;
-            border-radius: 0.4rem;
-            font-size: 0.75rem;
+            gap: 0.5rem;
+            background: #F4F6F1;
+            border: 1px solid var(--card-border);
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
             font-weight: 600;
-            text-decoration: none;
-            transition: all 0.15s ease;
-        }
-
-        .hub-pill-active {
-            background: #F59E0B;
-            color: #0F172A;
-            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
-        }
-
-        .hub-pill-inactive {
-            background: #F3F4F6;
-            color: #6B7280;
-            border: 1px solid #E5E7EB;
-        }
-
-        .hub-pill-inactive:hover {
-            background: #E5E7EB;
-            color: #374151;
+            color: #133826;
         }
 
         .content-container {
@@ -639,16 +644,24 @@
         }
 
         /* =====================================================================
-           RESPONSIVE MOBILE BREAKPOINTS
+           RESPONSIVE MOBILE BREAKPOINTS & TOUCH ACCESSIBILITY
            ===================================================================== */
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
+                z-index: 1200;
+                width: 280px;
             }
             .sidebar.open {
                 transform: translateX(0);
             }
+            .sidebar-overlay {
+                z-index: 1150;
+            }
             .sidebar-overlay.active {
+                display: block;
+            }
+            .sidebar-close-btn {
                 display: block;
             }
             .app-main {
@@ -656,13 +669,69 @@
                 width: 100%;
             }
             .mobile-menu-btn {
-                display: block;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
             }
             .top-cluster-info {
                 display: none;
             }
             .content-container {
                 padding: 1.25rem 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-container {
+                padding: 1rem 0.75rem;
+            }
+            .top-navbar {
+                padding: 0.65rem 1rem;
+            }
+            .grid-cards,
+            .metrics-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .table-container,
+            .table-responsive {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                display: block;
+            }
+            .table-container table,
+            .table-responsive table {
+                min-width: 600px;
+            }
+            .card {
+                padding: 1.15rem 1rem;
+                border-radius: 0.85rem;
+            }
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hide-mobile {
+                display: none !important;
+            }
+            .top-pilot-badge {
+                font-size: 0.68rem;
+                padding: 0.25rem 0.6rem;
+            }
+            .top-user-pill {
+                font-size: 0.72rem;
+                padding: 0.3rem 0.6rem;
+            }
+            .voice-fab {
+                bottom: 18px;
+                right: 18px;
+                width: 54px;
+                height: 54px;
+                font-size: 1.35rem;
             }
         }
     </style>
@@ -677,15 +746,144 @@
          1. SIDEBAR NAVIGATION (DARK FOREST GREEN: #133826)
          ===================================================================== -->
     <aside class="sidebar" id="appSidebar">
-        <a href="{% url 'farmer_dashboard' %}" class="sidebar-brand">
-            <div class="sidebar-brand-icon">🌱</div>
-            <div class="sidebar-brand-title">
-                <span>Khet2Kitchen</span>
-                <span class="sidebar-brand-sub">Smart Agri-Supply</span>
-            </div>
-        </a>
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <a href="{% if user.role == 'RETAILER' %}{% url 'retailer_dashboard' %}{% elif user.role == 'SUPPLIER' %}{% url 'supplier_dashboard' %}{% elif user.role == 'ADMIN' %}{% url 'admin_command_dashboard' %}{% else %}{% url 'farmer_dashboard' %}{% endif %}" class="sidebar-brand" style="border-bottom: none; flex: 1;">
+                <div class="sidebar-brand-icon">🌱</div>
+                <div class="sidebar-brand-title">
+                    <span>Khet2Kitchen</span>
+                    <span class="sidebar-brand-sub">Smart Agri-Supply</span>
+                </div>
+            </a>
+            <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close Sidebar">
+                ✕
+            </button>
+        </div>
 
         <nav class="sidebar-nav">
+            {% if user.role == 'RETAILER' %}
+            <!-- ================= RETAILER NAVIGATION ================= -->
+            <div class="nav-section">
+                <div class="nav-section-title">Procurement & Demand</div>
+                <div class="nav-group">
+                    <a href="{% url 'retailer_dashboard' %}" class="nav-link {% if active_nav == 'retailer_dashboard' %}active{% endif %}">
+                        <span class="nav-link-icon">🏬</span>
+                        <span>Retailer B2B Hub</span>
+                    </a>
+                    <a href="{% url 'retailer_dashboard' %}#pre-orders" class="nav-link">
+                        <span class="nav-link-icon">📋</span>
+                        <span>My Pre-Orders</span>
+                    </a>
+                    <a href="{% url 'retailer_dashboard' %}#ai-forecasts" class="nav-link">
+                        <span class="nav-link-icon">🧠</span>
+                        <span>AI Demand Forecast</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Supply Chain & Trace</div>
+                <div class="nav-group">
+                    <a href="{% url 'retailer_dashboard' %}#traceability" class="nav-link">
+                        <span class="nav-link-icon">🔍</span>
+                        <span>Batch Traceability</span>
+                    </a>
+                    <a href="{% url 'retailer_dashboard' %}#reefer-dispatch" class="nav-link">
+                        <span class="nav-link-icon">🚚</span>
+                        <span>Cold-Chain Dispatch</span>
+                    </a>
+                    <a href="{% url 'retailer_dashboard' %}#market-catalog" class="nav-link">
+                        <span class="nav-link-icon">🥬</span>
+                        <span>Produce Catalog</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Retailer Advisory</div>
+                <div class="nav-group">
+                    <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
+                        <span class="nav-link-icon">🎤</span>
+                        <span>Voice Assistant</span>
+                    </button>
+                </div>
+            </div>
+
+            {% elif user.role == 'SUPPLIER' %}
+            <!-- ================= SUPPLIER NAVIGATION ================= -->
+            <div class="nav-section">
+                <div class="nav-section-title">Input Supply Operations</div>
+                <div class="nav-group">
+                    <a href="{% url 'supplier_dashboard' %}" class="nav-link {% if active_nav == 'supplier_dashboard' %}active{% endif %}">
+                        <span class="nav-link-icon">🚜</span>
+                        <span>Supplier Hub</span>
+                    </a>
+                    <a href="{% url 'supplier_dashboard' %}#micro-hubs" class="nav-link">
+                        <span class="nav-link-icon">🏬</span>
+                        <span>Drop-off Hubs</span>
+                    </a>
+                    <a href="{% url 'supplier_dashboard' %}#clusters" class="nav-link">
+                        <span class="nav-link-icon">🌾</span>
+                        <span>Connected Clusters</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Vendor Advisory</div>
+                <div class="nav-group">
+                    <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
+                        <span class="nav-link-icon">🎤</span>
+                        <span>Voice Assistant</span>
+                    </button>
+                </div>
+            </div>
+
+            {% elif user.role == 'ADMIN' or user.is_staff %}
+            <!-- ================= ADMIN / COMMAND CENTER NAVIGATION ================= -->
+            <div class="nav-section">
+                <div class="nav-section-title">System Operations</div>
+                <div class="nav-group">
+                    <a href="{% url 'admin_command_dashboard' %}" class="nav-link {% if active_nav == 'admin' %}active{% endif %}">
+                        <span class="nav-link-icon">🛡️</span>
+                        <span>Command Center</span>
+                    </a>
+                    <a href="/admin/" class="nav-link" target="_blank">
+                        <span class="nav-link-icon">⚙️</span>
+                        <span>Django Admin Panel ↗</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Network Channels (RBAC)</div>
+                <div class="nav-group">
+                    <a href="{% url 'farmer_dashboard' %}" class="nav-link">
+                        <span class="nav-link-icon">🌾</span>
+                        <span>Farmer Channel</span>
+                    </a>
+                    <a href="{% url 'retailer_dashboard' %}" class="nav-link">
+                        <span class="nav-link-icon">🏬</span>
+                        <span>Retailer Channel</span>
+                    </a>
+                    <a href="{% url 'supplier_dashboard' %}" class="nav-link">
+                        <span class="nav-link-icon">🚜</span>
+                        <span>Supplier Channel</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Operations Support</div>
+                <div class="nav-group">
+                    <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
+                        <span class="nav-link-icon">🎤</span>
+                        <span>Voice Assistant</span>
+                    </button>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- ================= DEFAULT / FARMER NAVIGATION ================= -->
             <!-- SECTION 1: CORE OPERATIONS -->
             <div class="nav-section">
                 <div class="nav-section-title">Core Operations</div>
@@ -721,10 +919,12 @@
                         <span class="nav-link-icon">🚚</span>
                         <span>Dynamic Sweeps</span>
                     </a>
+                    {% if user.is_staff or user.role == 'ADMIN' %}
                     <a href="{% url 'admin_command_dashboard' %}" class="nav-link {% if active_nav == 'admin' %}active{% endif %}">
                         <span class="nav-link-icon">🏢</span>
                         <span>Command Center</span>
                     </a>
+                    {% endif %}
                 </div>
             </div>
 
@@ -742,24 +942,25 @@
                     </button>
                 </div>
             </div>
+            {% endif %}
         </nav>
 
         <!-- Sidebar User Footer -->
         <div class="sidebar-footer">
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <div class="user-avatar">
-                    {{ user.first_name|first|default:"K" }}
+            <div style="display: flex; align-items: center; gap: 0.6rem; min-width: 0;">
+                <div class="user-avatar" style="flex-shrink: 0;">
+                    {{ user.first_name|first|default:user.identifier|first|upper }}
                 </div>
-                <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: #FFFFFF;">
-                        {{ user.get_full_name|default:user.identifier|truncatechars:18 }}
+                <div style="display: flex; flex-direction: column; min-width: 0; overflow: hidden;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        {{ user.get_full_name|default:user.identifier }}
                     </span>
-                    <span style="font-size: 0.7rem; color: #A3C2B0;">
-                        {{ user.phone_number|default:"Kisan Member" }}
+                    <span style="font-size: 0.7rem; color: #A3C2B0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        {{ user.get_role_display|default:"K2K Member" }}
                     </span>
                 </div>
             </div>
-            <form action="{% url 'logout' %}" method="post">
+            <form action="{% url 'logout' %}" method="post" style="margin: 0; flex-shrink: 0;">
                 {% csrf_token %}
                 <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 1.1rem; padding: 0.25rem;" title="Logout">
                     🚪
@@ -788,16 +989,41 @@
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <div class="top-quick-hubs">
-                    <a href="{% url 'farmer_dashboard' %}" class="hub-pill hub-pill-active">1. Farmer Portal</a>
-                    <a href="{% url 'retailer_dashboard' %}" class="hub-pill hub-pill-inactive">2. Retailer Hub</a>
-                    <a href="{% url 'supplier_dashboard' %}" class="hub-pill hub-pill-inactive">3. Supplier Hub</a>
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                <!-- Role-Based Access Control User Badge -->
+                <div class="top-user-pill">
+                    {% if user.role == 'FARMER' %}
+                        <span style="background: #10B981; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem;">🌾</span>
+                        <span>Farmer Portal</span>
+                    {% elif user.role == 'RETAILER' %}
+                        <span style="background: #0284C7; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem;">🏬</span>
+                        <span>Retailer Hub</span>
+                    {% elif user.role == 'SUPPLIER' %}
+                        <span style="background: #D97706; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem;">🚜</span>
+                        <span>Supplier Hub</span>
+                    {% elif user.role == 'ADMIN' or user.is_staff %}
+                        <span style="background: #4B5563; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem;">🛡️</span>
+                        <span>Command Center</span>
+                    {% else %}
+                        <span style="background: #10B981; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem;">👤</span>
+                        <span>{{ user.get_role_display|default:"K2K Member" }}</span>
+                    {% endif %}
+                    <span style="color: #9CA3AF;">•</span>
+                    <span style="color: #4B5563; font-weight: 500;">{{ user.first_name|default:user.identifier|truncatechars:14 }}</span>
                 </div>
 
-                <button type="button" onclick="window.location.reload()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
-                    🔄 Refresh
+                <!-- Refresh Telemetry Action -->
+                <button type="button" onclick="window.location.reload()" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" title="Refresh live telemetry">
+                    🔄 <span class="hide-mobile">Refresh</span>
                 </button>
+
+                <!-- Top Quick Logout -->
+                <form action="{% url 'logout' %}" method="post" style="display: inline-flex; margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; color: #DC2626; border-color: #FECACA;" title="Logout of K2K">
+                        🚪 <span class="hide-mobile">Logout</span>
+                    </button>
+                </form>
             </div>
         </header>
 

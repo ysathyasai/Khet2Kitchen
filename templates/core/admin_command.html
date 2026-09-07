@@ -1,108 +1,203 @@
 {% extends "core/base_dashboard.html" %}
 
-{% block title %}K2K Command Center - Platform Operations{% endblock %}
+{% block title %}K2K Command Center - Platform Operations & Analytics{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<div style="margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+<!-- =========================================================================
+     COMMAND CENTER HERO SECTION (DARK FOREST GREEN GRADIENT)
+     ========================================================================= -->
+<div style="background: var(--hero-bg-gradient); border-radius: 1.25rem; padding: 2.25rem 2rem; color: #FFFFFF; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(19, 56, 38, 0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
         <div>
-            <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
-                Settlement & Fleet • System Administration
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #6EE7B7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.85rem;">
+                <span>🛡️</span> Settlement & Fleet • System Administration
             </div>
-            <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
-                🛡️ K2K Command Center
+            <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; color: #FFFFFF;">
+                K2K Command Center
             </h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-                Platform Supervision, Aggregated Network Volumes & APMC Disintermediation Operations.
+            <p style="color: #A3C2B0; font-size: 0.95rem; max-width: 650px; line-height: 1.5;">
+                Platform Supervision, Aggregated Network Volumes & APMC Disintermediation Operations for <strong style="color: #FFFFFF;">{{ user.get_full_name|default:user.identifier }}</strong>.
             </p>
         </div>
-        <div style="display: flex; gap: 0.75rem; align-items: center;">
-            <a href="/admin/" class="btn btn-secondary" style="font-size: 0.85rem; font-weight: 600;" target="_blank">
-                Django Admin Panel ↗
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="/admin/" class="btn btn-gold" style="font-size: 0.85rem; font-weight: 700;" target="_blank">
+                ⚙️ Django Admin Panel ↗
             </a>
-            <span class="status-pill status-growing">
+            <span class="status-pill status-growing" style="padding: 0.45rem 1rem; font-size: 0.82rem; background: #D1FAE5; color: #065F46;">
                 ● Operations Live
             </span>
         </div>
     </div>
 </div>
 
-<!-- Metrics Grid -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Registered Farmers</span>
-            <span style="font-size: 1.3rem;">👨‍🌾</span>
+<!-- =========================================================================
+     NETWORK OVERVIEW ANALYTICS METRICS (HIGH-LEVEL CARDS)
+     ========================================================================= -->
+<div class="grid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <!-- Registered Farmers -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #10B981;">
+        <div class="card-header">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Registered Farmers
+            </span>
+            <span style="font-size: 1.4rem;">👨‍🌾</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 800; color: #133826;">{{ metrics.total_farmers }}</div>
-        <div style="font-size: 0.78rem; color: #059669; font-weight: 600; margin-top: 0.3rem;">Mobile / OTP authenticated</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #133826; line-height: 1.1; margin: 0.25rem 0;">
+            {{ metrics.total_farmers }}
+        </div>
+        <div style="font-size: 0.78rem; color: #059669; font-weight: 600;">
+            Mobile / OTP authenticated
+        </div>
     </div>
 
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Registered Retailers</span>
-            <span style="font-size: 1.3rem;">🏬</span>
+    <!-- Registered Retailers -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #0284C7;">
+        <div class="card-header">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Registered Retailers
+            </span>
+            <span style="font-size: 1.4rem;">🏬</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 800; color: #0284C7;">{{ metrics.total_retailers }}</div>
-        <div style="font-size: 0.78rem; color: #0369A1; font-weight: 600; margin-top: 0.3rem;">Urban B2B buyers</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #0284C7; line-height: 1.1; margin: 0.25rem 0;">
+            {{ metrics.total_retailers }}
+        </div>
+        <div style="font-size: 0.78rem; color: #0369A1; font-weight: 600;">
+            Urban B2B buyers
+        </div>
     </div>
 
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Micro-Hubs</span>
-            <span style="font-size: 1.3rem;">📍</span>
+    <!-- Micro-Hubs -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #F59E0B;">
+        <div class="card-header">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Active Micro-Hubs
+            </span>
+            <span style="font-size: 1.4rem;">📍</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 800; color: #D97706;">{{ metrics.total_hubs }}</div>
-        <div style="font-size: 0.78rem; color: #B45309; font-weight: 600; margin-top: 0.3rem;">AI Grading stations</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #D97706; line-height: 1.1; margin: 0.25rem 0;">
+            {{ metrics.total_hubs }}
+        </div>
+        <div style="font-size: 0.78rem; color: #B45309; font-weight: 600;">
+            AI Grading stations
+        </div>
     </div>
 
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Batches Graded</span>
-            <span style="font-size: 1.3rem;">📦</span>
+    <!-- Active Batches Graded -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #059669;">
+        <div class="card-header">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Active Batches
+            </span>
+            <span style="font-size: 1.4rem;">📦</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 800; color: #059669;">{{ metrics.active_batches }}</div>
-        <div style="font-size: 0.78rem; color: #065F46; font-weight: 600; margin-top: 0.3rem;">Edge vision validated</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #059669; line-height: 1.1; margin: 0.25rem 0;">
+            {{ metrics.active_batches }}
+        </div>
+        <div style="font-size: 0.78rem; color: #065F46; font-weight: 600;">
+            Edge vision validated
+        </div>
     </div>
 
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending Demand Orders</span>
-            <span style="font-size: 1.3rem;">⏳</span>
+    <!-- Pending Demand Orders -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #DC2626;">
+        <div class="card-header">
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Pending Orders
+            </span>
+            <span style="font-size: 1.4rem;">⏳</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 800; color: #DC2626;">{{ metrics.pending_demand_orders }}</div>
-        <div style="font-size: 0.78rem; color: #B91C1C; font-weight: 600; margin-top: 0.3rem;">Awaiting dispatch matching</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #DC2626; line-height: 1.1; margin: 0.25rem 0;">
+            {{ metrics.pending_demand_orders }}
+        </div>
+        <div style="font-size: 0.78rem; color: #B91C1C; font-weight: 600;">
+            Awaiting dispatch matching
+        </div>
     </div>
 </div>
 
-<!-- Architecture & RBAC Card -->
-<div class="card">
+<!-- =========================================================================
+     ARCHITECTURE & ROLE-BASED ACCESS CONTROL (RBAC) HEALTH
+     ========================================================================= -->
+<div class="card" id="rbac" style="margin-bottom: 2rem;">
     <div class="card-header">
         <div>
             <h2 class="card-title">
                 <span>⚙️</span> Architectural Health & Role-Based Access Control (RBAC)
             </h2>
-            <div class="card-subtitle">Channel dispatch routes and active identity providers.</div>
+            <p class="card-subtitle">Channel dispatch routes and active identity providers across the direct agri-network.</p>
         </div>
+        <span class="status-pill status-growing">
+            ● RBAC Enforced
+        </span>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
-        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
-            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Farmer Channel</div>
-            <div style="color: var(--text-muted); font-size: 0.85rem;">Mobile / OTP login route to <code>/farmer/dashboard/</code></div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+        <!-- Farmer Channel -->
+        <div style="background: #FAFCF9; padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--card-border); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div style="font-weight: 700; color: #133826; font-size: 1.05rem;">🌾 Farmer Channel</div>
+                    <span class="status-pill status-growing" style="font-size: 0.7rem;">Active</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 1rem;">
+                    Mobile / OTP authentication for rural cultivators with AI pricing, mandi discovery, and instant wallet ledger.
+                </p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 0.75rem;">
+                <code style="font-size: 0.75rem; color: #059669;">/farmer/dashboard/</code>
+                <a href="{% url 'farmer_dashboard' %}" class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">Jump ↗</a>
+            </div>
         </div>
-        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
-            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Retailer Channel</div>
-            <div style="color: var(--text-muted); font-size: 0.85rem;">Email / Password login route to <code>/retailer/dashboard/</code></div>
+
+        <!-- Retailer Channel -->
+        <div style="background: #FAFCF9; padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--card-border); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div style="font-weight: 700; color: #0284C7; font-size: 1.05rem;">🏬 Retailer Channel</div>
+                    <span class="status-pill status-hub" style="font-size: 0.7rem;">Active</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 1rem;">
+                    B2B procurement with automated supply allocation matching, 4-stage batch traceability, and cold-chain reefer routing.
+                </p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 0.75rem;">
+                <code style="font-size: 0.75rem; color: #0284C7;">/retailer/dashboard/</code>
+                <a href="{% url 'retailer_dashboard' %}" class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">Jump ↗</a>
+            </div>
         </div>
-        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
-            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Supplier Channel</div>
-            <div style="color: var(--text-muted); font-size: 0.85rem;">Email / Password login route to <code>/supplier/dashboard/</code></div>
+
+        <!-- Supplier Channel -->
+        <div style="background: #FAFCF9; padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--card-border); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div style="font-weight: 700; color: #D97706; font-size: 1.05rem;">🚜 Supplier Channel</div>
+                    <span class="status-pill status-hub" style="font-size: 0.7rem;">Active</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 1rem;">
+                    Direct agri-input vendor channel with micro-hub intake verification and escrow disbursements.
+                </p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 0.75rem;">
+                <code style="font-size: 0.75rem; color: #D97706;">/supplier/dashboard/</code>
+                <a href="{% url 'supplier_dashboard' %}" class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">Jump ↗</a>
+            </div>
         </div>
-        <div style="background: #F9FAFB; padding: 1.25rem; border-radius: 0.6rem; border: 1px solid var(--card-border);">
-            <div style="font-weight: 700; color: #133826; margin-bottom: 0.25rem;">Command Central</div>
-            <div style="color: var(--text-muted); font-size: 0.85rem;">Superuser / Admin route to <code>/k2k-command/</code></div>
+
+        <!-- Command Central -->
+        <div style="background: #FAFCF9; padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--card-border); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div style="font-weight: 700; color: #4B5563; font-size: 1.05rem;">🛡️ Command Central</div>
+                    <span class="status-pill status-growing" style="font-size: 0.7rem;">Superuser</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 1rem;">
+                    High-level aggregate telemetry, database migrations, audit logs, and operational controls.
+                </p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 0.75rem;">
+                <code style="font-size: 0.75rem; color: #4B5563;">/k2k-command/</code>
+                <span class="status-pill status-growing" style="font-size: 0.72rem;">Current</span>
+            </div>
         </div>
     </div>
 </div>

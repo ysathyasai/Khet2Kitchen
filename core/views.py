@@ -736,6 +736,7 @@ def retailer_dashboard_view(request):
         "title": "Khet2Kitchen - Retailer Procurement",
         "role": "RETAILER",
         "user": retailer,
+        "active_nav": "retailer_dashboard",
         "demand_orders": demand_orders,
         "market_catalog": market_catalog,
         "ai_recommended_orders": ai_recommended_orders,
@@ -797,6 +798,7 @@ def supplier_dashboard_view(request):
         "title": "Khet2Kitchen - Supplier Portal",
         "role": "SUPPLIER",
         "user": supplier,
+        "active_nav": "supplier_dashboard",
         "active_hubs": MicroHub.objects.filter(is_active=True),
     }
 
@@ -821,6 +823,7 @@ def admin_dashboard_view(request):
         "title": "K2K Command Center",
         "role": "ADMIN",
         "user": request.user,
+        "active_nav": "admin",
         "metrics": {
             "total_farmers": User.objects.farmers().count(),
             "total_retailers": User.objects.retailers().count(),

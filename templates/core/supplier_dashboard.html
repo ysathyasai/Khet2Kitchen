@@ -1,62 +1,104 @@
-{% extends "base.html" %}
+{% extends "core/base_dashboard.html" %}
 
-{% block title %}Supplier Portal - Khet2Kitchen{% endblock %}
+{% block title %}Agricultural Input Supplier Portal - Khet2Kitchen{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-    <div>
-        <h1 style="font-size: 1.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🚜</span> Agricultural Input Supplier Portal
-        </h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-            Direct input vendor channel for <strong>{{ user.get_full_name }}</strong> (✉️ {{ user.email }})
-        </p>
-    </div>
-    <div>
-        <span class="badge badge-warning" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-            ● Supplier Network Active
-        </span>
+<!-- =========================================================================
+     SUPPLIER PORTAL HERO SECTION (FOREST GREEN & GOLD)
+     ========================================================================= -->
+<div style="background: var(--hero-bg-gradient); border-radius: 1.25rem; padding: 2.25rem 2rem; color: #FFFFFF; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(19, 56, 38, 0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
+        <div>
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #6EE7B7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.85rem;">
+                <span>🚜</span> Certified Input Vendor Rail
+            </div>
+            <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; color: #FFFFFF;">
+                Agricultural Input Supplier Portal
+            </h1>
+            <p style="color: #A3C2B0; font-size: 0.95rem; max-width: 650px; line-height: 1.5;">
+                Direct input vendor channel for <strong style="color: #FFFFFF;">{{ user.get_full_name|default:user.identifier }}</strong> (✉️ {{ user.email }}). Consign certified bio-fertilizers, seeds, drip irrigation equipment, and crated packaging directly to micro-hubs.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <span class="status-pill status-growing" style="padding: 0.45rem 1rem; font-size: 0.82rem; background: #D1FAE5; color: #065F46;">
+                ● Supplier Network Active
+            </span>
+        </div>
     </div>
 </div>
 
-<div class="grid-cards">
-    <div class="card">
+<!-- =========================================================================
+     SUPPLIER OPERATIONAL KPIS & DISINTERMEDIATION METRICS
+     ========================================================================= -->
+<div class="grid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <!-- Metric 1: Connected Farmer Clusters -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #10B981;">
         <div class="card-header">
-            <span class="metric-label">Connected Farmer Clusters</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Connected Farmer Clusters
+            </span>
             <span style="font-size: 1.5rem;">🌾</span>
         </div>
-        <div class="metric-value">4</div>
-        <div class="metric-label" style="color: #fbbf24;">Linked via Micro-Hub distribution</div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #133826; line-height: 1.1; margin: 0.35rem 0;">
+            4
+        </div>
+        <div style="font-size: 0.82rem; color: #059669; font-weight: 600;">
+            Linked via Micro-Hub distribution
+        </div>
     </div>
 
-    <div class="card">
+    <!-- Metric 2: Active Drop-off Hubs -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #0284C7;">
         <div class="card-header">
-            <span class="metric-label">Active Drop-off Hubs</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Active Drop-off Hubs
+            </span>
             <span style="font-size: 1.5rem;">🏬</span>
         </div>
-        <div class="metric-value">{{ active_hubs.count }}</div>
-        <div class="metric-label">Pick-up and consignment points</div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #0284C7; line-height: 1.1; margin: 0.35rem 0;">
+            {{ active_hubs.count }}
+        </div>
+        <div style="font-size: 0.82rem; color: #0369A1; font-weight: 600;">
+            Pick-up and consignment points
+        </div>
     </div>
 
-    <div class="card">
+    <!-- Metric 3: Fulfillment Rail -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #F59E0B;">
         <div class="card-header">
-            <span class="metric-label">Fulfillment Rail</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Fulfillment Rail
+            </span>
             <span style="font-size: 1.5rem;">⚡</span>
         </div>
-        <div class="metric-value" style="color: #34d399;">Direct</div>
-        <div class="metric-label">Zero intermediaries</div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #D97706; line-height: 1.1; margin: 0.35rem 0;">
+            Direct
+        </div>
+        <div style="font-size: 0.82rem; color: #B45309; font-weight: 600;">
+            Zero intermediaries & commission fees
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-        <span>🌱</span> Certified Farm Input Distribution Points (Micro-Hubs)
-    </h2>
-    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
-        Suppliers deliver organic bio-fertilizers, seeds, drip irrigation equipment, and crated packaging directly to micro-hubs for farmer collection.
-    </p>
+<!-- =========================================================================
+     CERTIFIED FARM INPUT DISTRIBUTION POINTS (MICRO-HUBS TABLE)
+     ========================================================================= -->
+<div class="card" id="micro-hubs">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🌱</span> Certified Farm Input Distribution Points (Micro-Hubs)
+            </h2>
+            <p class="card-subtitle">
+                Suppliers deliver organic bio-fertilizers, seeds, drip irrigation equipment, and crated packaging directly to micro-hubs for farmer collection.
+            </p>
+        </div>
+        <span class="status-pill status-growing">
+            ● Hub Gateways Online
+        </span>
+    </div>
 
-    <div class="table-responsive">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
@@ -64,27 +106,90 @@
                     <th>Hub Name</th>
                     <th>District</th>
                     <th>State</th>
+                    <th>Storage / Capacity</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 {% for hub in active_hubs %}
                 <tr>
-                    <td><code>{{ hub.code }}</code></td>
-                    <td><strong>{{ hub.name }}</strong></td>
+                    <td>
+                        <span style="font-family: monospace; font-weight: 700; background: #F3F4F6; padding: 0.25rem 0.5rem; border-radius: 0.35rem; color: #1F2937;">
+                            {{ hub.code }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="color: #133826; font-size: 0.95rem;">{{ hub.name }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">📍 {{ hub.location }} (PIN: {{ hub.pincode }})</div>
+                    </td>
                     <td>{{ hub.district }}</td>
                     <td>{{ hub.state }}</td>
-                    <td><span class="badge badge-success">Operational</span></td>
+                    <td>
+                        <span style="font-weight: 600; color: #059669;">{{ hub.capacity_kg|floatformat:0 }} kg</span>
+                    </td>
+                    <td>
+                        <span class="status-pill status-growing">
+                            Operational
+                        </span>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                        No hubs currently registered.
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No micro-hubs currently registered in this cluster.
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- =========================================================================
+     CONNECTED CLUSTERS & LOGISTICS PROTOCOLS
+     ========================================================================= -->
+<div class="card" id="clusters" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🌾</span> Connected Regional Clusters & Drop-Off Protocol
+            </h2>
+            <p class="card-subtitle">
+                Streamlined intake procedures for verified input manufacturers and distributors.
+            </p>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 0.75rem; padding: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">📦</span>
+                <strong style="color: #133826; font-size: 0.95rem;">Packaging & Barcode Standard</strong>
+            </div>
+            <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5;">
+                All bio-fertilizer sacks and seed crates must have clear QR identifiers linking to manufacturer batch certification for instant edge validation.
+            </p>
+        </div>
+
+        <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 0.75rem; padding: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">🚚</span>
+                <strong style="color: #133826; font-size: 0.95rem;">Direct Farm Collection</strong>
+            </div>
+            <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5;">
+                Farmers retrieve allocated inputs during morning harvest drops, eliminating last-mile distributor overhead and retail markup.
+            </p>
+        </div>
+
+        <div style="background: #F9FAFB; border: 1px solid var(--card-border); border-radius: 0.75rem; padding: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">💳</span>
+                <strong style="color: #133826; font-size: 0.95rem;">Escrow Settlement</strong>
+            </div>
+            <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5;">
+                Supplier disbursements are escrow-protected and credited directly upon micro-hub intake scan and farmer confirmation.
+            </p>
+        </div>
     </div>
 </div>
 {% endblock %}

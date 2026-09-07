@@ -1,135 +1,178 @@
-{% extends "base.html" %}
+{% extends "core/base_dashboard.html" %}
 
-{% block title %}Retailer B2B Portal - Khet2Kitchen{% endblock %}
+{% block title %}Retailer B2B Procurement Portal - Project Khet2Kitchen{% endblock %}
 
 {% block content %}
 <!-- Flash Messages for Supply Allocation Actions -->
 {% if messages %}
     <div style="margin-bottom: 1.5rem;">
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }}">
+            <div class="card" style="padding: 0.85rem 1.25rem; margin-bottom: 0.75rem; border-left: 4px solid #10B981; background: #ECFDF5; color: #065F46; font-size: 0.9rem; font-weight: 500;">
                 {{ message }}
             </div>
         {% endfor %}
     </div>
 {% endif %}
 
-<!-- Header & Direct Rail Status -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-    <div>
-        <h1 style="font-size: 1.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🏬</span> Retailer Procurement & AI Demand Portal
-        </h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-            Direct-from-farm procurement for <strong>{{ user.get_full_name }}</strong> (✉️ {{ user.email }})
-        </p>
-    </div>
-    <div>
-        <span class="badge badge-info" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-            ● B2B Pre-Order Direct Rail Active
-        </span>
+<!-- =========================================================================
+     HERO SECTION (DARK FOREST GREEN & GOLD)
+     ========================================================================= -->
+<div style="background: var(--hero-bg-gradient); border-radius: 1.25rem; padding: 2.25rem 2rem; color: #FFFFFF; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(19, 56, 38, 0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
+        <div>
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #6EE7B7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.85rem;">
+                <span>🏬</span> Urban B2B Buyer Direct Rail
+            </div>
+            <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; color: #FFFFFF;">
+                Retailer Procurement & AI Demand Portal
+            </h1>
+            <p style="color: #A3C2B0; font-size: 0.95rem; max-width: 650px; line-height: 1.5;">
+                Direct-from-farm procurement channel for <strong style="color: #FFFFFF;">{{ user.get_full_name|default:user.identifier }}</strong> (✉️ {{ user.email }}). Lock in farm-fresh produce directly from rural micro-hubs with guaranteed cold-chain transit.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <span class="status-pill status-growing" style="padding: 0.45rem 1rem; font-size: 0.82rem; background: #D1FAE5; color: #065F46;">
+                ● B2B Pre-Order Direct Rail Active
+            </span>
+        </div>
     </div>
 </div>
 
-<!-- Overview Metric Cards -->
-<div class="grid-cards">
-    <div class="card" style="border-left: 4px solid #3b82f6;">
+<!-- =========================================================================
+     OVERVIEW METRIC CARDS
+     ========================================================================= -->
+<div class="grid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <!-- Metric 1: Active Pre-Orders -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #0284C7;">
         <div class="card-header">
-            <span class="metric-label">Active Pre-Orders</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Active Pre-Orders
+            </span>
             <span style="font-size: 1.5rem;">🛒</span>
         </div>
-        <div class="metric-value">{{ demand_orders.count }}</div>
-        <div class="metric-label" style="color: #60a5fa;">Pending & allocated shipments</div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #0284C7; line-height: 1.1; margin: 0.35rem 0;">
+            {{ demand_orders.count }}
+        </div>
+        <div style="font-size: 0.82rem; color: #0369A1; font-weight: 600;">
+            Pending & allocated shipments
+        </div>
     </div>
 
-    <div class="card" style="border-left: 4px solid #10b981;">
+    <!-- Metric 2: AI Demand Recommendations -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #10B981;">
         <div class="card-header">
-            <span class="metric-label">AI Demand Recommendations</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                AI Demand Recommendations
+            </span>
             <span style="font-size: 1.5rem;">🧠</span>
         </div>
-        <div class="metric-value" style="color: #34d399;">{{ ai_recommended_orders|length }}</div>
-        <div class="metric-label">Predictive pre-order opportunities</div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #10B981; line-height: 1.1; margin: 0.35rem 0;">
+            {{ ai_recommended_orders|length }}
+        </div>
+        <div style="font-size: 0.82rem; color: #059669; font-weight: 600;">
+            Predictive pre-order opportunities
+        </div>
     </div>
 
-    <div class="card" style="border-left: 4px solid #f59e0b;">
+    <!-- Metric 3: Procurement Cost Advantage -->
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #F59E0B;">
         <div class="card-header">
-            <span class="metric-label">Procurement Cost Advantage</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                Procurement Cost Advantage
+            </span>
             <span style="font-size: 1.5rem;">⚡</span>
         </div>
-        <div class="metric-value" style="color: #fbbf24;">~22% Saved</div>
-        <div class="metric-label">Disintermediated wholesale pricing</div>
+        <div style="font-size: 2.25rem; font-weight: 800; color: #D97706; line-height: 1.1; margin: 0.35rem 0;">
+            ~22% Saved
+        </div>
+        <div style="font-size: 0.82rem; color: #B45309; font-weight: 600;">
+            Disintermediated wholesale pricing
+        </div>
     </div>
 </div>
 
-<!-- AI DEMAND FORECAST & RECOMMENDED ORDERS (K2K Intelligence Engine) -->
-<div class="card" style="margin-bottom: 2rem; border-color: rgba(59, 130, 246, 0.4);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+<!-- =========================================================================
+     FEATURE 1: AI DEMAND FORECAST & RECOMMENDED PRE-ORDERS
+     ========================================================================= -->
+<div class="card" id="ai-forecasts" style="margin-bottom: 2rem;">
+    <div class="card-header">
         <div>
-            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <h2 class="card-title">
                 <span>🧠</span> AI Demand Forecast & Recommended Pre-Orders
             </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+            <p class="card-subtitle">
                 Powered by K2K Intelligence Engine: real-time consumption cycles and micro-hub harvest arrivals.
             </p>
         </div>
-        <span class="badge badge-success" style="font-size: 0.8rem;">Live Predictive Rail</span>
+        <span class="status-pill status-growing">
+            ● Live Predictive Rail
+        </span>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;">
         {% for forecast in ai_recommended_orders %}
-        <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background: #FAFCF9; border: 1px solid var(--card-border); border-radius: 0.75rem; padding: 1.35rem; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.65rem;">
                     <div>
-                        <div style="font-size: 1.15rem; font-weight: 700;">{{ forecast.crop_name }}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ forecast.crop_category }} • Target: {{ forecast.target_date }}</div>
+                        <div style="font-size: 1.15rem; font-weight: 700; color: #133826;">{{ forecast.crop_name }}</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            {{ forecast.crop_category }} • Target: <strong>{{ forecast.target_date }}</strong>
+                        </div>
                     </div>
-                    <span class="badge {% if forecast.trend == 'HIGH_DEMAND' %}badge-success{% else %}badge-info{% endif %}">
+                    <span class="status-pill {% if forecast.trend == 'HIGH_DEMAND' %}status-growing{% else %}status-hub{% endif %}">
                         {{ forecast.trend }}
                     </span>
                 </div>
 
-                <div style="display: flex; gap: 1rem; margin: 1rem 0; padding: 0.75rem; background: rgba(15, 23, 42, 0.5); border-radius: 0.5rem; border: 1px solid var(--border);">
+                <div style="display: flex; gap: 1rem; margin: 1rem 0; padding: 0.85rem; background: #FFFFFF; border-radius: 0.5rem; border: 1px solid var(--card-border);">
                     <div style="flex: 1;">
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Recommended Volume</div>
-                        <div style="font-size: 1.35rem; font-weight: 700; color: #60a5fa;">{{ forecast.predicted_volume_kg }} kg</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Recommended Volume</div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #0284C7; margin-top: 0.2rem;">{{ forecast.predicted_volume_kg }} kg</div>
                     </div>
-                    <div style="flex: 1; border-left: 1px solid var(--border); padding-left: 1rem;">
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Expected Price</div>
-                        <div style="font-size: 1.35rem; font-weight: 700; color: #34d399;">₹{{ forecast.expected_price_per_kg }}/kg</div>
+                    <div style="flex: 1; border-left: 1px solid var(--card-border); padding-left: 1rem;">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Expected Price</div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #059669; margin-top: 0.2rem;">₹{{ forecast.expected_price_per_kg }}/kg</div>
                     </div>
                 </div>
 
-                <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1rem;">
+                <p style="font-size: 0.84rem; color: #4B5563; line-height: 1.5; margin-bottom: 1rem;">
                     {{ forecast.rationale }}
                 </p>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 0.75rem; font-size: 0.8rem;">
-                <span style="color: var(--text-muted);">Model Confidence: <strong style="color: #34d399;">{{ forecast.confidence_score }}%</strong></span>
-                <span style="color: #60a5fa; font-weight: 500;">Direct Micro-Hub Rail</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--card-border); padding-top: 0.75rem; font-size: 0.8rem;">
+                <span style="color: var(--text-muted);">Model Confidence: <strong style="color: #059669; font-weight: 700;">{{ forecast.confidence_score }}%</strong></span>
+                <span style="color: #0284C7; font-weight: 600;">Direct Micro-Hub Rail</span>
             </div>
         </div>
         {% empty %}
-        <p style="color: var(--text-muted); font-size: 0.875rem;">AI forecasts are updating for the upcoming harvest cycle.</p>
+        <p style="color: var(--text-muted); font-size: 0.875rem; padding: 1rem;">
+            AI forecasts are updating for the upcoming harvest cycle.
+        </p>
         {% endfor %}
     </div>
 </div>
 
-<!-- Demand Orders Management (Pre-Orders) with Automated Supply Allocation -->
-<div class="card" style="margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+<!-- =========================================================================
+     FEATURE 2: DEMAND ORDERS (PRE-ORDERS) & SUPPLY ALLOCATION
+     ======================================================================== -->
+<div class="card" id="pre-orders" style="margin-bottom: 2rem;">
+    <div class="card-header">
         <div>
-            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <h2 class="card-title">
                 <span>📋</span> My Pre-Orders & Allocation Status
             </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+            <p class="card-subtitle">
                 Click <strong>"Auto-Match Supply"</strong> to execute the matching algorithm against real-time micro-hub batches.
             </p>
         </div>
+        <span class="status-pill status-hub">
+            ● Direct APMC Disintermediation
+        </span>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
@@ -145,13 +188,17 @@
             <tbody>
                 {% for order in demand_orders %}
                 <tr>
-                    <td><code>{{ order.order_id }}</code></td>
-                    <td><strong>{{ order.crop.name }}</strong></td>
-                    <td>{{ order.required_volume_kg }} kg</td>
-                    <td>{{ order.required_date }}</td>
-                    <td style="font-weight: 600; color: #34d399;">₹{{ order.calculate_estimated_cost }}</td>
                     <td>
-                        <span class="badge {% if order.status == 'FULFILLED' %}badge-success{% elif order.status == 'ALLOCATED' %}badge-info{% else %}badge-warning{% endif %}">
+                        <span style="font-family: monospace; font-weight: 700; background: #F3F4F6; padding: 0.25rem 0.5rem; border-radius: 0.35rem; color: #1F2937;">
+                            {{ order.order_id }}
+                        </span>
+                    </td>
+                    <td><strong style="color: #133826;">{{ order.crop.name }}</strong></td>
+                    <td><span style="font-weight: 600;">{{ order.required_volume_kg }} kg</span></td>
+                    <td>{{ order.required_date }}</td>
+                    <td style="font-weight: 700; color: #059669;">₹{{ order.calculate_estimated_cost }}</td>
+                    <td>
+                        <span class="status-pill {% if order.status == 'FULFILLED' %}status-growing{% elif order.status == 'ALLOCATED' %}status-hub{% else %}status-planting{% endif %}">
                             {{ order.get_status_display }}
                         </span>
                     </td>
@@ -159,19 +206,21 @@
                         {% if order.status != 'FULFILLED' %}
                             <form action="{% url 'allocate_order' order.order_id %}" method="post" style="display: inline;">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                                <button type="submit" class="btn btn-gold" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;">
                                     ⚡ Auto-Match Supply
                                 </button>
                             </form>
                         {% else %}
-                            <span style="color: #34d399; font-size: 0.85rem; font-weight: 600;">✓ Fully Matched</span>
+                            <span style="color: #059669; font-size: 0.85rem; font-weight: 700;">
+                                ✓ Fully Matched
+                            </span>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
                     <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-                        No pre-orders placed yet. Submit a demand order above to reserve fresh produce directly from micro-hubs.
+                        No pre-orders placed yet. Submit a demand order to reserve fresh produce directly from rural micro-hubs.
                     </td>
                 </tr>
                 {% endfor %}
@@ -180,31 +229,31 @@
     </div>
 </div>
 
-<!-- ========================================================================= -->
-<!-- FEATURE 3: FARM-TO-FORK BATCH TRACEABILITY & PROVENANCE TIMELINE -->
-<!-- ========================================================================= -->
-<div class="card" style="margin-bottom: 2rem; border-color: rgba(16, 185, 129, 0.4);">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+<!-- =========================================================================
+     FEATURE 3: FARM-TO-FORK BATCH TRACEABILITY & PROVENANCE TIMELINE
+     ========================================================================= -->
+<div class="card" id="traceability" style="margin-bottom: 2rem; border-top: 4px solid #10B981;">
+    <div class="card-header">
         <div>
-            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <h2 class="card-title">
                 <span>🔍</span> Batch Traceability & Farm-to-Fork Provenance
             </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+            <p class="card-subtitle">
                 Verify full supply chain transparency: geolocated farm harvest, micro-hub AI grading, and guaranteed farmer payout.
             </p>
         </div>
-        <span class="badge badge-success" style="font-size: 0.8rem;">100% Transparent Chain</span>
+        <span class="status-pill status-growing">
+            100% Transparent Chain
+        </span>
     </div>
 
     <!-- Quick Batch Selection Chips -->
     {% if recent_active_batches %}
     <div style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-        <span style="font-size: 0.8rem; color: var(--text-muted);">Recent Hub Batches:</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Recent Micro-Hub Batches:</span>
         {% for b in recent_active_batches %}
         <button type="button" onclick="traceBatch('{{ b.batch_id }}')"
-            style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border); color: #34d399; padding: 0.3rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;"
-            onmouseover="this.style.borderColor='#34d399'; this.style.background='rgba(52, 211, 153, 0.1)';"
-            onmouseout="this.style.borderColor='var(--border)'; this.style.background='rgba(30, 41, 59, 0.8)';">
+            style="background: #E6F4EA; border: 1px solid #A3C2B0; color: #133826; padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
             🏷️ {{ b.batch_id }} ({{ b.crop.name }})
         </button>
         {% endfor %}
@@ -212,120 +261,120 @@
     {% endif %}
 
     <!-- Search Input Form -->
-    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; max-width: 650px;">
-        <input type="text" id="traceBatchInput" placeholder="Enter Batch ID (e.g., K2K-BTH-101)..."
-            style="flex: 1; padding: 0.75rem 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 0.95rem;">
-        <button type="button" id="traceBatchBtn" onclick="traceBatch()" class="btn btn-primary" style="white-space: nowrap;">
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; max-width: 650px; flex-wrap: wrap;">
+        <input type="text" id="traceBatchInput" placeholder="Enter Batch ID (e.g., K2K-BTH-20260906-001A)..."
+            style="flex: 1; min-width: 240px; padding: 0.75rem 1rem; border-radius: 0.5rem; background: #FFFFFF; border: 1px solid var(--card-border); color: var(--text-main); font-size: 0.95rem; outline: none;">
+        <button type="button" id="traceBatchBtn" onclick="traceBatch()" class="btn btn-forest" style="white-space: nowrap;">
             🔎 Trace Provenance
         </button>
     </div>
 
     <!-- Live Traceability Results Container -->
-    <div id="traceResults" style="display: none; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem;">
+    <div id="traceResults" style="display: none; background: #FAFCF9; border: 1px solid var(--card-border); border-radius: 0.85rem; padding: 1.5rem;">
         <!-- Header Info -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
-            <div>
-                <span id="traceCropName" style="font-size: 1.35rem; font-weight: 700; color: var(--text);">Crop</span>
-                <span id="traceBatchBadge" class="badge badge-info" style="margin-left: 0.5rem;">Batch ID</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="traceCropName" style="font-size: 1.25rem; font-weight: 800; color: #133826;">Crop</span>
+                <span id="traceBatchBadge" class="status-pill status-hub">Batch ID</span>
             </div>
             <div style="font-size: 0.85rem; color: var(--text-muted);">
-                Volume: <strong id="traceVolume" style="color: #60a5fa;">0 kg</strong> | Current Status: <strong id="traceStatus" style="color: #34d399;">Active</strong>
+                Volume: <strong id="traceVolume" style="color: #0284C7;">0 kg</strong> | Current Status: <strong id="traceStatus" style="color: #059669;">Active</strong>
             </div>
         </div>
 
         <!-- 4-Stage Visual Provenance Timeline -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; position: relative;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
             <!-- Stage 1: Farm Origin -->
-            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #10b981;">
+            <div class="card" style="margin-bottom: 0; padding: 1.25rem; border-top: 4px solid #10B981;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <div style="background: rgba(16, 185, 129, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                    <div style="background: #D1FAE5; color: #065F46; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
                         🌱
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 1: Origin</div>
-                        <div style="font-size: 0.95rem; font-weight: 600;">Farm Harvest</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 1: Origin</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #133826;">Farm Harvest</div>
                     </div>
                 </div>
                 <div style="font-size: 0.85rem; line-height: 1.6;">
-                    <div>Farmer: <strong id="traceFarmer" style="color: var(--text);">-</strong></div>
+                    <div>Farmer: <strong id="traceFarmer" style="color: #133826;">-</strong></div>
                     <div>Origin: <span id="traceRegion" style="color: var(--text-muted);">-</span></div>
                     <div style="margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted);">🕒 <span id="traceHarvestDate">-</span></div>
                 </div>
             </div>
 
             <!-- Stage 2: Micro-Hub AI Quality Inspection -->
-            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #3b82f6;">
+            <div class="card" style="margin-bottom: 0; padding: 1.25rem; border-top: 4px solid #0284C7;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <div style="background: rgba(59, 130, 246, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                    <div style="background: #E0F2FE; color: #0369A1; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
                         🤖
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 2: Grading</div>
-                        <div style="font-size: 0.95rem; font-weight: 600;">AI Vision Inspection</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 2: Grading</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #133826;">AI Vision Inspection</div>
                     </div>
                 </div>
                 <div style="font-size: 0.85rem; line-height: 1.6;">
-                    <div>Hub: <strong id="traceHub" style="color: var(--text);">-</strong></div>
+                    <div>Hub: <strong id="traceHub" style="color: #133826;">-</strong></div>
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.25rem 0;">
                         <span>Grade:</span>
-                        <span id="traceGrade" class="badge badge-success" style="font-size: 0.85rem;">Grade A</span>
+                        <span id="traceGrade" class="status-pill status-growing">Grade A</span>
                     </div>
-                    <div>Confidence: <strong id="traceConfidence" style="color: #34d399;">0%</strong></div>
+                    <div>Confidence: <strong id="traceConfidence" style="color: #059669;">0%</strong></div>
                     <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">🕒 <span id="traceInspectDate">-</span></div>
                 </div>
             </div>
 
             <!-- Stage 3: Guaranteed Settlement -->
-            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #f59e0b;">
+            <div class="card" style="margin-bottom: 0; padding: 1.25rem; border-top: 4px solid #F59E0B;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <div style="background: rgba(245, 158, 11, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                    <div style="background: #FEF3C7; color: #92400E; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
                         💳
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 3: Settlement</div>
-                        <div style="font-size: 0.95rem; font-weight: 600;">Direct Farmer Payout</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 3: Settlement</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #133826;">Direct Farmer Payout</div>
                     </div>
                 </div>
                 <div style="font-size: 0.85rem; line-height: 1.6;">
-                    <div>Net Payout: <strong id="tracePayout" style="color: #34d399; font-size: 1rem;">₹0</strong></div>
-                    <div>Status: <span id="traceSettlementStatus" class="badge badge-success" style="font-size: 0.75rem;">SETTLED</span></div>
-                    <div>Middlemen Cut Saved: <strong id="traceSaved" style="color: #fbbf24;">₹0</strong></div>
+                    <div>Net Payout: <strong id="tracePayout" style="color: #059669; font-size: 1rem;">₹0</strong></div>
+                    <div style="margin: 0.15rem 0;">Status: <span id="traceSettlementStatus" class="status-pill status-growing" style="font-size: 0.72rem;">SETTLED</span></div>
+                    <div>Middlemen Cut Saved: <strong id="traceSaved" style="color: #D97706;">₹0</strong></div>
                     <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">⚡ Instant Wallet Credit</div>
                 </div>
             </div>
 
             <!-- Stage 4: Urban Cold-Chain Dispatch -->
-            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #8b5cf6;">
+            <div class="card" style="margin-bottom: 0; padding: 1.25rem; border-top: 4px solid #8B5CF6;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <div style="background: rgba(139, 92, 246, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                    <div style="background: #EDE9FE; color: #5B21B6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
                         🚛
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 4: Cold-Chain</div>
-                        <div style="font-size: 0.95rem; font-weight: 600;">Reefer Van Transit</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 4: Cold-Chain</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #133826;">Reefer Van Transit</div>
                     </div>
                 </div>
                 <div style="font-size: 0.85rem; line-height: 1.6;">
-                    <div>Transit Temp: <strong id="traceTemp" style="color: #60a5fa;">4°C - 8°C</strong></div>
+                    <div>Transit Temp: <strong id="traceTemp" style="color: #0284C7;">4°C - 8°C</strong></div>
                     <div>Vehicle: <span id="traceVehicle" style="color: var(--text-muted);">-</span></div>
-                    <div>Delivery ETA: <span id="traceEta" style="color: #a78bfa; font-weight: 600;">-</span></div>
-                    <div style="font-size: 0.75rem; color: #34d399; margin-top: 0.25rem;">✓ Zero Multi-Tier Spoilage</div>
+                    <div>Delivery ETA: <span id="traceEta" style="color: #7C3AED; font-weight: 600;">-</span></div>
+                    <div style="font-size: 0.75rem; color: #059669; margin-top: 0.25rem;">✓ Zero Multi-Tier Spoilage</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ========================================================================= -->
-<!-- FEATURE 4: DYNAMIC REEFER DISPATCH ROUTING & CO2 SAVINGS -->
-<!-- ========================================================================= -->
-<div class="card" style="margin-bottom: 2rem; border-color: rgba(59, 130, 246, 0.4);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+<!-- =========================================================================
+     FEATURE 4: DYNAMIC REEFER DISPATCH ROUTING & CO2 SAVINGS
+     ========================================================================= -->
+<div class="card" id="reefer-dispatch" style="margin-bottom: 2rem;">
+    <div class="card-header">
         <div>
-            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <h2 class="card-title">
                 <span>🚚</span> Dynamic Reefer Route Optimization & Cold-Chain Dispatch
             </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+            <p class="card-subtitle">
                 AI multi-stop route sequencing prioritizes high-perishability greens and models real-time EV carbon reductions.
             </p>
         </div>
@@ -336,30 +385,30 @@
 
     <!-- Active Reefer Vehicle Stats -->
     <div id="routeHeader" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
-        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Assigned Reefer Van</div>
-            <div id="routeVehicleId" style="font-size: 1.1rem; font-weight: 700; color: #60a5fa;">REEFER-EV-04</div>
-            <div id="routeVehicleType" style="font-size: 0.75rem; color: var(--text-muted);">Tata Ace EV Reefer (Active Chiller 4°C)</div>
+        <div style="background: #F9FAFB; border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--card-border);">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Assigned Reefer Van</div>
+            <div id="routeVehicleId" style="font-size: 1.15rem; font-weight: 800; color: #0284C7; margin-top: 0.2rem;">REEFER-EV-04</div>
+            <div id="routeVehicleType" style="font-size: 0.75rem; color: var(--text-muted);">Tata Ace EV Reefer (Chiller 4°C)</div>
         </div>
-        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Departure Micro-Hub</div>
-            <div id="routeHubName" style="font-size: 1.1rem; font-weight: 700; color: #34d399;">Kolar East Micro-Hub</div>
+        <div style="background: #F9FAFB; border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--card-border);">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Departure Micro-Hub</div>
+            <div id="routeHubName" style="font-size: 1.15rem; font-weight: 800; color: #059669; margin-top: 0.2rem;">Nashik Agro Cluster Hub #1</div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">Direct Farm Aggregation Zone</div>
         </div>
-        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Cargo Volume</div>
-            <div id="routeTotalVol" style="font-size: 1.1rem; font-weight: 700; color: #fbbf24;">Loading...</div>
+        <div style="background: #F9FAFB; border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--card-border);">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Cargo Volume</div>
+            <div id="routeTotalVol" style="font-size: 1.15rem; font-weight: 800; color: #D97706; margin-top: 0.2rem;">Loading...</div>
             <div id="routeStopsCount" style="font-size: 0.75rem; color: var(--text-muted);">Optimized Drops</div>
         </div>
-        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">🌱 Clean Transit Impact</div>
-            <div id="routeCo2Savings" style="font-size: 1.1rem; font-weight: 700; color: #4ade80;">18.4 kg CO₂</div>
+        <div style="background: #F9FAFB; border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--card-border);">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🌱 Clean Transit Impact</div>
+            <div id="routeCo2Savings" style="font-size: 1.15rem; font-weight: 800; color: #059669; margin-top: 0.2rem;">18.4 kg CO₂</div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">Saved vs Diesel Fleets</div>
         </div>
     </div>
 
     <!-- Route Stops Table -->
-    <div class="table-responsive">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
@@ -374,7 +423,7 @@
             </thead>
             <tbody id="routeStopsBody">
                 <tr>
-                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.75rem;">
                         Loading optimized cold-chain route stops...
                     </td>
                 </tr>
@@ -383,23 +432,30 @@
     </div>
 </div>
 
-<!-- Produce Catalog & Baseline Pricing -->
-<div class="card">
-    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-        <span>🥬</span> Available Produce Catalog & Baseline Benchmarks
-    </h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+<!-- =========================================================================
+     PRODUCE CATALOG & BASELINE PRICING
+     ========================================================================= -->
+<div class="card" id="market-catalog">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🥬</span> Available Produce Catalog & Baseline Benchmarks
+            </h2>
+            <p class="card-subtitle">Direct APMC disintermediated wholesale pricing reference.</p>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
         {% for crop in market_catalog %}
-        <div style="background: var(--surface-card); padding: 1.25rem; border-radius: 0.5rem; border: 1px solid var(--border);">
+        <div style="background: #FAFCF9; padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--card-border);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <span style="font-weight: 600; font-size: 1.1rem;">{{ crop.name }}</span>
-                <span class="badge badge-info">{{ crop.get_category_display }}</span>
+                <span style="font-weight: 700; font-size: 1.05rem; color: #133826;">{{ crop.name }}</span>
+                <span class="status-pill status-hub">{{ crop.get_category_display }}</span>
             </div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #34d399; margin-bottom: 0.25rem;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: #059669; margin-bottom: 0.25rem;">
                 ₹{{ crop.base_price }} <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 400;">/ kg</span>
             </div>
-            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.5rem;">
-                Shelf Life: <strong>{{ crop.shelf_life_days }} Days</strong>
+            <div style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.5rem; border-top: 1px solid var(--card-border); padding-top: 0.5rem;">
+                Shelf Life: <strong style="color: #1F2937;">{{ crop.shelf_life_days }} Days</strong>
             </div>
         </div>
         {% empty %}
@@ -450,11 +506,11 @@ async function traceBatch(preselectedId) {
         const gradeBadge = document.getElementById("traceGrade");
         gradeBadge.innerText = "Grade " + trace.hub_inspection.ai_grade;
         if (trace.hub_inspection.ai_grade === "A") {
-            gradeBadge.className = "badge badge-success";
+            gradeBadge.className = "status-pill status-growing";
         } else if (trace.hub_inspection.ai_grade === "B") {
-            gradeBadge.className = "badge badge-info";
+            gradeBadge.className = "status-pill status-hub";
         } else {
-            gradeBadge.className = "badge badge-warning";
+            gradeBadge.className = "status-pill status-planting";
         }
         document.getElementById("traceConfidence").innerText = trace.hub_inspection.confidence_score + "%";
         document.getElementById("traceInspectDate").innerText = trace.hub_inspection.inspected_at;
@@ -507,13 +563,13 @@ async function loadRoutePlan() {
             const tr = document.createElement("tr");
             const isHigh = stop.priority.includes("HIGH");
             tr.innerHTML = `
-                <td><strong style="color: #60a5fa;">#${stop.stop_number}</strong></td>
+                <td><strong style="color: #0284C7;">#${stop.stop_number}</strong></td>
                 <td><strong>${stop.retailer_name}</strong></td>
                 <td>${stop.crop}</td>
                 <td style="font-weight:600;">${stop.volume_kg} kg</td>
-                <td><span class="badge ${isHigh ? 'badge-warning' : 'badge-info'}">${stop.priority}</span></td>
+                <td><span class="status-pill ${isHigh ? 'status-hub' : 'status-planting'}">${stop.priority}</span></td>
                 <td>${stop.distance_km} km</td>
-                <td style="color: #34d399; font-weight:600;">+${stop.eta_minutes} mins</td>
+                <td style="color: #059669; font-weight:700;">+${stop.eta_minutes} mins</td>
             `;
             tbody.appendChild(tr);
         });
@@ -528,4 +584,3 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 {% endblock %}
-
