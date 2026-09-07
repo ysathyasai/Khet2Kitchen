@@ -373,7 +373,7 @@ CRITICAL RULES:
      * Hindi: "नमस्ते संतोष जी, ..."
 3. Intent classification: "greeting" | "wallet_balance" | "harvest_schedule" | "CHECK_PRICE" | "sell_produce" | "general_advice".
 4. If farmer asks about wallet, state their exact wallet balance from context.
-5. If farmer asks about harvest or selling, state crop pricing or harvest details from context.
+5. If farmer asks about harvest schedule or selling, explicitly state the exact crop name (e.g., Tomato / टमाटर) and scheduled date/volume from context.
 6. STRICT REQUIREMENT: Keep response UNDER 25 words for lightning-fast voice synthesis.
 
 Output valid JSON only matching this schema:

@@ -798,16 +798,6 @@
                 </div>
             </div>
 
-            <div class="nav-section">
-                <div class="nav-section-title">Retailer Advisory</div>
-                <div class="nav-group">
-                    <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
-                        <span class="nav-link-icon">🎤</span>
-                        <span>Voice Assistant</span>
-                    </button>
-                </div>
-            </div>
-
             {% elif user.role == 'SUPPLIER' %}
             <!-- ================= SUPPLIER NAVIGATION ================= -->
             <div class="nav-section">
@@ -825,16 +815,6 @@
                         <span class="nav-link-icon">🌾</span>
                         <span>Connected Clusters</span>
                     </a>
-                </div>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Vendor Advisory</div>
-                <div class="nav-group">
-                    <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
-                        <span class="nav-link-icon">🎤</span>
-                        <span>Voice Assistant</span>
-                    </button>
                 </div>
             </div>
 
@@ -869,16 +849,6 @@
                         <span class="nav-link-icon">🚜</span>
                         <span>Supplier Channel</span>
                     </a>
-                </div>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Operations Support</div>
-                <div class="nav-group">
-                    <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
-                        <span class="nav-link-icon">🎤</span>
-                        <span>Voice Assistant</span>
-                    </button>
                 </div>
             </div>
 
@@ -1036,8 +1006,9 @@
     </div>
 
     <!-- =====================================================================
-         3. GLOBAL FLOATING VERNACULAR VOICE ASSISTANT FAB
+         3. GLOBAL FLOATING VERNACULAR VOICE ASSISTANT FAB (FARMERS ONLY)
          ===================================================================== -->
+    {% if user.role == 'FARMER' or not user.is_authenticated or role == 'FARMER' %}
     <div class="voice-fab" id="voiceFabBtn" onclick="openVoiceAssistantModal()" title="Bol kar poochhein / Speak with AI Voice Assistant">
         <div class="voice-fab-pulse"></div>
         <span>🎙️</span>
@@ -1134,6 +1105,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- =====================================================================
          JAVASCRIPT CONTROLLERS: SIDEBAR & GLOBAL VOICE ASSISTANT

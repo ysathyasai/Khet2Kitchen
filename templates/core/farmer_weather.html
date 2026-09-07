@@ -2,13 +2,44 @@
 
 {% block title %}Weather & Agronomic Risk Intelligence - Khet2Kitchen{% endblock %}
 
+{% block extra_head %}
+<!-- Leaflet CSS for Interactive Farm Map Picker -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+    .leaflet-popup-content-wrapper {
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        font-family: inherit;
+    }
+    .map-preset-pill {
+        background: #F4F6F1;
+        border: 1px solid var(--card-border);
+        border-radius: 9999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #133826;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .map-preset-pill:hover {
+        background: #E6F4EA;
+        border-color: #A3C2B0;
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Header -->
 <div style="margin-bottom: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
         <div>
             <div style="font-size: 0.75rem; font-weight: 700; color: #0284C7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
-                Farmer Advisory • Real-Time Satellite Telemetry
+                Farmer Advisory • Real-Time Satellite Telemetry & Interactive GIS Map
             </div>
             <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
                 Weather & Agronomic Risk Intelligence
@@ -25,20 +56,22 @@
     </div>
 </div>
 
-<!-- Weather Controls & Telemetry Card -->
-<div class="card">
+<!-- =========================================================================
+     1. WEATHER CONTROLS & TELEMETRY CARD
+     ========================================================================= -->
+<div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-header">
         <div>
             <h2 class="card-title">
                 <span>🌾</span> Field Location & Microclimate
             </h2>
-            <div class="card-subtitle">Select your farm location via GPS or postal PIN code.</div>
+            <div class="card-subtitle">Select your farm location via GPS, postal PIN code, or manually on the map below.</div>
         </div>
 
         <!-- Location Controls: GPS + PIN Code input -->
         <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
             <button type="button" id="useLocationBtn" onclick="useCurrentLocation()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 600;">
-                <span>📍</span> Use Current Location
+                <span>🎯</span> Use Current Location
             </button>
             <div style="display: flex; gap: 0.4rem; align-items: center;">
                 <input type="text" id="weatherPincodeInput" placeholder="Enter PIN (e.g. 422004)" value="{{ user.pincode|default:'' }}"
@@ -157,8 +190,146 @@
     </div>
 </div>
 
-<!-- Weather Client JavaScript -->
+<!-- =========================================================================
+     2. INTERACTIVE FARM MAP & MANUAL LOCATION PICKER (LEAFLET GIS)
+     ========================================================================= -->
+<div class="card" id="farmMapSection">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🗺️</span> Interactive Farm Map & GIS Field Selector
+            </h2>
+            <div class="card-subtitle">
+                Click anywhere on the map or drag the farm pin to manually select your exact field coordinates. Telemetry automatically recalculates.
+            </div>
+        </div>
+
+        <!-- Preset Quick Jump Pills -->
+        <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="map-preset-pill" onclick="selectMapPreset(20.005, 73.789, 'Nashik Agro Cluster Hub #1')">
+                <span>📍</span> Nashik Hub
+            </button>
+            <button type="button" class="map-preset-pill" onclick="selectMapPreset(18.520, 73.856, 'Pune Western Ghats Hub #2')">
+                <span>📍</span> Pune Hub
+            </button>
+            <button type="button" class="map-preset-pill" onclick="selectMapPreset(19.206, 73.876, 'Junnar Agro Valley')">
+                <span>📍</span> Junnar Valley
+            </button>
+            <button type="button" class="map-preset-pill" onclick="selectMapPreset(17.385, 78.486, 'Telangana Agri Zone')">
+                <span>📍</span> Telangana Zone
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Coordinates Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding: 0.5rem 0.85rem; background: #F4F6F1; border-radius: 0.5rem; font-size: 0.8rem; color: #133826; font-weight: 600; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+            <span>🎯 Current Selected Pin:</span>
+            <span style="color: #059669; font-family: monospace; font-size: 0.88rem;">Lat: <span id="mapSelectedLat">20.0050°</span> | Lon: <span id="mapSelectedLon">73.7890°</span></span>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+            💡 Tap/click anywhere on map or drag pin to re-query
+        </div>
+    </div>
+
+    <!-- Leaflet Map Canvas -->
+    <div id="farmMap" style="height: 380px; width: 100%; border-radius: 0.75rem; border: 1px solid var(--card-border); z-index: 10;"></div>
+</div>
+
+<!-- =========================================================================
+     JAVASCRIPT CONTROLLERS: WEATHER TELEMETRY & LEAFLET GIS ENGINE
+     ========================================================================= -->
+<!-- Leaflet JS CDN -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
 <script>
+    let farmMapInstance = null;
+    let farmMarkerInstance = null;
+    let currentMapLat = 20.005;
+    let currentMapLon = 73.789;
+
+    function initOrUpdateFarmMap(lat, lon, label) {
+        currentMapLat = lat;
+        currentMapLon = lon;
+
+        updateCoordinatesDisplay(lat, lon);
+
+        if (!farmMapInstance) {
+            farmMapInstance = L.map('farmMap', {
+                scrollWheelZoom: false
+            }).setView([lat, lon], 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 18,
+            }).addTo(farmMapInstance);
+
+            // Custom Leaflet Farm Marker Icon
+            const farmDivIcon = L.divIcon({
+                className: 'custom-farm-pin',
+                html: '<div style="background: #133826; color: #FFFFFF; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 4px 14px rgba(19, 56, 38, 0.45); border: 2.5px solid #FFFFFF; cursor: grab;">🌱</div>',
+                iconSize: [38, 38],
+                iconAnchor: [19, 19],
+                popupAnchor: [0, -20]
+            });
+
+            farmMarkerInstance = L.marker([lat, lon], {
+                draggable: true,
+                icon: farmDivIcon
+            }).addTo(farmMapInstance);
+
+            farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label || 'Agricultural Land'}<br>Lat: ${lat.toFixed(4)}°, Lon: ${lon.toFixed(4)}°`).openPopup();
+
+            // Handle Pin Drag
+            farmMarkerInstance.on('dragend', function (e) {
+                const pos = e.target.getLatLng();
+                onMapLocationChosen(pos.lat, pos.lng, "Manual Map Pin Selection");
+            });
+
+            // Handle Map Click
+            farmMapInstance.on('click', function (e) {
+                const { lat, lng } = e.latlng;
+                onMapLocationChosen(lat, lng, "Manual Map Click Selection");
+            });
+        } else {
+            farmMapInstance.panTo([lat, lon]);
+            if (farmMarkerInstance) {
+                farmMarkerInstance.setLatLng([lat, lon]);
+                farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label || 'Agricultural Land'}<br>Lat: ${Number(lat).toFixed(4)}°, Lon: ${Number(lon).toFixed(4)}°`).openPopup();
+            }
+        }
+    }
+
+    function onMapLocationChosen(lat, lng, label) {
+        currentMapLat = lat;
+        currentMapLon = lng;
+        if (farmMarkerInstance) {
+            farmMarkerInstance.setLatLng([lat, lng]);
+            farmMarkerInstance.bindPopup(`<b>🌱 Selected Farm Field</b><br>${label}<br>Lat: ${Number(lat).toFixed(4)}°, Lon: ${Number(lng).toFixed(4)}°`).openPopup();
+        }
+        updateCoordinatesDisplay(lat, lng);
+        loadWeatherAdvisory({
+            lat: lat.toFixed(4),
+            lon: lng.toFixed(4),
+            location_name: label,
+            skipMapPan: true
+        });
+    }
+
+    function selectMapPreset(lat, lon, name) {
+        if (farmMapInstance) {
+            farmMapInstance.flyTo([lat, lon], 12);
+        }
+        onMapLocationChosen(lat, lon, name);
+    }
+
+    function updateCoordinatesDisplay(lat, lon) {
+        const latEl = document.getElementById("mapSelectedLat");
+        const lonEl = document.getElementById("mapSelectedLon");
+        if (latEl) latEl.innerText = Number(lat).toFixed(4) + "°";
+        if (lonEl) lonEl.innerText = Number(lon).toFixed(4) + "°";
+    }
+
     async function loadWeatherAdvisory(params = {}) {
         const spinner = document.getElementById("weatherSpinner");
         const locationText = document.getElementById("weatherLocationText");
@@ -192,9 +363,12 @@
 
             // Update Location
             const loc = data.location || {};
-            const locLabel = loc.display_name || (loc.pincode ? `PIN ${loc.pincode}` : `Coordinates (${loc.latitude}, ${loc.longitude})`);
+            const lat = parseFloat(loc.latitude) || 20.005;
+            const lon = parseFloat(loc.longitude) || 73.789;
+            const locLabel = loc.display_name || (loc.pincode ? `PIN ${loc.pincode}` : `Coordinates (${lat.toFixed(3)}°, ${lon.toFixed(3)}°)`);
+
             if (locationText) {
-                locationText.innerText = `${locLabel} (Lat: ${Number(loc.latitude).toFixed(3)}°, Lon: ${Number(loc.longitude).toFixed(3)}°)`;
+                locationText.innerText = `${locLabel} (Lat: ${lat.toFixed(3)}°, Lon: ${lon.toFixed(3)}°)`;
             }
 
             // Update Weather metrics
@@ -214,6 +388,13 @@
             if (irrigationText) irrigationText.innerText = adv.irrigation_harvest_advice || "Standard irrigation schedule recommended.";
             if (cropsText) cropsText.innerText = adv.recommended_crops || "Suitable for regional cash crops.";
 
+            // Sync GIS Map
+            if (!params.skipMapPan) {
+                initOrUpdateFarmMap(lat, lon, locLabel);
+            } else {
+                updateCoordinatesDisplay(lat, lon);
+            }
+
         } catch (err) {
             console.error("[K2K Weather] Error fetching advisory:", err);
             if (locationText) locationText.innerText = "Error loading weather data. Please check PIN code or try again.";
@@ -225,7 +406,7 @@
 
     function useCurrentLocation() {
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser. Please enter your PIN code instead.");
+            alert("Geolocation is not supported by your browser. Please select your field on the map or enter your PIN code.");
             return;
         }
 
@@ -238,7 +419,7 @@
             (pos) => {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
-                loadWeatherAdvisory({ lat, lon, location_name: "Farmer GPS Location" });
+                loadWeatherAdvisory({ lat, lon, location_name: "Farmer GPS Field" });
             },
             (err) => {
                 console.warn("[K2K Weather] Geolocation denied or unavailable:", err.message);
@@ -262,7 +443,7 @@
         loadWeatherAdvisory({ pincode: pin });
     }
 
-    // Auto-load weather telemetry on page ready
+    // Auto-load weather telemetry & GIS map on page ready
     document.addEventListener("DOMContentLoaded", () => {
         const initialPin = document.getElementById("weatherPincodeInput")?.value?.trim();
         if (initialPin) {

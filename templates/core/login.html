@@ -1,53 +1,374 @@
-{% extends "base.html" %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block title %}Login - Project Khet2Kitchen{% endblock %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Project Khet2Kitchen (K2K)</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-{% block content %}
-<div style="max-width: 440px; margin: 3rem auto; background: var(--surface); padding: 2.5rem; border-radius: 1rem; border: 1px solid var(--border); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <img src="{% static 'images/k2k-logo.svg' %}" alt="Khet2Kitchen Logo" style="height: 64px; width: 64px; margin-bottom: 0.75rem; display: inline-block; filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.5));">
-        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">K2K Unified Portal Login</h1>
-        <p style="color: var(--text-muted); font-size: 0.875rem;">
-            Farmers sign in with Mobile Number.<br>Retailers, Suppliers & Admins use Email.
-        </p>
-    </div>
+    <style>
+        :root {
+            --sidebar-bg: #133826;
+            --sidebar-hover: #1b4d35;
+            --app-canvas: #F4F6F1;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E9E2;
+            --card-shadow: 0 20px 40px -10px rgba(19, 56, 38, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+            
+            --cta-gold: #F59E0B;
+            --cta-gold-hover: #D97706;
+            
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --primary: #10B981;
+            --primary-dark: #059669;
+        }
 
-    {% if form.errors %}
-        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem;">
-            Invalid credentials. Please check your identifier and password.
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--app-canvas);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(19, 56, 38, 0.06) 0%, transparent 40%);
+        }
+
+        /* Top Navbar */
+        .login-navbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.85rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .login-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--sidebar-bg);
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .top-pilot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #065F46;
+            background: #E6F4EA;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Center Layout */
+        .login-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2.5rem 1rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1.25rem;
+            padding: 2.5rem 2.25rem;
+            box-shadow: var(--card-shadow);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E6F4EA, #D1FAE5);
+            border: 2px solid #A3C2B0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.85rem;
+            margin: 0 auto 1.25rem auto;
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.15);
+        }
+
+        .login-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--sidebar-bg);
+            text-align: center;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.45;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: #FFFFFF;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.6rem;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--sidebar-bg);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 0.6rem;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(19, 56, 38, 0.2);
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background: var(--sidebar-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(19, 56, 38, 0.3);
+        }
+
+        /* Demo Fill Buttons */
+        .demo-pill-btn {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.5rem;
+            padding: 0.45rem 0.65rem;
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .demo-pill-btn:hover {
+            background: #E6F4EA;
+            border-color: #A3C2B0;
+            color: #133826;
+        }
+
+        .alert-danger {
+            background: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            color: #991B1B;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        @media (max-width: 640px) {
+            .login-navbar {
+                padding: 0.75rem 1rem;
+            }
+            .top-pilot-badge {
+                display: none;
+            }
+            .login-card {
+                padding: 1.75rem 1.25rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Header -->
+    <header class="login-navbar">
+        <a href="{% url 'login' %}" class="login-brand">
+            <div class="brand-icon">🌱</div>
+            <div>
+                <span>Khet2Kitchen</span>
+                <span style="display: block; font-size: 0.65rem; font-weight: 700; color: #059669; letter-spacing: 0.06em; text-transform: uppercase;">
+                    Smart Agri-Supply
+                </span>
+            </div>
+        </a>
+        <div class="top-pilot-badge">
+            <span>🌾</span>
+            <span>NASHIK-PUNE RURAL PILOT • DIRECT AGRI-RAIL</span>
         </div>
-    {% endif %}
+    </header>
 
-    <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        <div style="margin-bottom: 1.25rem;">
-            <label for="id_username" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-muted);">
-                Mobile Number or Email
-            </label>
-            <input type="text" name="username" autofocus required id="id_username" 
-                placeholder="+919876543210 or user@retailer.com"
-                style="width: 100%; padding: 0.75rem 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s;"
-                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+    <!-- Main Container -->
+    <main class="login-container">
+        <div class="login-card">
+            <!-- Center Avatar / Logo -->
+            <div class="login-avatar">
+                🌱
+            </div>
+
+            <h1 class="login-title">
+                K2K Unified Portal Login
+            </h1>
+            <p class="login-subtitle">
+                Farmers sign in with <strong>Mobile Number</strong>.<br>
+                Retailers, Suppliers & Admins use <strong>Email Address</strong>.
+            </p>
+
+            {% if form.errors %}
+                <div class="alert-danger">
+                    ⚠️ Invalid credentials. Please verify your login identifier and password.
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_username" class="form-label">
+                        Mobile Number or Email
+                    </label>
+                    <input type="text" name="username" autofocus required id="id_username" 
+                        placeholder="+919876543210 or user@retailer.com" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password" class="form-label">
+                        Password / OTP
+                    </label>
+                    <input type="password" name="password" required id="id_password"
+                        placeholder="••••••••" class="form-input">
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <span>Sign In to K2K</span>
+                    <span>→</span>
+                </button>
+            </form>
+
+            <!-- One-Click Demo Credentials Autofill Drawer -->
+            <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--card-border);">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; text-align: center;">
+                    ⚡ Quick Demo Autofill (Click Role to Populate)
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+                    <button type="button" class="demo-pill-btn" onclick="fillDemo('+919876543210', 'farmer1234')">
+                        <span>👨‍🌾</span>
+                        <span><strong>Farmer</strong> (+91987...)</span>
+                    </button>
+                    <button type="button" class="demo-pill-btn" onclick="fillDemo('procure@freshbazaar.in', 'retailer1234')">
+                        <span>🏬</span>
+                        <span><strong>Retailer</strong> (procure@...)</span>
+                    </button>
+                    <button type="button" class="demo-pill-btn" onclick="fillDemo('sales@bioagri.com', 'supplier1234')">
+                        <span>🚜</span>
+                        <span><strong>Supplier</strong> (sales@...)</span>
+                    </button>
+                    <button type="button" class="demo-pill-btn" onclick="fillDemo('admin@k2k.org', 'admin1234')">
+                        <span>🛡️</span>
+                        <span><strong>Admin</strong> (admin@...)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Security Footer -->
+            <div style="margin-top: 1.25rem; text-align: center; font-size: 0.76rem; color: var(--text-muted);">
+                🔒 Strict Role-Based Access Control (RBAC) automatically routes you to your authorized dashboard.
+            </div>
         </div>
+    </main>
 
-        <div style="margin-bottom: 1.5rem;">
-            <label for="id_password" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-muted);">
-                Password / OTP
-            </label>
-            <input type="password" name="password" required id="id_password"
-                placeholder="••••••••"
-                style="width: 100%; padding: 0.75rem 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s;"
-                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-        </div>
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 1.25rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--card-border); background: #FFFFFF;">
+        &copy; 2026 Project Khet2Kitchen (K2K) • Direct Agri-Supply Disintermediation
+    </footer>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; font-weight: 600;">
-            Sign In to K2K
-        </button>
-    </form>
+    <script>
+        function fillDemo(identifier, password) {
+            const userInput = document.getElementById('id_username');
+            const passInput = document.getElementById('id_password');
+            if (userInput) userInput.value = identifier;
+            if (passInput) passInput.value = password;
+            userInput.focus();
+        }
+    </script>
+</body>
 
-    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); text-align: center;">
-        <p>🔒 Role-based routing will automatically redirect you to your authorized dashboard.</p>
-    </div>
-</div>
-{% endblock %}
+</html>
