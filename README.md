@@ -52,12 +52,12 @@ Proudly developed for **Smart India Hackathon (SIH 2026)** under Problem Stateme
 
 | Member Name | Role & Core Responsibilities | Focus Domain |
 | :--- | :--- | :--- |
-| **[Swayam](https://github.com/)** | **Team Lead** • Product Strategy & Business Model Architecture | Agritech Economics, Dual-Channel Market Design & Pitch Strategy |
-| **[Yejju Sathyasai](https://github.com/ysathyasai/)** | **Full-Stack Architect** • Lead Software Engineer | Django Core, B2B/D2C Engine, Database Schema, DevOps & API Design |
-| **[Shaik Mohammed Imaadh](https://github.com/)** | **AI/ML Engineer** • Speech & Vision Systems | Sarvam AI Voice Pipeline, Computer Vision Grading & Gemini Reasoning |
-| **[Dupalica](https://github.com/)** | **Frontend Architect** • UI/UX & Design Systems | Mobile Optimization, Responsive Design, CSS Architecture & Dashboards |
-| **[Asifa Siddiha](https://github.com/)** | **Supply Chain Specialist** • Logistics & Policy | Rural PACS Micro-Hub Asset-Light Model, Cold-Chain & ONDC Integration |
-| **[Karuneshwari](https://github.com/)** | **Quality Assurance & Testing Engineer** | Automated Unit & Integration Testing (112 Suites), Security & Data Validation |
+| **Swayam** | **Team Lead** • Product Strategy & Business Model Architecture | Agritech Economics, Dual-Channel Market Design & Pitch Strategy |
+| **Yejju Sathyasai** | **Full-Stack Architect** • Lead Software Engineer | Django Core, B2B/D2C Engine, Database Schema, DevOps & API Design |
+| **Shaik Mohammed Imaadh** | **AI/ML Engineer** • Speech & Vision Systems | Sarvam AI Voice Pipeline, Computer Vision Grading & Gemini Reasoning |
+| **Dupalica** | **Frontend Architect** • UI/UX & Design Systems | Mobile Optimization, Responsive Design, CSS Architecture & Dashboards |
+| **Afsha Siddiha** | **Supply Chain Specialist** • Logistics & Policy | Rural PACS Micro-Hub Asset-Light Model, Cold-Chain & ONDC Integration |
+| **Karuneshwari** | **Quality Assurance & Testing Engineer** | Automated Unit & Integration Testing (112 Suites), Security & Data Validation |
 
 ---
 
