@@ -6,7 +6,7 @@ from django.core.validators import validate_email
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from .models import User, FarmerWallet
+from .models import User, FarmerWallet, Crop, DemandOrder, InputSupply, MicroHub
 
 
 class UserRegistrationForm(forms.ModelForm):
@@ -178,3 +178,184 @@ class UserRegistrationForm(forms.ModelForm):
                     FarmerWallet.objects.create(farmer=user, current_balance=Decimal("0.00"))
 
         return user
+
+
+class CropUpdateForm(forms.ModelForm):
+    """
+    Form allowing farmers to edit expected yield, harvest date, and status of a specific crop.
+    """
+    STATUS_CHOICES = [
+        ("Growing", _("Growing")),
+        ("Planting", _("Planting")),
+        ("Harvested", _("Harvested")),
+        ("At Hub (Graded)", _("At Hub (Graded)")),
+    ]
+
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        widget=forms.Select(attrs={"class": "form-input"}),
+        label=_("Current Crop Status"),
+    )
+
+    class Meta:
+        model = Crop
+        fields = ["expected_yield_kg", "harvest_date", "status"]
+        labels = {
+            "expected_yield_kg": _("Expected Yield (kg)"),
+            "harvest_date": _("Estimated Harvest Date"),
+            "status": _("Status"),
+        }
+        widgets = {
+            "expected_yield_kg": forms.NumberInput(attrs={
+                "class": "form-input",
+                "step": "10",
+                "placeholder": "e.g. 5000",
+            }),
+            "harvest_date": forms.DateInput(attrs={
+                "class": "form-input",
+                "type": "date",
+            }),
+        }
+
+
+class CropCreateForm(forms.ModelForm):
+    """
+    Form allowing farmers to register a new crop / planting on their dashboard.
+    """
+    STATUS_CHOICES = [
+        ("Growing", _("Growing")),
+        ("Planting", _("Planting")),
+        ("Harvested", _("Harvested")),
+        ("At Hub (Graded)", _("At Hub (Graded)")),
+    ]
+
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        initial="Growing",
+        widget=forms.Select(attrs={"class": "form-input"}),
+        label=_("Crop Status"),
+    )
+
+    class Meta:
+        model = Crop
+        fields = ["name", "category", "expected_yield_kg", "planted_date", "harvest_date", "status"]
+        labels = {
+            "name": _("Crop Name"),
+            "category": _("Category"),
+            "expected_yield_kg": _("Expected Yield (kg)"),
+            "planted_date": _("Planted Date"),
+            "harvest_date": _("Estimated Harvest Date"),
+            "status": _("Status"),
+        }
+        widgets = {
+            "name": forms.TextInput(attrs={
+                "class": "form-input",
+                "placeholder": "e.g. Hybrid Tomato (Tamatar), Winter Wheat",
+                "required": True,
+            }),
+            "category": forms.Select(attrs={"class": "form-input"}),
+            "expected_yield_kg": forms.NumberInput(attrs={
+                "class": "form-input",
+                "step": "10",
+                "placeholder": "e.g. 1200",
+                "required": True,
+            }),
+            "planted_date": forms.DateInput(attrs={
+                "class": "form-input",
+                "type": "date",
+            }),
+            "harvest_date": forms.DateInput(attrs={
+                "class": "form-input",
+                "type": "date",
+            }),
+        }
+
+
+class DemandOrderCreateForm(forms.ModelForm):
+    """
+    Form allowing urban B2B retailers to post new wholesale produce demand requirements.
+    """
+    class Meta:
+        model = DemandOrder
+        fields = ["crop", "required_volume_kg", "required_date", "delivery_address"]
+        labels = {
+            "crop": _("Produce / Crop Required"),
+            "required_volume_kg": _("Required Volume (kg)"),
+            "required_date": _("Required Delivery Date"),
+            "delivery_address": _("Destination / Warehouse Address"),
+        }
+        widgets = {
+            "crop": forms.Select(attrs={"class": "form-input", "required": True}),
+            "required_volume_kg": forms.NumberInput(attrs={
+                "class": "form-input",
+                "step": "10",
+                "placeholder": "e.g. 500",
+                "required": True,
+            }),
+            "required_date": forms.DateInput(attrs={
+                "class": "form-input",
+                "type": "date",
+                "required": True,
+            }),
+            "delivery_address": forms.TextInput(attrs={
+                "class": "form-input",
+                "placeholder": "e.g. FreshBazaar Central Warehouse, Secunderabad, PIN: 500003",
+                "required": True,
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Ensure only active catalog crops appear
+        self.fields["crop"].queryset = Crop.objects.filter(is_active=True).order_by("name")
+
+
+class InputSupplyForm(forms.ModelForm):
+    """
+    Form allowing agri-input vendors and suppliers to post or update inventory.
+    """
+    class Meta:
+        model = InputSupply
+        fields = ["name", "category", "quantity", "unit", "price_per_unit", "hub", "status", "description"]
+        labels = {
+            "name": _("Input Name / Product"),
+            "category": _("Category"),
+            "quantity": _("Stock Quantity"),
+            "unit": _("Unit"),
+            "price_per_unit": _("Price per Unit (₹)"),
+            "hub": _("Consigned Micro-Hub (Optional)"),
+            "status": _("Inventory Status"),
+            "description": _("Specifications / Brand Notes"),
+        }
+        widgets = {
+            "name": forms.TextInput(attrs={
+                "class": "form-input",
+                "placeholder": "e.g. Organic Neem Bio-Fertilizer TS",
+                "required": True,
+            }),
+            "category": forms.Select(attrs={"class": "form-input"}),
+            "quantity": forms.NumberInput(attrs={
+                "class": "form-input",
+                "step": "1",
+                "placeholder": "e.g. 100",
+                "required": True,
+            }),
+            "unit": forms.TextInput(attrs={
+                "class": "form-input",
+                "placeholder": "e.g. Bags, kg, Units, Packets",
+            }),
+            "price_per_unit": forms.NumberInput(attrs={
+                "class": "form-input",
+                "step": "0.50",
+                "placeholder": "e.g. 480.00",
+                "required": True,
+            }),
+            "hub": forms.Select(attrs={"class": "form-input"}),
+            "status": forms.Select(attrs={"class": "form-input"}),
+            "description": forms.Textarea(attrs={
+                "class": "form-input",
+                "rows": 2,
+                "placeholder": "Batch cert, application rate, active ingredients...",
+            }),
+        }
+

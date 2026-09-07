@@ -1,0 +1,97 @@
+{% extends "core/base_dashboard.html" %}
+
+{% block title %}Batch Details & Provenance - {{ crop.name }} - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'farmer_dashboard' %}" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem;">
+        ← Back to Farmer Dashboard
+    </a>
+</div>
+
+<!-- Header / Hero Card -->
+<div style="background: var(--hero-bg-gradient); border-radius: 1.25rem; padding: 2rem; color: #FFFFFF; margin-bottom: 2rem; box-shadow: 0 10px 25px rgba(19, 56, 38, 0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #6EE7B7; text-transform: uppercase; margin-bottom: 0.85rem;">
+                <span>🌱</span> Batch Traceability & Provenance
+            </div>
+            <h1 style="font-size: 2rem; font-weight: 800; color: #FFFFFF; margin-bottom: 0.5rem;">
+                {{ crop.name }}
+            </h1>
+            <p style="color: #A3C2B0; font-size: 0.92rem;">
+                Crop Code: <code style="color: #FFFFFF; font-weight: 700; background: rgba(0,0,0,0.25); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ crop.code }}</code>
+                • Category: <strong>{{ crop.get_category_display }}</strong>
+                • Status: <strong style="color: #6EE7B7;">{{ crop.status }}</strong>
+            </p>
+        </div>
+        <div>
+            <span class="status-pill status-growing" style="padding: 0.5rem 1.1rem; font-size: 0.85rem;">
+                ● 100% Traceable Farm-to-Fork
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Crop Metrics Overview Grid -->
+<div class="grid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #10B981;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Expected Yield</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #133826; margin: 0.35rem 0;">{{ crop.expected_yield_kg|floatformat:0 }} kg</div>
+        <div style="font-size: 0.78rem; color: #059669; font-weight: 600;">MSP Protected Volume</div>
+    </div>
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #0284C7;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Planted Date</div>
+        <div style="font-size: 1.5rem; font-weight: 800; color: #0284C7; margin: 0.35rem 0;">{{ crop.planted_date|default:"Unrecorded" }}</div>
+        <div style="font-size: 0.78rem; color: #0369A1; font-weight: 600;">Germination verified</div>
+    </div>
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #F59E0B;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Estimated Harvest</div>
+        <div style="font-size: 1.5rem; font-weight: 800; color: #D97706; margin: 0.35rem 0;">{{ crop.harvest_date|default:"Optimal Window" }}</div>
+        <div style="font-size: 0.78rem; color: #B45309; font-weight: 600;">Dynamic sweep scheduled</div>
+    </div>
+    <div class="card" style="margin-bottom: 0; border-top: 4px solid #8B5CF6;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Batch Intake</div>
+        <div style="font-size: 1.5rem; font-weight: 800; color: #7C3AED; margin: 0.35rem 0;">{{ batch.batch_id|default:"Pending" }}</div>
+        <div style="font-size: 0.78rem; color: #6D28D9; font-weight: 600;">{% if batch %}Grade {{ batch.ai_grade }} ({{ batch.ai_confidence_score }}%){% else %}Awaiting drop-off{% endif %}</div>
+    </div>
+</div>
+
+<!-- Farm-to-Fork Provenance Journey Timeline -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>🔍</span> 5-Step Farm-to-Fork Provenance Journey
+            </h2>
+            <p class="card-subtitle">
+                Cryptographically verifiable tracking from field seeding to urban retailer fulfillment.
+            </p>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        {% for step in timeline %}
+        <div style="display: flex; gap: 1.25rem; align-items: flex-start; padding: 1.25rem; background: #FAFCF9; border: 1px solid var(--card-border); border-radius: 0.75rem;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: {% if step.status == 'Completed' %}#10B981{% elif step.status == 'Active' %}#0284C7{% else %}#E5E7EB{% endif %}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0;">
+                {{ step.step }}
+            </div>
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem;">
+                    <div style="font-weight: 700; color: #133826; font-size: 1.05rem;">{{ step.title }}</div>
+                    <span class="status-pill {% if step.status == 'Completed' %}status-growing{% elif step.status == 'Active' %}status-hub{% else %}status-planting{% endif %}">
+                        {{ step.badge }}
+                    </span>
+                </div>
+                <div style="font-size: 0.85rem; color: #4B5563; line-height: 1.5; margin-bottom: 0.25rem;">
+                    {{ step.desc }}
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">
+                    Timeline Milestone: <strong>{{ step.date }}</strong>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

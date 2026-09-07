@@ -1,3 +1,4 @@
+import re
 import uuid
 from decimal import Decimal
 from typing import Union
@@ -223,7 +224,8 @@ class MicroHub(models.Model):
 
 class Crop(models.Model):
     """
-    Catalog of agricultural produce managed by the platform.
+    Catalog of agricultural produce managed by the platform,
+    as well as farmer-specific plantings and expected harvest batches.
     """
     class Category(models.TextChoices):
         VEGETABLE = "VEGETABLE", _("Vegetable")
@@ -232,8 +234,17 @@ class Crop(models.Model):
         PULSE = "PULSE", _("Pulse / Legume")
         SPICE = "SPICE", _("Spice")
 
-    name = models.CharField(max_length=100, unique=True, verbose_name=_("Crop Name"))
-    code = models.CharField(max_length=20, unique=True, db_index=True, verbose_name=_("Crop Code"))
+    farmer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        limit_choices_to={"role": User.Role.FARMER},
+        related_name="crops",
+        verbose_name=_("Farmer"),
+    )
+    name = models.CharField(max_length=100, verbose_name=_("Crop Name"))
+    code = models.CharField(max_length=40, blank=True, db_index=True, verbose_name=_("Crop Code"))
     category = models.CharField(
         max_length=30,
         choices=Category.choices,
@@ -243,13 +254,38 @@ class Crop(models.Model):
     base_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
+        default=Decimal("25.00"),
         validators=[MinValueValidator(Decimal("0.01"))],
         verbose_name=_("Base Price (₹/kg)"),
         help_text=_("Baseline standard price per kg for Grade B produce."),
     )
     shelf_life_days = models.PositiveIntegerField(
+        default=20,
         verbose_name=_("Shelf Life (Days)"),
         help_text=_("Typical shelf life in days under ambient micro-hub conditions."),
+    )
+    planted_date = models.DateField(
+        null=True,
+        blank=True,
+        default=timezone.now,
+        verbose_name=_("Planted Date"),
+    )
+    harvest_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("Expected Harvest Date"),
+    )
+    expected_yield_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("1000.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+        verbose_name=_("Expected Yield (kg)"),
+    )
+    status = models.CharField(
+        max_length=30,
+        default="Growing",
+        verbose_name=_("Crop Status"),
     )
     is_active = models.BooleanField(default=True, verbose_name=_("Active"))
     created_at = models.DateTimeField(auto_now_add=True)
@@ -258,10 +294,27 @@ class Crop(models.Model):
     class Meta:
         verbose_name = _("Crop")
         verbose_name_plural = _("Crops")
-        ordering = ["name"]
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.name} ({self.get_category_display()}) - ₹{self.base_price}/kg"
+        owner = f" ({self.farmer.get_full_name()})" if self.farmer else ""
+        return f"{self.name}{owner} - ₹{self.base_price}/kg"
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            clean_name = re.sub(r"[^A-Za-z0-9]", "", self.name).upper()[:6] or "CROP"
+            unique_token = uuid.uuid4().hex[:4].upper()
+            self.code = f"CRP-{clean_name}-{unique_token}"
+        super().save(*args, **kwargs)
+
+    def get_status_class(self) -> str:
+        mapping = {
+            "Growing": "status-growing",
+            "Planting": "status-planting",
+            "Harvested": "status-harvested",
+            "At Hub (Graded)": "status-hub",
+        }
+        return mapping.get(self.status, "status-growing")
 
     # Fat Model Logic
     def calculate_grade_price(self, grade: str) -> Decimal:
@@ -278,6 +331,7 @@ class Crop(models.Model):
         }
         multiplier = multipliers.get(grade, Decimal("1.00"))
         return (self.base_price * multiplier).quantize(Decimal("0.01"))
+
 
 
 class Batch(models.Model):
@@ -480,7 +534,7 @@ class DemandOrder(models.Model):
 
     def clean(self):
         super().clean()
-        if self.retailer and self.retailer.role != User.Role.RETAILER:
+        if getattr(self, "retailer_id", None) and self.retailer and self.retailer.role != User.Role.RETAILER:
             raise ValidationError({"retailer": _("Only registered retailers can place demand orders.")})
 
     def save(self, *args, **kwargs):
@@ -499,6 +553,82 @@ class DemandOrder(models.Model):
         """Marks order as delivered and fulfilled."""
         self.status = self.Status.FULFILLED
         self.save(update_fields=["status", "updated_at"])
+
+
+class InputSupply(models.Model):
+    """
+    Agricultural inputs (fertilizers, certified seeds, drip kits, bio-pesticides)
+    inventoried and consigned by suppliers to regional micro-hubs or farmer clusters.
+    """
+    class Category(models.TextChoices):
+        FERTILIZER = "FERTILIZER", _("Organic Fertilizer / Nutrients")
+        SEED = "SEED", _("Certified Seeds & Seedlings")
+        EQUIPMENT = "EQUIPMENT", _("Irrigation & Agri-Tools")
+        PESTICIDE = "PESTICIDE", _("Bio-Pesticide / Crop Care")
+        PACKAGING = "PACKAGING", _("Crates & Storage Packaging")
+
+    class Status(models.TextChoices):
+        IN_STOCK = "IN_STOCK", _("In Stock (Warehouse)")
+        LOW_STOCK = "LOW_STOCK", _("Low Stock (Reorder Alert)")
+        CONSIGNED = "CONSIGNED", _("Consigned at Micro-Hub")
+        RESERVED = "RESERVED", _("Reserved by Farmer")
+        OUT_OF_STOCK = "OUT_OF_STOCK", _("Out of Stock")
+
+    supplier = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        limit_choices_to={"role": User.Role.SUPPLIER},
+        related_name="input_supplies",
+        verbose_name=_("Supplier"),
+    )
+    hub = models.ForeignKey(
+        MicroHub,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="supplied_inputs",
+        verbose_name=_("Assigned Micro-Hub"),
+    )
+    name = models.CharField(max_length=150, verbose_name=_("Item / Product Name"))
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        default=Category.FERTILIZER,
+        verbose_name=_("Category"),
+    )
+    quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+        verbose_name=_("Stock Quantity"),
+    )
+    unit = models.CharField(max_length=30, default="Bags", verbose_name=_("Unit"))
+    price_per_unit = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+        verbose_name=_("Price per Unit (₹)"),
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.IN_STOCK,
+        verbose_name=_("Inventory Status"),
+    )
+    description = models.TextField(blank=True, verbose_name=_("Specifications / Details"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Input Supply")
+        verbose_name_plural = _("Input Supplies")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name} ({self.quantity} {self.unit}) - {self.supplier.get_full_name()}"
+
+    def calculate_total_valuation(self) -> Decimal:
+        return (self.quantity * self.price_per_unit).quantize(Decimal("0.01"))
 
 
 # ==============================================================================

@@ -12,13 +12,20 @@ from django.template.loader import TemplateDoesNotExist
 from django.views.decorators.http import require_POST
 
 from core.decorators import role_required
-from core.forms import UserRegistrationForm
+from core.forms import (
+    CropCreateForm,
+    CropUpdateForm,
+    DemandOrderCreateForm,
+    InputSupplyForm,
+    UserRegistrationForm,
+)
 from core.models import (
     Batch,
     Crop,
     DemandOrder,
     FarmerWallet,
     HarvestSchedule,
+    InputSupply,
     MicroHub,
     User,
     WalletTransaction,
@@ -573,14 +580,8 @@ def _get_farmer_dashboard_context(request, active_nav="dashboard"):
         logger.warning("Could not compute route plan: %s", exc)
         route_plan = None
 
-    # Curated crop status list matching the tabular blueprint
-    my_crops = [
-        {"name": "Winter Wheat", "planted_date": "2023-10-15", "expected_yield": "8,000 kg", "status": "Growing", "status_class": "status-growing", "action": "Edit"},
-        {"name": "Corn", "planted_date": "2024-04-20", "expected_yield": "12,000 kg", "status": "Growing", "status_class": "status-growing", "action": "Edit"},
-        {"name": "Soybeans", "planted_date": "2024-05-01", "expected_yield": "10,000 kg", "status": "Planting", "status_class": "status-planting", "action": "Edit"},
-        {"name": "Barley", "planted_date": "2023-09-30", "expected_yield": "6,500 kg", "status": "Harvested", "status_class": "status-harvested", "action": "Edit"},
-        {"name": "Hybrid Tomato (Tamatar)", "planted_date": "2026-04-10", "expected_yield": "400 kg", "status": "At Hub (Graded)", "status_class": "status-hub", "action": "Inspect", "is_demo": True},
-    ]
+    # Dynamic crop list strictly filtered by the authenticated farmer
+    my_crops = Crop.objects.filter(farmer=farmer).order_by("-planted_date", "-created_at")
 
     return {
         "title": "Khet2Kitchen - Kisan Portal",
@@ -615,6 +616,8 @@ def farmer_dashboard_view(request):
     """
     context = _get_farmer_dashboard_context(request, active_nav="dashboard")
     context["title"] = "Farmer's Dashboard & My Crops - Khet2Kitchen"
+    context["crop_create_form"] = CropCreateForm()
+    context["crop_update_form"] = CropUpdateForm()
     try:
         return render(request, "core/farmer_dashboard.html", context)
     except TemplateDoesNotExist:
@@ -739,6 +742,7 @@ def retailer_dashboard_view(request):
         "user": retailer,
         "active_nav": "retailer_dashboard",
         "demand_orders": demand_orders,
+        "order_form": DemandOrderCreateForm(),
         "market_catalog": market_catalog,
         "ai_recommended_orders": ai_recommended_orders,
         "recent_active_batches": recent_active_batches,
@@ -793,13 +797,17 @@ def supplier_dashboard_view(request):
     """
     Supplier Portal Dashboard - Agricultural Inputs & Vendors.
     Connects certified seed, fertilizer, and equipment vendors to farmer clusters.
+    Strictly filters inventory to the authenticated supplier.
     """
     supplier = request.user
+    inventory_items = supplier.input_supplies.select_related("hub").order_by("-created_at")
     context = {
         "title": "Khet2Kitchen - Supplier Portal",
         "role": "SUPPLIER",
         "user": supplier,
         "active_nav": "supplier_dashboard",
+        "inventory_items": inventory_items,
+        "input_form": InputSupplyForm(),
         "active_hubs": MicroHub.objects.filter(is_active=True),
     }
 
@@ -880,4 +888,213 @@ def signup_view(request):
         form = UserRegistrationForm()
 
     return render(request, "core/signup.html", {"form": form})
+
+
+# ==============================================================================
+# Dynamic Farmer Actions (Add, Edit, Inspect)
+# ==============================================================================
+
+@role_required(User.Role.FARMER)
+def add_crop_view(request):
+    """
+    Allows a farmer to dynamically register a new crop / planting.
+    Strictly isolated: crop is associated directly with request.user.
+    """
+    if request.method == "POST":
+        form = CropCreateForm(request.POST)
+        if form.is_valid():
+            crop = form.save(commit=False)
+            crop.farmer = request.user
+            crop.save()
+            messages.success(request, f"Successfully added crop: {crop.name} ({crop.expected_yield_kg} kg)!")
+        else:
+            messages.error(request, "Failed to add crop. Please check the values entered.")
+    return redirect("farmer_dashboard")
+
+
+@role_required(User.Role.FARMER)
+def edit_crop_view(request, crop_id):
+    """
+    Allows a farmer to edit expected yield, harvest date, and status of their crop.
+    Enforces strict ownership check (farmer=request.user).
+    """
+    crop = get_object_or_404(Crop, id=crop_id, farmer=request.user)
+
+    if request.method == "POST":
+        form = CropUpdateForm(request.POST, instance=crop)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Updated crop details for {crop.name} successfully.")
+            return redirect("farmer_dashboard")
+        else:
+            messages.error(request, "Failed to update crop. Please check the values entered.")
+    else:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("format") == "json":
+            return JsonResponse({
+                "success": True,
+                "id": crop.id,
+                "name": crop.name,
+                "expected_yield_kg": str(crop.expected_yield_kg),
+                "harvest_date": str(crop.harvest_date or ""),
+                "status": crop.status,
+            })
+        form = CropUpdateForm(instance=crop)
+
+    return render(request, "core/crop_edit.html", {"form": form, "crop": crop, "title": f"Edit {crop.name}"})
+
+
+@role_required(User.Role.FARMER)
+def crop_inspect_view(request, crop_id):
+    """
+    Opens Batch Details / Provenance inspection for a specific crop.
+    Enforces strict ownership check (farmer=request.user).
+    """
+    crop = get_object_or_404(Crop, id=crop_id, farmer=request.user)
+    batch = crop.batches.filter(farmer=request.user).order_by("-received_at").first()
+
+    timeline = [
+        {
+            "step": 1,
+            "title": "Seed Certification & Planting",
+            "date": crop.planted_date.strftime("%d %b %Y") if crop.planted_date else "Recorded",
+            "status": "Completed",
+            "badge": "Certified Provenance",
+            "desc": f"Planted {crop.name} with verified germination certification.",
+        },
+        {
+            "step": 2,
+            "title": "Agronomic Soil & Satellite Health",
+            "date": "Active Monitoring",
+            "status": "Active" if crop.status in ("Growing", "Planting") else "Completed",
+            "badge": "Optimal NDVI",
+            "desc": "Real-time satellite vegetative index and root-zone moisture within target threshold.",
+        },
+        {
+            "step": 3,
+            "title": "Harvest Window & Yield Forecast",
+            "date": crop.harvest_date.strftime("%d %b %Y") if crop.harvest_date else "Optimal Window",
+            "status": "Completed" if crop.status in ("Harvested", "At Hub (Graded)") else "Targeted",
+            "badge": f"{crop.expected_yield_kg or 'Standard'} kg Targeted",
+            "desc": f"Expected harvest payload under guaranteed MSP floor protection.",
+        },
+        {
+            "step": 4,
+            "title": "Micro-Hub Intake & AI Quality Scan",
+            "date": batch.received_at.strftime("%d %b %Y %H:%M") if batch else "Pending Drop-off",
+            "status": "Completed" if batch else "Pending",
+            "badge": f"Grade {batch.ai_grade} ({batch.ai_confidence_score}%)" if batch else "Awaiting Drop",
+            "desc": f"Batch ID: {batch.batch_id}" if batch else "Batch barcode generated for drop-off at nearest Micro-Hub.",
+        },
+        {
+            "step": 5,
+            "title": "Cold-Chain Dispatch & Escrow Settlement",
+            "date": "Same-Day Direct",
+            "status": "Completed" if batch and batch.status in (Batch.Status.DELIVERED, Batch.Status.ALLOCATED) else "Scheduled",
+            "badge": "Instant IMPS",
+            "desc": "Direct B2B urban retailer fulfillment with zero APMC commission.",
+        },
+    ]
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("format") == "json":
+        return JsonResponse({
+            "success": True,
+            "crop": {
+                "id": crop.id,
+                "name": crop.name,
+                "code": crop.code,
+                "planted_date": str(crop.planted_date or ""),
+                "harvest_date": str(crop.harvest_date or ""),
+                "expected_yield_kg": str(crop.expected_yield_kg),
+                "status": crop.status,
+                "batch_id": batch.batch_id if batch else None,
+                "ai_grade": batch.ai_grade if batch else None,
+            },
+            "timeline": timeline,
+        })
+
+    return render(request, "core/crop_inspect.html", {
+        "crop": crop,
+        "batch": batch,
+        "timeline": timeline,
+        "title": f"Crop Details - {crop.name}",
+    })
+
+
+# ==============================================================================
+# Dynamic Retailer Actions
+# ==============================================================================
+
+@require_POST
+@role_required(User.Role.RETAILER)
+def add_demand_order_view(request):
+    """
+    Allows a retailer to dynamically post a new demand pre-order.
+    Strictly isolated: demand order is tied directly to request.user.
+    """
+    form = DemandOrderCreateForm(request.POST)
+    if form.is_valid():
+        order = form.save(commit=False)
+        order.retailer = request.user
+        order.save()
+        messages.success(
+            request,
+            f"Demand Order {order.order_id} ({order.required_volume_kg}kg {order.crop.name}) posted successfully!"
+        )
+    else:
+        messages.error(request, "Could not post demand order. Please check the inputs.")
+    return redirect("retailer_dashboard")
+
+
+# ==============================================================================
+# Dynamic Supplier Actions
+# ==============================================================================
+
+@require_POST
+@role_required(User.Role.SUPPLIER)
+def add_input_supply_view(request):
+    """
+    Allows a supplier to add an agri-input product to inventory.
+    Strictly isolated: input is tied to request.user.
+    """
+    form = InputSupplyForm(request.POST)
+    if form.is_valid():
+        supply = form.save(commit=False)
+        supply.supplier = request.user
+        supply.save()
+        messages.success(
+            request,
+            f"Successfully added {supply.name} ({supply.quantity} {supply.unit}) to your inventory!"
+        )
+    else:
+        messages.error(request, "Failed to add input supply item. Please check the form fields.")
+    return redirect("supplier_dashboard")
+
+
+@require_POST
+@role_required(User.Role.SUPPLIER)
+def update_input_supply_view(request, supply_id):
+    """
+    Allows a supplier to update inventory quantities or status.
+    Enforces strict ownership check (supplier=request.user).
+    """
+    supply = get_object_or_404(InputSupply, id=supply_id, supplier=request.user)
+    quantity = request.POST.get("quantity")
+    price_per_unit = request.POST.get("price_per_unit")
+    status = request.POST.get("status")
+
+    try:
+        if quantity is not None and str(quantity).strip():
+            supply.quantity = Decimal(str(quantity))
+        if price_per_unit is not None and str(price_per_unit).strip():
+            supply.price_per_unit = Decimal(str(price_per_unit))
+        if status in dict(InputSupply.Status.choices):
+            supply.status = status
+        supply.save()
+        messages.success(request, f"Updated stock for {supply.name} ({supply.quantity} {supply.unit}).")
+    except Exception as exc:
+        logger.error("Error updating input supply %s: %s", supply_id, exc)
+        messages.error(request, f"Error updating inventory: {exc}")
+
+    return redirect("supplier_dashboard")
+
 

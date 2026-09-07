@@ -167,9 +167,14 @@
                 Click <strong>"Auto-Match Supply"</strong> to execute the matching algorithm against real-time micro-hub batches.
             </p>
         </div>
-        <span class="status-pill status-hub">
-            ● Direct APMC Disintermediation
-        </span>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-forest" onclick="openOrderModal()" style="padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 2px 4px rgba(19, 56, 38, 0.2);">
+                <span>➕</span> Post Demand Order
+            </button>
+            <span class="status-pill status-hub">
+                ● Direct APMC Disintermediation
+            </span>
+        </div>
     </div>
 
     <div class="table-container">
@@ -582,5 +587,59 @@ async function loadRoutePlan() {
 document.addEventListener("DOMContentLoaded", () => {
     loadRoutePlan();
 });
+
+function openOrderModal() {
+    const modal = document.getElementById("addOrderModal");
+    if (modal) modal.style.display = "flex";
+}
+
+function closeOrderModal() {
+    const modal = document.getElementById("addOrderModal");
+    if (modal) modal.style.display = "none";
+}
+
+window.addEventListener("click", (e) => {
+    const modal = document.getElementById("addOrderModal");
+    if (e.target === modal) closeOrderModal();
+});
 </script>
+
+<!-- =========================================================================
+     MODAL: POST NEW WHOLESALE DEMAND ORDER
+     ========================================================================= -->
+<div id="addOrderModal" class="k2k-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(19, 56, 38, 0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #FFFFFF; border-radius: 1rem; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E5E9E2; overflow: hidden; animation: fadeIn 0.2s ease-out;">
+        <div style="padding: 1.25rem 1.5rem; background: #FAFCF9; border-bottom: 1px solid #E5E9E2; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 800; font-size: 1.15rem; color: #133826; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🛒</span> Post B2B Demand Order
+            </div>
+            <button type="button" onclick="closeOrderModal()" style="background: none; border: none; font-size: 1.35rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        <form method="post" action="{% url 'add_demand_order' %}" style="padding: 1.5rem;">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Produce / Crop</label>
+                {{ order_form.crop }}
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Required Volume (kg)</label>
+                    {{ order_form.required_volume_kg }}
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Required Date</label>
+                    {{ order_form.required_date }}
+                </div>
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Destination Warehouse / Store</label>
+                {{ order_form.delivery_address }}
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeOrderModal()">Cancel</button>
+                <button type="submit" class="btn btn-forest">Submit Pre-Order</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

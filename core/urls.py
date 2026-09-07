@@ -20,8 +20,18 @@ urlpatterns = [
     path("supplier/dashboard/", views.supplier_dashboard_view, name="supplier_dashboard"),
     path("k2k-command/", views.admin_dashboard_view, name="admin_command_dashboard"),
 
-    # Supply Allocation Action
+    # Dynamic Farmer Actions (Add, Edit, Inspect)
+    path("farmer/crops/add/", views.add_crop_view, name="add_crop"),
+    path("farmer/crops/<int:crop_id>/edit/", views.edit_crop_view, name="edit_crop"),
+    path("farmer/crops/<int:crop_id>/inspect/", views.crop_inspect_view, name="crop_inspect"),
+
+    # Dynamic Retailer Actions
+    path("retailer/orders/create/", views.add_demand_order_view, name="add_demand_order"),
     path("retailer/orders/<str:order_id>/allocate/", views.allocate_order_view, name="allocate_order"),
+
+    # Dynamic Supplier Actions
+    path("supplier/inputs/add/", views.add_input_supply_view, name="add_input_supply"),
+    path("supplier/inputs/<int:supply_id>/update/", views.update_input_supply_view, name="update_input_supply"),
 
     # Computer Vision AI Grading API
     path("api/grade-batch/", views.api_grade_batch, name="api_grade_batch"),

@@ -3,6 +3,17 @@
 {% block title %}Agricultural Input Supplier Portal - Khet2Kitchen{% endblock %}
 
 {% block content %}
+<!-- Flash Messages for Inventory Actions -->
+{% if messages %}
+    <div style="margin-bottom: 1.5rem;">
+        {% for message in messages %}
+            <div class="card" style="padding: 0.85rem 1.25rem; margin-bottom: 0.75rem; border-left: 4px solid #10B981; background: #ECFDF5; color: #065F46; font-size: 0.9rem; font-weight: 500;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
 <!-- =========================================================================
      SUPPLIER PORTAL HERO SECTION (FOREST GREEN & GOLD)
      ========================================================================= -->
@@ -20,8 +31,11 @@
             </p>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button type="button" class="btn btn-forest" onclick="openAddInputModal()" style="background: #10B981; color: #FFFFFF; padding: 0.5rem 1.2rem; font-size: 0.88rem; font-weight: 700; border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <span>➕</span> Add Input Supply
+            </button>
             <span class="status-pill status-growing" style="padding: 0.45rem 1rem; font-size: 0.82rem; background: #D1FAE5; color: #065F46;">
-                ● Supplier Network Active
+                ● Supplier Rail Active
             </span>
         </div>
     </div>
@@ -31,19 +45,19 @@
      SUPPLIER OPERATIONAL KPIS & DISINTERMEDIATION METRICS
      ========================================================================= -->
 <div class="grid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
-    <!-- Metric 1: Connected Farmer Clusters -->
+    <!-- Metric 1: My Listed Inputs -->
     <div class="card" style="margin-bottom: 0; border-top: 4px solid #10B981;">
         <div class="card-header">
             <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
-                Connected Farmer Clusters
+                My Stocked Products
             </span>
-            <span style="font-size: 1.5rem;">🌾</span>
+            <span style="font-size: 1.5rem;">📦</span>
         </div>
         <div style="font-size: 2.25rem; font-weight: 800; color: #133826; line-height: 1.1; margin: 0.35rem 0;">
-            4
+            {{ inventory_items.count }}
         </div>
         <div style="font-size: 0.82rem; color: #059669; font-weight: 600;">
-            Linked via Micro-Hub distribution
+            Active catalog items consigned
         </div>
     </div>
 
@@ -51,7 +65,7 @@
     <div class="card" style="margin-bottom: 0; border-top: 4px solid #0284C7;">
         <div class="card-header">
             <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
-                Active Drop-off Hubs
+                Connected Micro-Hubs
             </span>
             <span style="font-size: 1.5rem;">🏬</span>
         </div>
@@ -59,7 +73,7 @@
             {{ active_hubs.count }}
         </div>
         <div style="font-size: 0.82rem; color: #0369A1; font-weight: 600;">
-            Pick-up and consignment points
+            Consignment & collection points
         </div>
     </div>
 
@@ -72,18 +86,108 @@
             <span style="font-size: 1.5rem;">⚡</span>
         </div>
         <div style="font-size: 2.25rem; font-weight: 800; color: #D97706; line-height: 1.1; margin: 0.35rem 0;">
-            Direct
+            Direct Hub Rail
         </div>
         <div style="font-size: 0.82rem; color: #B45309; font-weight: 600;">
-            Zero intermediaries & commission fees
+            Zero retail middlemen & commission markups
         </div>
     </div>
 </div>
 
 <!-- =========================================================================
-     CERTIFIED FARM INPUT DISTRIBUTION POINTS (MICRO-HUBS TABLE)
+     FEATURE 1: DYNAMIC SUPPLIER INVENTORY & INPUT CATALOG
      ========================================================================= -->
-<div class="card" id="micro-hubs">
+<div class="card" id="inventory" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <span>📦</span> My Consigned Inputs & Inventory Catalog
+            </h2>
+            <p class="card-subtitle">
+                Manage your bio-fertilizers, seeds, and equipment dispatched to local micro-hubs. Filtered exclusively for your supplier account.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-forest" onclick="openAddInputModal()" style="padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 2px 4px rgba(19, 56, 38, 0.2);">
+                <span>➕</span> Add Input Supply
+            </button>
+            <span class="status-pill status-growing">
+                ● Live Database Inventory
+            </span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product / Input Name</th>
+                    <th>Category</th>
+                    <th>Available Stock</th>
+                    <th>Price / Unit</th>
+                    <th>Consigned Hub</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory_items %}
+                <tr>
+                    <td>
+                        <strong style="color: #133826; font-size: 0.95rem;">{{ item.name }}</strong>
+                        {% if item.description %}
+                            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.15rem; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ item.description }}
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-size: 0.82rem; font-weight: 600; color: #4B5563;">
+                            {{ item.get_category_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size: 0.95rem; color: #0284C7;">
+                            {{ item.quantity|floatformat:0 }} {{ item.unit }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; color: #059669; font-size: 0.95rem;">
+                            ₹{{ item.price_per_unit }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.84rem; color: #1F2937;">
+                            {{ item.hub.name|default:"General Regional Hub" }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-pill {% if item.status == 'IN_STOCK' %}status-growing{% elif item.status == 'LOW_STOCK' %}status-hub{% else %}status-planting{% endif %}">
+                            {{ item.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-secondary" onclick="openUpdateStockModal('{{ item.id }}', '{{ item.name|escapejs }}', '{{ item.quantity }}', '{{ item.unit|escapejs }}', '{{ item.price_per_unit }}', '{{ item.status }}')" style="padding: 0.35rem 0.8rem; font-size: 0.78rem; font-weight: 600;">
+                            ✏️ Update Stock
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No input supplies registered yet. Click <strong>"➕ Add Input Supply"</strong> to consign bio-fertilizers, seeds, or farm tools to local micro-hubs.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- =========================================================================
+     FEATURE 2: CERTIFIED FARM INPUT DISTRIBUTION POINTS (MICRO-HUBS TABLE)
+     ========================================================================= -->
+<div class="card" id="micro-hubs" style="margin-bottom: 2rem;">
     <div class="card-header">
         <div>
             <h2 class="card-title">
@@ -146,7 +250,7 @@
 </div>
 
 <!-- =========================================================================
-     CONNECTED CLUSTERS & LOGISTICS PROTOCOLS
+     FEATURE 3: CONNECTED CLUSTERS & LOGISTICS PROTOCOLS
      ========================================================================= -->
 <div class="card" id="clusters" style="margin-bottom: 1.5rem;">
     <div class="card-header">
@@ -192,4 +296,134 @@
         </div>
     </div>
 </div>
+
+<!-- =========================================================================
+     MODAL 1: ADD NEW INPUT SUPPLY ITEM
+     ========================================================================= -->
+<div id="addInputModal" class="k2k-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(19, 56, 38, 0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #FFFFFF; border-radius: 1rem; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E5E9E2; overflow: hidden; animation: fadeIn 0.2s ease-out;">
+        <div style="padding: 1.25rem 1.5rem; background: #FAFCF9; border-bottom: 1px solid #E5E9E2; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 800; font-size: 1.15rem; color: #133826; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🚜</span> Add Agricultural Input Supply
+            </div>
+            <button type="button" onclick="closeAddInputModal()" style="background: none; border: none; font-size: 1.35rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        <form method="post" action="{% url 'add_input_supply' %}" style="padding: 1.5rem;">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Product / Input Name</label>
+                {{ input_form.name }}
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Category</label>
+                    {{ input_form.category }}
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Status</label>
+                    {{ input_form.status }}
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Stock Qty</label>
+                    {{ input_form.quantity }}
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Unit</label>
+                    {{ input_form.unit }}
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Price (₹)</label>
+                    {{ input_form.price_per_unit }}
+                </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Consigned Micro-Hub (Optional)</label>
+                {{ input_form.hub }}
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Description / Specifications</label>
+                {{ input_form.description }}
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddInputModal()">Cancel</button>
+                <button type="submit" class="btn btn-forest">Save to Inventory</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 2: UPDATE STOCK & INVENTORY QUANTITY
+     ========================================================================= -->
+<div id="updateStockModal" class="k2k-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(19, 56, 38, 0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #FFFFFF; border-radius: 1rem; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E5E9E2; overflow: hidden; animation: fadeIn 0.2s ease-out;">
+        <div style="padding: 1.25rem 1.5rem; background: #FAFCF9; border-bottom: 1px solid #E5E9E2; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 800; font-size: 1.1rem; color: #133826; display: flex; align-items: center; gap: 0.5rem;">
+                <span>✏️</span> Update Stock: <span id="updateStockTitle" style="color: #059669;">Item</span>
+            </div>
+            <button type="button" onclick="closeUpdateStockModal()" style="background: none; border: none; font-size: 1.35rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        <form id="updateStockForm" method="post" action="" style="padding: 1.5rem;">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Stock Quantity (<span id="updateStockUnit">Units</span>)</label>
+                <input type="number" step="1" name="quantity" id="updateStockQty" required class="form-input">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Price per Unit (₹)</label>
+                <input type="number" step="0.50" name="price_per_unit" id="updateStockPrice" required class="form-input">
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; text-transform: uppercase;">Inventory Status</label>
+                <select name="status" id="updateStockStatus" class="form-input">
+                    <option value="IN_STOCK">In Stock (Available)</option>
+                    <option value="LOW_STOCK">Low Stock</option>
+                    <option value="OUT_OF_STOCK">Out of Stock</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeUpdateStockModal()">Cancel</button>
+                <button type="submit" class="btn btn-forest">Update Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddInputModal() {
+    const modal = document.getElementById("addInputModal");
+    if (modal) modal.style.display = "flex";
+}
+
+function closeAddInputModal() {
+    const modal = document.getElementById("addInputModal");
+    if (modal) modal.style.display = "none";
+}
+
+function openUpdateStockModal(id, name, qty, unit, price, status) {
+    const modal = document.getElementById("updateStockModal");
+    const form = document.getElementById("updateStockForm");
+    document.getElementById("updateStockTitle").innerText = name;
+    document.getElementById("updateStockUnit").innerText = unit;
+    document.getElementById("updateStockQty").value = qty;
+    document.getElementById("updateStockPrice").value = price;
+    document.getElementById("updateStockStatus").value = status;
+    form.action = `/supplier/inputs/${id}/update/`;
+    if (modal) modal.style.display = "flex";
+}
+
+function closeUpdateStockModal() {
+    const modal = document.getElementById("updateStockModal");
+    if (modal) modal.style.display = "none";
+}
+
+window.addEventListener("click", (e) => {
+    const addModal = document.getElementById("addInputModal");
+    const updateModal = document.getElementById("updateStockModal");
+    if (e.target === addModal) closeAddInputModal();
+    if (e.target === updateModal) closeUpdateStockModal();
+});
+</script>
 {% endblock %}

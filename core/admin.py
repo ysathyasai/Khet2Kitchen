@@ -8,6 +8,7 @@ from core.models import (
     DemandOrder,
     FarmerWallet,
     HarvestSchedule,
+    InputSupply,
     MicroHub,
     User,
     WalletTransaction,
@@ -89,4 +90,13 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
     list_display = ("farmer", "crop", "recommended_date", "target_volume_kg", "status", "created_at")
     list_filter = ("status", "crop", "recommended_date")
     search_fields = ("farmer__identifier", "crop__name")
+
+
+@admin.register(InputSupply)
+class InputSupplyAdmin(admin.ModelAdmin):
+    list_display = ("name", "supplier", "category", "quantity", "unit", "price_per_unit", "status", "hub", "created_at")
+    list_filter = ("category", "status", "hub")
+    search_fields = ("name", "supplier__identifier", "supplier__email")
+    readonly_fields = ("created_at", "updated_at")
+
 

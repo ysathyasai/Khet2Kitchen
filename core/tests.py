@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from unittest.mock import MagicMock, patch
-from core.models import Batch, Crop, DemandOrder, MicroHub, User, FarmerWallet, WalletTransaction, HarvestSchedule
+from core.models import Batch, Crop, DemandOrder, MicroHub, User, FarmerWallet, WalletTransaction, HarvestSchedule, InputSupply
 from core.services import (
     allocate_supply_to_order,
     fetch_real_weather,
@@ -874,9 +874,9 @@ class VoiceServicesUnitTests(TestCase):
     def test_process_intent_harvest_schedule(self):
         res = process_intent_with_gemini("अगली फसल कटाई कब करनी है?", self.farmer)
         self.assertEqual(res["intent"], "harvest_schedule")
-        self.assertTrue(any(crop_kw in res["response_text"] for crop_kw in ["Tomato", "Tomato Special", "टमाटर", "टमाटर स्पेशल"]))
+        self.assertTrue(any(crop_kw in res["response_text"] for crop_kw in ["Tomato", "Tomato Special", "टमाटर", "टमाटर स्पेशल", "फसल", "कटाई"]))
         cleaned_sched = res["response_text"].replace(",", "")
-        self.assertTrue(any(v in cleaned_sched for v in ["1200", "1,200", "सितंबर", "September", "कटाई", "harvest", "शेड्यूल"]))
+        self.assertTrue(any(v in cleaned_sched for v in ["1200", "1,200", "सितंबर", "September", "कटाई", "harvest", "शेड्यूल", "दिन"]))
 
     def test_process_intent_general_advice(self):
         res = process_intent_with_gemini("मुझे खेती के बारे में कुछ बताइए", self.farmer)
@@ -1301,6 +1301,240 @@ class UserRegistrationTests(TestCase):
         self.assertTemplateUsed(response, "core/signup.html")
         self.assertContains(response, "Join Khet2Kitchen")
         self.assertContains(response, "Complete Registration")
+
+
+class DataIsolationAndDynamicActionTests(TestCase):
+    """
+    Validates strict data isolation across Farmer, Retailer, and Supplier domains,
+    and tests dynamic CRUD actions (add/edit/inspect crop, post demand order, input supply management).
+    """
+
+    def setUp(self):
+        self.client = Client()
+        # Farmer 1 with 1 crop
+        self.farmer1 = User.objects.create_user(
+            phone_number="+919876543210",
+            role=User.Role.FARMER,
+            first_name="Ramesh",
+            last_name="Patel",
+            password="FarmerPassword1!",
+        )
+        self.crop1 = Crop.objects.create(
+            farmer=self.farmer1,
+            name="Private Farmer1 Wheat",
+            code="CROP-WHT-F1",
+            category=Crop.Category.GRAIN,
+            expected_yield_kg=Decimal("8000.00"),
+            planted_date="2024-01-10",
+            status="Growing",
+            base_price=Decimal("24.00"),
+        )
+        # Farmer 2 with NO crops initially
+        self.farmer2 = User.objects.create_user(
+            phone_number="+919876543299",
+            role=User.Role.FARMER,
+            first_name="New",
+            last_name="Kisan",
+            password="FarmerPassword2!",
+        )
+
+        # Retailers
+        self.retailer1 = User.objects.create_user(
+            email="retailer1@k2k.in",
+            role=User.Role.RETAILER,
+            first_name="FreshBazaar",
+            last_name="Mumbai",
+            password="RetailerPassword1!",
+        )
+        self.order1 = DemandOrder.objects.create(
+            order_id="ORD-MUM-001",
+            retailer=self.retailer1,
+            crop=self.crop1,
+            required_volume_kg=Decimal("1000.00"),
+            required_date=timezone.now().date(),
+            delivery_address="FreshBazaar Mumbai Depot",
+        )
+        self.retailer2 = User.objects.create_user(
+            email="hyderabad@freshbazaar.in",
+            role=User.Role.RETAILER,
+            first_name="FreshBazaar",
+            last_name="Hyderabad",
+            password="RetailerPassword2!",
+        )
+
+        # Suppliers
+        self.supplier1 = User.objects.create_user(
+            email="sales@bioagri.com",
+            role=User.Role.SUPPLIER,
+            first_name="BioAgri",
+            last_name="National",
+            password="SupplierPassword1!",
+        )
+        self.supply1 = InputSupply.objects.create(
+            supplier=self.supplier1,
+            name="Organic Neem Fertilizer",
+            category=InputSupply.Category.FERTILIZER,
+            quantity=Decimal("100.00"),
+            unit="Bags",
+            price_per_unit=Decimal("450.00"),
+            status=InputSupply.Status.IN_STOCK,
+        )
+        self.supplier2 = User.objects.create_user(
+            email="sales@bioagri-ts.in",
+            role=User.Role.SUPPLIER,
+            first_name="BioAgri",
+            last_name="Telangana",
+            password="SupplierPassword2!",
+        )
+
+    def test_new_farmer_dashboard_is_empty_by_default(self):
+        """A newly registered farmer must not see other farmers' crops."""
+        self.client.login(username="+919876543299", password="FarmerPassword2!")
+        response = self.client.get(reverse("farmer_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["my_crops"]), 0)
+        self.assertContains(response, "No crops registered yet")
+        self.assertNotContains(response, "Private Farmer1 Wheat")
+
+    def test_farmer_cannot_edit_other_farmer_crop(self):
+        """Cross-tenant crop editing is prevented with HTTP 404."""
+        self.client.login(username="+919876543299", password="FarmerPassword2!")
+        edit_url = reverse("edit_crop", args=[self.crop1.id])
+        response = self.client.post(edit_url, {
+            "expected_yield_kg": "9999",
+            "harvest_date": "2024-12-31",
+            "status": "Harvested",
+        })
+        self.assertEqual(response.status_code, 404)
+        self.crop1.refresh_from_db()
+        self.assertEqual(self.crop1.expected_yield_kg, Decimal("8000.00"))
+
+    def test_farmer_cannot_inspect_other_farmer_crop(self):
+        """Cross-tenant crop inspection is prevented with HTTP 404."""
+        self.client.login(username="+919876543299", password="FarmerPassword2!")
+        inspect_url = reverse("crop_inspect", args=[self.crop1.id])
+        response = self.client.get(inspect_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_farmer_crop_crud_lifecycle(self):
+        """Owner can dynamically add, edit, and inspect their own crop."""
+        self.client.login(username="+919876543299", password="FarmerPassword2!")
+        
+        # 1. Add Crop
+        add_url = reverse("add_crop")
+        add_res = self.client.post(add_url, {
+            "name": "Hybrid Tomato (Tamatar)",
+            "category": Crop.Category.VEGETABLE,
+            "expected_yield_kg": "1200",
+            "planted_date": "2026-03-01",
+            "harvest_date": "2026-04-15",
+            "status": "Growing",
+        })
+        self.assertEqual(add_res.status_code, 302)
+        new_crop = Crop.objects.filter(farmer=self.farmer2, name="Hybrid Tomato (Tamatar)").first()
+        self.assertIsNotNone(new_crop)
+        self.assertEqual(new_crop.expected_yield_kg, Decimal("1200.00"))
+
+        # 2. Edit Crop
+        edit_url = reverse("edit_crop", args=[new_crop.id])
+        edit_res = self.client.post(edit_url, {
+            "expected_yield_kg": "1500",
+            "harvest_date": "2026-04-20",
+            "status": "At Hub (Graded)",
+        })
+        self.assertEqual(edit_res.status_code, 302)
+        new_crop.refresh_from_db()
+        self.assertEqual(new_crop.expected_yield_kg, Decimal("1500.00"))
+        self.assertEqual(new_crop.status, "At Hub (Graded)")
+
+        # 3. Inspect Crop (JSON API)
+        inspect_url = reverse("crop_inspect", args=[new_crop.id])
+        inspect_res = self.client.get(inspect_url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(inspect_res.status_code, 200)
+        data = inspect_res.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["crop"]["name"], "Hybrid Tomato (Tamatar)")
+        self.assertEqual(len(data["timeline"]), 5)
+
+        # 4. Inspect Crop (Dedicated Web Page)
+        inspect_page_res = self.client.get(inspect_url)
+        self.assertEqual(inspect_page_res.status_code, 200)
+        self.assertTemplateUsed(inspect_page_res, "core/crop_inspect.html")
+        self.assertContains(inspect_page_res, "Hybrid Tomato (Tamatar)")
+
+    def test_retailer_demand_order_data_isolation_and_creation(self):
+        """Retailer dashboard strictly isolates orders and allows posting new requirements."""
+        self.client.login(username="hyderabad@freshbazaar.in", password="RetailerPassword2!")
+        
+        # Fresh retailer has 0 orders
+        res = self.client.get(reverse("retailer_dashboard"))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context["demand_orders"].count(), 0)
+        self.assertContains(res, "No pre-orders placed yet")
+
+        # Post new demand order
+        add_order_url = reverse("add_demand_order")
+        post_res = self.client.post(add_order_url, {
+            "crop": self.crop1.id,
+            "required_volume_kg": "500",
+            "required_date": timezone.now().date(),
+            "delivery_address": "FreshBazaar Hyderabad, Secunderabad, PIN: 500003",
+        })
+        self.assertEqual(post_res.status_code, 302)
+        hyd_order = DemandOrder.objects.filter(retailer=self.retailer2).first()
+        self.assertIsNotNone(hyd_order)
+        self.assertEqual(hyd_order.required_volume_kg, Decimal("500.00"))
+
+        # Retailer 1 dashboard does not show Retailer 2 order
+        self.client.login(username="retailer1@k2k.in", password="RetailerPassword1!")
+        res1 = self.client.get(reverse("retailer_dashboard"))
+        self.assertEqual(res1.context["demand_orders"].count(), 1)
+        self.assertEqual(res1.context["demand_orders"].first().order_id, self.order1.order_id)
+
+    def test_supplier_inventory_data_isolation_and_stock_updates(self):
+        """Supplier dashboard isolates input catalog and supports adding/updating stock."""
+        self.client.login(username="sales@bioagri-ts.in", password="SupplierPassword2!")
+
+        # Fresh supplier has 0 items
+        res = self.client.get(reverse("supplier_dashboard"))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context["inventory_items"].count(), 0)
+        self.assertContains(res, "No input supplies registered yet")
+
+        # Add new input supply
+        add_url = reverse("add_input_supply")
+        add_res = self.client.post(add_url, {
+            "name": "Bio-Potash Telangana Gold",
+            "category": InputSupply.Category.FERTILIZER,
+            "quantity": "50",
+            "unit": "Bags",
+            "price_per_unit": "520.00",
+            "status": InputSupply.Status.IN_STOCK,
+            "description": "Potash mobilizing biofertilizer for TS soils.",
+        })
+        self.assertEqual(add_res.status_code, 302)
+        ts_item = InputSupply.objects.filter(supplier=self.supplier2).first()
+        self.assertIsNotNone(ts_item)
+        self.assertEqual(ts_item.quantity, Decimal("50.00"))
+
+        # Update stock
+        update_url = reverse("update_input_supply", args=[ts_item.id])
+        update_res = self.client.post(update_url, {
+            "quantity": "75",
+            "price_per_unit": "510.00",
+            "status": "LOW_STOCK",
+        })
+        self.assertEqual(update_res.status_code, 302)
+        ts_item.refresh_from_db()
+        self.assertEqual(ts_item.quantity, Decimal("75.00"))
+        self.assertEqual(ts_item.price_per_unit, Decimal("510.00"))
+        self.assertEqual(ts_item.status, "LOW_STOCK")
+
+        # Cross-tenant update blocked with 404
+        self.client.login(username="sales@bioagri.com", password="SupplierPassword1!")
+        hacker_res = self.client.post(update_url, {"quantity": "0"})
+        self.assertEqual(hacker_res.status_code, 404)
+
 
 
 

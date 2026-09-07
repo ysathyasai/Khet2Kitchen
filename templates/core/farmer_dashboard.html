@@ -52,7 +52,7 @@
 </div>
 
 <!-- ======================================================================= -->
-<!-- 2. MY CROPS TABULAR SECTION (FROM SCREENSHOT 2026-09-07 131221.PNG)     -->
+<!-- 2. MY CROPS TABULAR SECTION (STRICTLY DATA-ISOLATED PER FARMER)      -->
 <!-- ======================================================================= -->
 <div class="card">
     <div class="card-header">
@@ -63,9 +63,9 @@
             <div class="card-subtitle">An overview of your current and past crops.</div>
         </div>
         <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-            <a href="{% url 'farmer_graded_produce' %}" class="btn btn-forest" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem;">
+            <button type="button" class="btn btn-forest" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem; cursor: pointer;" onclick="openAddCropModal()">
                 <span>➕ Add Crop</span>
-            </a>
+            </button>
             <a href="{% url 'farmer_orders' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem;">
                 <span>🔍 Batch Traceability Tracker</span>
             </a>
@@ -89,28 +89,54 @@
                     <td>
                         <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">
                             {{ crop_item.name }}
-                            {% if crop_item.is_demo %}
+                            {% if crop_item.status == "At Hub (Graded)" %}
                                 <span style="display: inline-block; margin-left: 0.4rem; padding: 0.15rem 0.45rem; background: #D1FAE5; color: #065F46; border-radius: 4px; font-size: 0.68rem; font-weight: 700;">Active Demo</span>
                             {% endif %}
                         </div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">
+                            Code: <code>{{ crop_item.code }}</code> • {{ crop_item.get_category_display }}
+                        </div>
                     </td>
-                    <td style="color: var(--text-muted); font-size: 0.88rem;">{{ crop_item.planted_date }}</td>
-                    <td style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">{{ crop_item.expected_yield }}</td>
+                    <td style="color: var(--text-muted); font-size: 0.88rem;">
+                        {% if crop_item.planted_date %}
+                            {{ crop_item.planted_date|date:"Y-m-d" }}
+                        {% elif crop_item.harvest_date %}
+                            {{ crop_item.harvest_date|date:"Y-m-d" }}
+                        {% else %}
+                            <span style="color: var(--text-muted);">Unscheduled</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">
+                        {{ crop_item.expected_yield_kg|floatformat:0 }} kg
+                    </td>
                     <td>
-                        <span class="status-pill {{ crop_item.status_class }}">
+                        <span class="status-pill {{ crop_item.get_status_class }}">
                             {{ crop_item.status }}
                         </span>
                     </td>
                     <td style="text-align: right;">
-                        {% if crop_item.action == 'Inspect' %}
-                            <a href="{% url 'farmer_graded_produce' %}" class="btn btn-forest" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; border-radius: 0.4rem;">
+                        {% if crop_item.status == 'At Hub (Graded)' %}
+                            <button type="button" class="btn btn-forest" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; border-radius: 0.4rem; cursor: pointer;" onclick="openInspectModal({{ crop_item.id }})">
                                 Inspect
-                            </a>
+                            </button>
                         {% else %}
-                            <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; border-radius: 0.4rem;" onclick="alert('Viewing crop details for {{ crop_item.name }}')">
+                            <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; border-radius: 0.4rem; cursor: pointer;" onclick="openEditModal({{ crop_item.id }}, '{{ crop_item.name|escapejs }}', '{{ crop_item.expected_yield_kg|floatformat:0 }}', '{{ crop_item.harvest_date|date:"Y-m-d"|default:"" }}', '{{ crop_item.status|escapejs }}')">
                                 Edit
                             </button>
                         {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
+                        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🌾</div>
+                        <div style="font-weight: 700; font-size: 1rem; color: #133826; margin-bottom: 0.35rem;">No crops registered yet</div>
+                        <div style="font-size: 0.85rem; max-width: 420px; margin: 0 auto 1.25rem auto; line-height: 1.4;">
+                            Track your seasonal plantings, estimate expected yield, and schedule optical quality inspections for guaranteed payouts.
+                        </div>
+                        <button type="button" class="btn btn-forest" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;" onclick="openAddCropModal()">
+                            ➕ Add First Crop
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -315,4 +341,229 @@
         </p>
     </a>
 </div>
+
+<!-- ======================================================================= -->
+<!-- 6. DYNAMIC FARMER MODALS (ADD, EDIT, INSPECT)                           -->
+<!-- ======================================================================= -->
+
+<!-- Modal 1: Add New Crop -->
+<div id="addCropModal" class="k2k-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(19, 56, 38, 0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #FFFFFF; border-radius: 1rem; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E5E9E2; overflow: hidden; animation: fadeIn 0.2s ease-out;">
+        <div style="padding: 1.25rem 1.5rem; background: #FAFCF9; border-bottom: 1px solid #E5E9E2; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 800; font-size: 1.1rem; color: #133826; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🌱</span> Log New Crop Planting
+            </div>
+            <button type="button" onclick="closeAddCropModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        <form method="post" action="{% url 'add_crop' %}" style="padding: 1.5rem;">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">CROP NAME</label>
+                {{ crop_create_form.name }}
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">CATEGORY</label>
+                    {{ crop_create_form.category }}
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">EXPECTED YIELD (KG)</label>
+                    {{ crop_create_form.expected_yield_kg }}
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">PLANTED DATE</label>
+                    {{ crop_create_form.planted_date }}
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">ESTIMATED HARVEST</label>
+                    {{ crop_create_form.harvest_date }}
+                </div>
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">STATUS</label>
+                {{ crop_create_form.status }}
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddCropModal()">Cancel</button>
+                <button type="submit" class="btn btn-forest">Save Crop</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Edit Crop -->
+<div id="editCropModal" class="k2k-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(19, 56, 38, 0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #FFFFFF; border-radius: 1rem; width: 100%; max-width: 460px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E5E9E2; overflow: hidden; animation: fadeIn 0.2s ease-out;">
+        <div style="padding: 1.25rem 1.5rem; background: #FAFCF9; border-bottom: 1px solid #E5E9E2; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 800; font-size: 1.1rem; color: #133826; display: flex; align-items: center; gap: 0.5rem;">
+                <span>✏️</span> Edit Crop: <span id="editCropTitle" style="color: #059669;">Crop</span>
+            </div>
+            <button type="button" onclick="closeEditModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        <form id="editCropForm" method="post" action="" style="padding: 1.5rem;">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">EXPECTED YIELD (KG)</label>
+                <input type="number" name="expected_yield_kg" id="editExpectedYield" step="10" required class="form-input">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">ESTIMATED HARVEST DATE</label>
+                <input type="date" name="harvest_date" id="editHarvestDate" class="form-input">
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">CURRENT STATUS</label>
+                <select name="status" id="editCropStatus" class="form-input">
+                    <option value="Growing">Growing</option>
+                    <option value="Planting">Planting</option>
+                    <option value="Harvested">Harvested</option>
+                    <option value="At Hub (Graded)">At Hub (Graded)</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-forest">Update Crop</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 3: Batch Details & Provenance Inspection -->
+<div id="inspectCropModal" class="k2k-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(19, 56, 38, 0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #FFFFFF; border-radius: 1rem; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E5E9E2; animation: fadeIn 0.2s ease-out;">
+        <div style="padding: 1.25rem 1.5rem; background: #133826; color: #FFFFFF; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔍</span> <span id="inspectModalTitle">Batch Details & Provenance</span>
+            </div>
+            <button type="button" onclick="closeInspectModal()" style="background: none; border: none; font-size: 1.35rem; cursor: pointer; color: #FFFFFF;">&times;</button>
+        </div>
+        
+        <div style="padding: 1.5rem;">
+            <!-- Summary Header Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; background: #F4F6F1; padding: 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; border: 1px solid #E5E9E2;">
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Crop Code</div>
+                    <div id="inspectCropCode" style="font-weight: 800; color: #133826; font-size: 0.95rem; font-family: monospace;">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Planted Date</div>
+                    <div id="inspectPlantedDate" style="font-weight: 700; color: #1F2937; font-size: 0.9rem;">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Batch Status</div>
+                    <div id="inspectStatusBadge" style="font-weight: 700; color: #059669; font-size: 0.9rem;">-</div>
+                </div>
+            </div>
+
+            <!-- Traceability Timeline Section -->
+            <h4 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 1rem;">
+                Farm-to-Fork Traceability Journey
+            </h4>
+            
+            <div id="timelineContainer" style="display: flex; flex-direction: column; gap: 1rem; position: relative;">
+                <!-- Timeline items rendered dynamically by JS -->
+            </div>
+
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #E5E9E2; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeInspectModal()">Close Details</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openAddCropModal() {
+        const modal = document.getElementById('addCropModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeAddCropModal() {
+        const modal = document.getElementById('addCropModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function openEditModal(cropId, cropName, expectedYield, harvestDate, status) {
+        const modal = document.getElementById('editCropModal');
+        const form = document.getElementById('editCropForm');
+        const title = document.getElementById('editCropTitle');
+        const yieldInput = document.getElementById('editExpectedYield');
+        const dateInput = document.getElementById('editHarvestDate');
+        const statusSelect = document.getElementById('editCropStatus');
+
+        if (form) form.action = '/farmer/crops/' + cropId + '/edit/';
+        if (title) title.textContent = cropName;
+        if (yieldInput) yieldInput.value = expectedYield;
+        if (dateInput) dateInput.value = harvestDate;
+        if (statusSelect) statusSelect.value = status;
+
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        const modal = document.getElementById('editCropModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function openInspectModal(cropId) {
+        const modal = document.getElementById('inspectCropModal');
+        if (modal) modal.style.display = 'flex';
+
+        fetch('/farmer/crops/' + cropId + '/inspect/?format=json', {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('inspectModalTitle').textContent = 'Batch Traceability: ' + data.crop.name;
+                document.getElementById('inspectCropCode').textContent = data.crop.code || 'CRP-' + data.crop.id;
+                document.getElementById('inspectPlantedDate').textContent = data.crop.planted_date || 'N/A';
+                document.getElementById('inspectStatusBadge').textContent = data.crop.status;
+
+                const container = document.getElementById('timelineContainer');
+                container.innerHTML = '';
+
+                data.timeline.forEach((step, idx) => {
+                    const item = document.createElement('div');
+                    item.style.display = 'flex';
+                    item.style.gap = '0.85rem';
+                    item.style.alignItems = 'flex-start';
+
+                    const dotColor = step.status === 'Completed' ? '#10B981' : (step.status === 'Active' ? '#0284C7' : '#D1D5DB');
+                    const icon = step.status === 'Completed' ? '✓' : (idx + 1);
+
+                    item.innerHTML = `
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: ${dotColor}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0;">
+                            ${icon}
+                        </div>
+                        <div style="flex: 1; background: #FAFCF9; border: 1px solid #E5E9E2; border-radius: 0.5rem; padding: 0.65rem 0.85rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <strong style="font-size: 0.85rem; color: #133826;">${step.title}</strong>
+                                <span style="font-size: 0.7rem; color: #065F46; font-weight: 700; background: #E6F4EA; padding: 0.15rem 0.4rem; border-radius: 9999px;">${step.badge}</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: #4B5563; line-height: 1.35;">${step.desc}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.35rem;">📅 ${step.date}</div>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+        })
+        .catch(err => console.error("Error loading inspect data:", err));
+    }
+
+    function closeInspectModal() {
+        const modal = document.getElementById('inspectCropModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Close modals on clicking overlay background
+    window.addEventListener('click', (e) => {
+        ['addCropModal', 'editCropModal', 'inspectCropModal'].forEach(id => {
+            const m = document.getElementById(id);
+            if (m && e.target === m) m.style.display = 'none';
+        });
+    });
+</script>
 {% endblock %}
+

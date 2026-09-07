@@ -1,13 +1,23 @@
 from decimal import Decimal
+from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import timedelta
 
-from core.models import User, MicroHub, Crop, Batch, DemandOrder, FarmerWallet, WalletTransaction, HarvestSchedule
+from core.models import (
+    Batch,
+    Crop,
+    DemandOrder,
+    FarmerWallet,
+    HarvestSchedule,
+    InputSupply,
+    MicroHub,
+    User,
+    WalletTransaction,
+)
 
 
 class Command(BaseCommand):
-    help = "Seeds initial demo data for Project Khet2Kitchen (K2K) platform."
+    help = "Seeds comprehensive demo data for Project Khet2Kitchen (K2K) platform with localized TS/Hyderabad accounts."
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.NOTICE("[K2K] Seeding Khet2Kitchen demo data..."))
@@ -70,7 +80,7 @@ class Command(BaseCommand):
                 "email": "procure@freshbazaar.in",
                 "role": User.Role.RETAILER,
                 "first_name": "Ananya",
-                "last_name": "Sharma (FreshBazaar)",
+                "last_name": "Sharma (FreshBazaar Mumbai)",
                 "state": "Maharashtra",
                 "address": "Bandra Kurla Complex, Mumbai",
                 "pincode": "400051",
@@ -80,25 +90,26 @@ class Command(BaseCommand):
             retailer1.set_password("retailer1234")
             retailer1.save()
 
-        retailer2, created = User.objects.get_or_create(
-            identifier="orders@quickmart.in",
+        # Localized Demo Retailer (Hyderabad, Telangana)
+        retailer_hyd, created = User.objects.get_or_create(
+            identifier="hyderabad@freshbazaar.in",
             defaults={
-                "email": "orders@quickmart.in",
+                "email": "hyderabad@freshbazaar.in",
                 "role": User.Role.RETAILER,
-                "first_name": "Vikram",
-                "last_name": "Mehta (QuickMart)",
-                "state": "Maharashtra",
-                "address": "Andheri East, Mumbai",
-                "pincode": "400069",
+                "first_name": "FreshBazaar",
+                "last_name": "Hyderabad",
+                "state": "Telangana",
+                "address": "Secunderabad, Telangana",
+                "pincode": "500003",
             },
         )
         if created:
-            retailer2.set_password("retailer1234")
-            retailer2.save()
-        self.stdout.write(self.style.SUCCESS("[OK] Created Retailers: procure@freshbazaar.in, orders@quickmart.in (pwd: retailer1234)"))
+            retailer_hyd.set_password("retailer1234")
+            retailer_hyd.save()
+        self.stdout.write(self.style.SUCCESS("[OK] Created Retailers: procure@freshbazaar.in, hyderabad@freshbazaar.in (pwd: retailer1234)"))
 
-        # 4. Supplier
-        supplier, created = User.objects.get_or_create(
+        # 4. Suppliers (Authenticate via Email)
+        supplier1, created = User.objects.get_or_create(
             identifier="sales@bioagri.com",
             defaults={
                 "email": "sales@bioagri.com",
@@ -111,9 +122,26 @@ class Command(BaseCommand):
             },
         )
         if created:
-            supplier.set_password("supplier1234")
-            supplier.save()
-        self.stdout.write(self.style.SUCCESS("[OK] Created Supplier: sales@bioagri.com (pwd: supplier1234)"))
+            supplier1.set_password("supplier1234")
+            supplier1.save()
+
+        # Localized Demo Supplier (Medchal, Telangana)
+        supplier_ts, created = User.objects.get_or_create(
+            identifier="sales@bioagri-ts.in",
+            defaults={
+                "email": "sales@bioagri-ts.in",
+                "role": User.Role.SUPPLIER,
+                "first_name": "BioAgri Solutions",
+                "last_name": "TS",
+                "state": "Telangana",
+                "address": "Medchal, Telangana",
+                "pincode": "501401",
+            },
+        )
+        if created:
+            supplier_ts.set_password("supplier1234")
+            supplier_ts.save()
+        self.stdout.write(self.style.SUCCESS("[OK] Created Suppliers: sales@bioagri.com, sales@bioagri-ts.in (pwd: supplier1234)"))
 
         # 5. MicroHubs
         hub1, _ = MicroHub.objects.get_or_create(
@@ -138,9 +166,20 @@ class Command(BaseCommand):
                 "capacity_kg": Decimal("30000.00"),
             },
         )
-        self.stdout.write(self.style.SUCCESS("[OK] Created Micro-Hubs: HUB-NSK-01, HUB-PUN-02"))
+        hub_hyd, _ = MicroHub.objects.get_or_create(
+            code="HUB-HYD-01",
+            defaults={
+                "name": "Hyderabad Agri-Rail Mega Hub #1",
+                "location": "Kukatpally Wholesale Rail Siding",
+                "district": "Hyderabad",
+                "state": "Telangana",
+                "pincode": "500072",
+                "capacity_kg": Decimal("35000.00"),
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("[OK] Created Micro-Hubs: HUB-NSK-01, HUB-PUN-02, HUB-HYD-01"))
 
-        # 6. Crops
+        # 6. Master Catalog Crops (Available for all B2B and AI systems)
         onion, _ = Crop.objects.get_or_create(
             code="CROP-ONION-01",
             defaults={
@@ -168,9 +207,84 @@ class Command(BaseCommand):
                 "shelf_life_days": 14,
             },
         )
-        self.stdout.write(self.style.SUCCESS("[OK] Created Crops: Onion, Tomato, Alphonso Mango"))
+        chilli, _ = Crop.objects.get_or_create(
+            code="CROP-CHILLI-04",
+            defaults={
+                "name": "Warangal Teja Red Chilli",
+                "category": Crop.Category.SPICE,
+                "base_price": Decimal("165.00"),
+                "shelf_life_days": 60,
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("[OK] Seeded Master Catalog Produce: Onion, Tomato, Mango, Chilli"))
 
-        # 7. Batches
+        # 7. Demo Farmer's My Crops (Strictly Isolated to Demo Farmer 1)
+        farmer_crops_data = [
+            {
+                "name": "Winter Wheat",
+                "code": "CROP-WHT-01",
+                "category": Crop.Category.GRAIN,
+                "planted_date": "2023-10-15",
+                "expected_yield_kg": Decimal("8000.00"),
+                "status": "Growing",
+                "base_price": Decimal("24.00"),
+            },
+            {
+                "name": "Corn",
+                "code": "CROP-CRN-01",
+                "category": Crop.Category.GRAIN,
+                "planted_date": "2024-04-20",
+                "expected_yield_kg": Decimal("12000.00"),
+                "status": "Growing",
+                "base_price": Decimal("20.00"),
+            },
+            {
+                "name": "Soybeans",
+                "code": "CROP-SYB-01",
+                "category": Crop.Category.PULSE,
+                "planted_date": "2024-05-01",
+                "expected_yield_kg": Decimal("10000.00"),
+                "status": "Planting",
+                "base_price": Decimal("46.00"),
+            },
+            {
+                "name": "Barley",
+                "code": "CROP-BRL-01",
+                "category": Crop.Category.GRAIN,
+                "planted_date": "2023-09-30",
+                "expected_yield_kg": Decimal("6500.00"),
+                "status": "Harvested",
+                "base_price": Decimal("18.00"),
+            },
+            {
+                "name": "Hybrid Tomato (Tamatar)",
+                "code": "CROP-TMT-DEMO",
+                "category": Crop.Category.VEGETABLE,
+                "planted_date": "2026-04-10",
+                "expected_yield_kg": Decimal("400.00"),
+                "status": "At Hub (Graded)",
+                "base_price": Decimal("22.00"),
+            },
+        ]
+
+        demo_crops = {}
+        for cdata in farmer_crops_data:
+            crop_obj, _ = Crop.objects.get_or_create(
+                farmer=farmer1,
+                name=cdata["name"],
+                defaults={
+                    "code": cdata["code"],
+                    "category": cdata["category"],
+                    "planted_date": cdata["planted_date"],
+                    "expected_yield_kg": cdata["expected_yield_kg"],
+                    "status": cdata["status"],
+                    "base_price": cdata["base_price"],
+                },
+            )
+            demo_crops[cdata["name"]] = crop_obj
+        self.stdout.write(self.style.SUCCESS("[OK] Seeded 5 Demo Crops strictly assigned to Demo Farmer (+919876543210)"))
+
+        # 8. Batches
         batch1, _ = Batch.objects.get_or_create(
             batch_id="K2K-BTH-20260906-001A",
             defaults={
@@ -195,10 +309,25 @@ class Command(BaseCommand):
                 "status": Batch.Status.ALLOCATED,
             },
         )
+        # Link Batch for the active demo crop
+        if "Hybrid Tomato (Tamatar)" in demo_crops:
+            Batch.objects.get_or_create(
+                batch_id="K2K-BTH-20260907-TMT-DEMO",
+                defaults={
+                    "farmer": farmer1,
+                    "hub": hub1,
+                    "crop": demo_crops["Hybrid Tomato (Tamatar)"],
+                    "volume_kg": Decimal("400.00"),
+                    "ai_grade": Batch.Grade.GRADE_A,
+                    "ai_confidence_score": Decimal("98.60"),
+                    "status": Batch.Status.QUALITY_INSPECTED,
+                },
+            )
         self.stdout.write(self.style.SUCCESS("[OK] Created Harvest Batches with AI Quality Grading"))
 
-        # 8. Demand Orders
-        order1, _ = DemandOrder.objects.get_or_create(
+        # 9. Demand Orders (Retailers)
+        # Mumbai Retailer Orders
+        DemandOrder.objects.get_or_create(
             order_id="K2K-ORD-20260906-001X",
             defaults={
                 "retailer": retailer1,
@@ -209,20 +338,62 @@ class Command(BaseCommand):
                 "delivery_address": "FreshBazaar Distribution Center, Kurla, Mumbai",
             },
         )
-        order2, _ = DemandOrder.objects.get_or_create(
-            order_id="K2K-ORD-20260906-002Y",
+
+        # Localized Telangana Retailer Orders (Strictly Isolated to retailer_hyd)
+        DemandOrder.objects.get_or_create(
+            order_id="K2K-ORD-HYD-001",
             defaults={
-                "retailer": retailer2,
+                "retailer": retailer_hyd,
                 "crop": tomato,
                 "required_volume_kg": Decimal("500.00"),
-                "required_date": (timezone.now() + timedelta(days=1)).date(),
-                "status": DemandOrder.Status.ALLOCATED,
-                "delivery_address": "QuickMart Hub, Vashi APMC Sector 19, Navi Mumbai",
+                "required_date": (timezone.now() + timedelta(days=2)).date(),
+                "status": DemandOrder.Status.PENDING,
+                "delivery_address": "FreshBazaar Central Warehouse, Paradise Circle, Secunderabad, PIN: 500003",
             },
         )
-        self.stdout.write(self.style.SUCCESS("[OK] Created Retailer Demand Orders"))
+        DemandOrder.objects.get_or_create(
+            order_id="K2K-ORD-HYD-002",
+            defaults={
+                "retailer": retailer_hyd,
+                "crop": onion,
+                "required_volume_kg": Decimal("1200.00"),
+                "required_date": (timezone.now() + timedelta(days=4)).date(),
+                "status": DemandOrder.Status.ALLOCATED,
+                "delivery_address": "FreshBazaar Retail Depot, Begumpet, Hyderabad, PIN: 500016",
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("[OK] Created Localized Telangana Retailer Demand Orders"))
 
-        # 9. Digital Wallets & Ledgers
+        # 10. Localized Supplier Inventory (Strictly Isolated to supplier_ts)
+        InputSupply.objects.get_or_create(
+            supplier=supplier_ts,
+            name="Organic Neem Bio-Fertilizer TS",
+            defaults={
+                "category": InputSupply.Category.FERTILIZER,
+                "quantity": Decimal("150.00"),
+                "unit": "Bags",
+                "price_per_unit": Decimal("480.00"),
+                "hub": hub_hyd,
+                "status": InputSupply.Status.IN_STOCK,
+                "description": "Cold-pressed organic neem cake fortified with Trichoderma. Specially formulated for Telangana red & black cotton soils.",
+            },
+        )
+        InputSupply.objects.get_or_create(
+            supplier=supplier_ts,
+            name="Telangana Desi Red Chilli Seeds (Warangal Hybrid)",
+            defaults={
+                "category": InputSupply.Category.SEED,
+                "quantity": Decimal("80.00"),
+                "unit": "Packets",
+                "price_per_unit": Decimal("220.00"),
+                "hub": hub_hyd,
+                "status": InputSupply.Status.CONSIGNED,
+                "description": "High-germination certified Warangal hybrid seed packets with optimal drought resistance.",
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("[OK] Seeded Localized Supplier Inventory for BioAgri Solutions TS (Medchal)"))
+
+        # 11. Digital Wallets & Ledgers
         wallet1, _ = FarmerWallet.objects.get_or_create(
             farmer=farmer1,
             defaults={"current_balance": Decimal("0.00")},
@@ -249,7 +420,7 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS(f"[OK] Seeded Wallet for {farmer2.get_full_name()}: INR {wallet2.current_balance}"))
 
-        # 10. AI Harvest Schedules
+        # 12. AI Harvest Schedules
         HarvestSchedule.objects.get_or_create(
             farmer=farmer1,
             crop=onion,
@@ -257,7 +428,7 @@ class Command(BaseCommand):
             defaults={
                 "target_volume_kg": Decimal("2500.00"),
                 "status": HarvestSchedule.Status.PENDING,
-                "notes": "Peak wholesale demand anticipated across Mumbai retailers. Dry weather window optimal.",
+                "notes": "Peak wholesale demand anticipated across Hyderabad and Mumbai retailers. Dry weather window optimal.",
             },
         )
         HarvestSchedule.objects.get_or_create(
@@ -270,17 +441,6 @@ class Command(BaseCommand):
                 "notes": "Optimal Brix index expected. Schedule early morning harvest to preserve firmness.",
             },
         )
-        HarvestSchedule.objects.get_or_create(
-            farmer=farmer2,
-            crop=tomato,
-            recommended_date=(timezone.now() + timedelta(days=2)).date(),
-            defaults={
-                "target_volume_kg": Decimal("1500.00"),
-                "status": HarvestSchedule.Status.PENDING,
-                "notes": "Direct pre-order match reserved for QuickMart chain. Priority cold-chain dispatch.",
-            },
-        )
         self.stdout.write(self.style.SUCCESS("[OK] Seeded AI Harvest Schedules for Farmers"))
 
-        self.stdout.write(self.style.SUCCESS("\n[SUCCESS] Demo dataset seeded successfully with all 4 Must Have features!"))
-
+        self.stdout.write(self.style.SUCCESS("\n[SUCCESS] Localized demo dataset seeded successfully with full multi-role data isolation!"))
