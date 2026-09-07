@@ -6,7 +6,7 @@ from django.core.validators import validate_email
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from .models import User, FarmerWallet, Crop, DemandOrder, InputSupply, MicroHub
+from .models import User, FarmerWallet, Crop, DemandOrder, InputSupply, MicroHub, ConsumerFeedback
 
 
 class UserRegistrationForm(forms.ModelForm):
@@ -15,10 +15,12 @@ class UserRegistrationForm(forms.ModelForm):
     Supports multi-role registration with data mirroring:
     - Farmers authenticate via Mobile Phone Number.
     - Retailers and Suppliers authenticate via Email Address.
+    - Consumers authenticate via Mobile Phone Number or Email Address.
     Auto-provisions zero-balance FarmerWallet within an atomic transaction.
     """
 
     ROLE_CHOICES = [
+        (User.Role.CONSUMER, _("Consumer / Kitchen Buyer (Fresh Produce & Farm Kits)")),
         (User.Role.FARMER, _("Farmer (Direct Supply & Guaranteed MSP Floor)")),
         (User.Role.RETAILER, _("Retailer (Procure Fresh Produce B2B)")),
         (User.Role.SUPPLIER, _("Supplier (Seeds, Fertilizer & Agri-Equipment)")),
@@ -98,6 +100,20 @@ class UserRegistrationForm(forms.ModelForm):
                 raise ValidationError(_("Identifier must be a valid email address for Retailers and Suppliers."))
             if User.objects.filter(email=identifier.lower()).exists():
                 raise ValidationError(_("An account with this email address already exists."))
+        elif role == User.Role.CONSUMER:
+            if "@" in identifier:
+                try:
+                    validate_email(identifier)
+                except ValidationError:
+                    raise ValidationError(_("Identifier must be a valid email address or phone number."))
+                if User.objects.filter(email=identifier.lower()).exists():
+                    raise ValidationError(_("An account with this email address already exists."))
+            else:
+                digits_only = re.sub(r"\D", "", identifier)
+                if len(digits_only) < 10:
+                    raise ValidationError(_("Consumer phone number must have at least 10 digits."))
+                if User.objects.filter(phone_number=identifier).exists():
+                    raise ValidationError(_("An account with this mobile phone number already exists."))
 
         return identifier
 
@@ -120,6 +136,20 @@ class UserRegistrationForm(forms.ModelForm):
                     self.add_error("identifier", _("Identifier must be a valid email address for Retailers and Suppliers."))
                 if User.objects.filter(email=identifier.lower()).exists():
                     self.add_error("identifier", _("An account with this email address already exists."))
+            elif role == User.Role.CONSUMER:
+                if "@" in identifier:
+                    try:
+                        validate_email(identifier)
+                    except ValidationError:
+                        self.add_error("identifier", _("Identifier must be a valid email address or phone number."))
+                    if User.objects.filter(email=identifier.lower()).exists():
+                        self.add_error("identifier", _("An account with this email address already exists."))
+                else:
+                    digits_only = re.sub(r"\D", "", identifier)
+                    if len(digits_only) < 10:
+                        self.add_error("identifier", _("Consumer phone number must have at least 10 digits."))
+                    elif User.objects.filter(phone_number=identifier).exists():
+                        self.add_error("identifier", _("An account with this mobile phone number already exists."))
 
         return cleaned_data
 
@@ -137,6 +167,13 @@ class UserRegistrationForm(forms.ModelForm):
             elif role in (User.Role.RETAILER, User.Role.SUPPLIER):
                 self.instance.email = identifier.lower()
                 self.instance.phone_number = None
+            elif role == User.Role.CONSUMER:
+                if "@" in identifier:
+                    self.instance.email = identifier.lower()
+                    self.instance.phone_number = None
+                else:
+                    self.instance.phone_number = identifier
+                    self.instance.email = None
 
         name = self.cleaned_data.get("name")
         if name:
@@ -170,6 +207,11 @@ class UserRegistrationForm(forms.ModelForm):
             user.phone_number = identifier
         elif role in (User.Role.RETAILER, User.Role.SUPPLIER):
             user.email = identifier.lower()
+        elif role == User.Role.CONSUMER:
+            if "@" in identifier:
+                user.email = identifier.lower()
+            else:
+                user.phone_number = identifier
 
         if commit:
             with transaction.atomic():
@@ -356,6 +398,65 @@ class InputSupplyForm(forms.ModelForm):
                 "class": "form-input",
                 "rows": 2,
                 "placeholder": "Batch cert, application rate, active ingredients...",
+            }),
+        }
+
+
+class ConsumerFeedbackForm(forms.ModelForm):
+    """
+    Form allowing consumers to review their delivered orders, rate produce freshness,
+    packaging/delivery speed, and send direct appreciation notes to smallholder farmers.
+    """
+    class Meta:
+        model = ConsumerFeedback
+        fields = ["rating", "freshness_rating", "delivery_rating", "comment", "farmer_note"]
+        labels = {
+            "rating": _("Overall Rating"),
+            "freshness_rating": _("Produce Freshness & Quality"),
+            "delivery_rating": _("Speed & Packaging Quality"),
+            "comment": _("Order Review & Experience"),
+            "farmer_note": _("Direct Note to the Farmers"),
+        }
+        widgets = {
+            "rating": forms.Select(
+                choices=[
+                    (5, _("⭐⭐⭐⭐⭐ (5/5 - Outstanding Quality)")),
+                    (4, _("⭐⭐⭐⭐ (4/5 - Very Good & Crisp)")),
+                    (3, _("⭐⭐⭐ (3/5 - Satisfactory)")),
+                    (2, _("⭐⭐ (2/5 - Below Expectations)")),
+                    (1, _("⭐ (1/5 - Unsatisfactory)")),
+                ],
+                attrs={"class": "form-input"},
+            ),
+            "freshness_rating": forms.Select(
+                choices=[
+                    (5, _("🌿 5/5 - Farm-crisp & zero wilt")),
+                    (4, _("🌿 4/5 - Fresh & green")),
+                    (3, _("🌿 3/5 - Acceptable")),
+                    (2, _("🌿 2/5 - Slightly tired")),
+                    (1, _("🌿 1/5 - Poor freshness")),
+                ],
+                attrs={"class": "form-input"},
+            ),
+            "delivery_rating": forms.Select(
+                choices=[
+                    (5, _("⚡ 5/5 - Super fast & pristine eco-pack")),
+                    (4, _("⚡ 4/5 - Prompt delivery")),
+                    (3, _("⚡ 3/5 - On time")),
+                    (2, _("⚡ 2/5 - Slight delay")),
+                    (1, _("⚡ 1/5 - Damaged or late")),
+                ],
+                attrs={"class": "form-input"},
+            ),
+            "comment": forms.Textarea(attrs={
+                "class": "form-input",
+                "rows": 3,
+                "placeholder": _("How was your unboxing? Tell us about the taste, texture, and aroma of the produce..."),
+            }),
+            "farmer_note": forms.Textarea(attrs={
+                "class": "form-input",
+                "rows": 2,
+                "placeholder": _("Send a direct note or thank-you message to the smallholder farmer who harvested your food!"),
             }),
         }
 

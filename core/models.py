@@ -36,6 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         FARMER = "FARMER", _("Farmer")
         RETAILER = "RETAILER", _("Retailer")
         SUPPLIER = "SUPPLIER", _("Supplier")
+        CONSUMER = "CONSUMER", _("Consumer")
         ADMIN = "ADMIN", _("Admin")
 
     # Unified identifier used as USERNAME_FIELD
@@ -106,6 +107,14 @@ class User(AbstractBaseUser, PermissionsMixin):
                 raise ValidationError({"phone_number": _("Mobile number is mandatory for farmers.")})
             if not self.identifier:
                 self.identifier = self.phone_number
+        elif self.role == self.Role.CONSUMER:
+            if not self.identifier:
+                if self.phone_number:
+                    self.identifier = self.phone_number
+                elif self.email:
+                    self.identifier = self.email
+                else:
+                    raise ValidationError({"identifier": _("Phone number or email is required for consumers.")})
         else:
             if not self.email:
                 raise ValidationError({"email": _("Email address is mandatory for this role.")})
@@ -117,6 +126,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         if not self.identifier:
             if self.role == self.Role.FARMER and self.phone_number:
                 self.identifier = self.phone_number
+            elif self.role == self.Role.CONSUMER:
+                self.identifier = self.phone_number or self.email
             elif self.email:
                 self.identifier = self.email
 
@@ -144,6 +155,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.role == self.Role.SUPPLIER
 
     @property
+    def is_consumer(self) -> bool:
+        return self.role == self.Role.CONSUMER
+
+    @property
     def is_admin_user(self) -> bool:
         return self.role == self.Role.ADMIN or self.is_superuser
 
@@ -162,9 +177,12 @@ class User(AbstractBaseUser, PermissionsMixin):
             return reverse("retailer_dashboard")
         elif self.role == self.Role.SUPPLIER:
             return reverse("supplier_dashboard")
+        elif self.role == self.Role.CONSUMER:
+            return reverse("consumer_dashboard")
         elif self.role == self.Role.ADMIN or self.is_staff:
             return reverse("admin_command_dashboard")
         return reverse("login")
+
 
 
 # ==============================================================================
@@ -978,6 +996,14 @@ class ConsumerOrder(models.Model):
         CANCELLED = "CANCELLED", _("Cancelled")
 
     order_id = models.CharField(max_length=50, unique=True, editable=False, db_index=True)
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="consumer_orders",
+        verbose_name=_("Registered Customer Account"),
+    )
     customer_name = models.CharField(max_length=150, verbose_name=_("Customer Name"))
     customer_phone = models.CharField(max_length=20, verbose_name=_("Customer Phone"))
     customer_email = models.EmailField(max_length=255, blank=True, verbose_name=_("Customer Email"))
@@ -1009,6 +1035,11 @@ class ConsumerOrder(models.Model):
             token = uuid.uuid4().hex[:6].upper()
             self.order_id = f"K2K-D2C-{date_str}-{token}"
         super().save(*args, **kwargs)
+
+    @property
+    def feedback(self):
+        """Returns the primary feedback submitted for this order, if any."""
+        return self.feedbacks.first()
 
 
 class ConsumerOrderItem(models.Model):
@@ -1055,5 +1086,57 @@ class ConsumerOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.item_name} x {self.quantity} {self.unit} (Order {self.order.order_id})"
+
+
+class ConsumerFeedback(models.Model):
+    """
+    Direct consumer feedback on D2C produce quality, delivery freshness,
+    and appreciation messages directly delivered to the farmer.
+    """
+    order = models.ForeignKey(
+        ConsumerOrder,
+        on_delete=models.CASCADE,
+        related_name="feedbacks",
+        verbose_name=_("Order"),
+    )
+    consumer = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="consumer_feedbacks",
+        verbose_name=_("Consumer"),
+    )
+    rating = models.PositiveSmallIntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name=_("Overall Rating (1-5)"),
+    )
+    freshness_rating = models.PositiveSmallIntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name=_("Produce Freshness Rating (1-5)"),
+    )
+    delivery_rating = models.PositiveSmallIntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name=_("Cold Delivery Speed Rating (1-5)"),
+    )
+    comment = models.TextField(verbose_name=_("Customer Feedback"))
+    farmer_note = models.TextField(
+        blank=True,
+        verbose_name=_("Direct Message / Note to Farmer"),
+        help_text=_("Heartfelt appreciation message passed directly to the farmer."),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Consumer Feedback")
+        verbose_name_plural = _("Consumer Feedbacks")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Feedback ({self.rating}★) for Order {self.order.order_id}"
+
 
 

@@ -56,9 +56,11 @@ urlpatterns = [
     # Direct-to-Consumer (D2C) Marketplace & AI Recipe-to-Combo Routes
     path("consumer/", views.consumer_shop_view, name="consumer_shop"),
     path("consumer/shop/", views.consumer_shop_view, name="consumer_shop_alt"),
+    path("consumer/dashboard/", views.consumer_dashboard_view, name="consumer_dashboard"),
     path("consumer/combo/", views.ai_combo_builder_view, name="ai_combo_builder"),
     path("consumer/checkout/", views.consumer_checkout_view, name="consumer_checkout"),
     path("consumer/order/<str:order_id>/", views.consumer_order_success_view, name="consumer_order_success"),
+    path("consumer/order/<str:order_id>/feedback/", views.consumer_add_feedback_view, name="consumer_add_feedback"),
 
     # Authentication Routes
     path(

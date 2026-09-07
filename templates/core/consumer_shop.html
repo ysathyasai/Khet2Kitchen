@@ -1041,9 +1041,24 @@
             <a href="#ai-engine" class="btn-nav-action btn-nav-gold">
                 <span>🤖</span> AI Recipe Combo
             </a>
-            <a href="{% url 'login' %}" class="btn-nav-action">
-                <span>👤</span> Portal Sign In
-            </a>
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'consumer_dashboard' %}" class="btn-nav-action" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); color: #6EE7B7;">
+                    <span>📦</span> {{ request.user.first_name|default:"My Orders" }}
+                </a>
+                <form action="{% url 'logout' %}" method="post" style="display:inline; margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-nav-action" style="cursor: pointer; border: 1px solid var(--border-glass);">
+                        <span>🚪</span>
+                    </button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn-nav-action">
+                    <span>👤</span> Sign In
+                </a>
+                <a href="{% url 'signup' %}" class="btn-nav-action" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); color: #6EE7B7;">
+                    <span>✨</span> Join
+                </a>
+            {% endif %}
         </div>
     </header>
 

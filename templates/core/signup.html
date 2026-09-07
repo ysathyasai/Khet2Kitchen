@@ -244,7 +244,7 @@
 
         .role-cards-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
@@ -398,7 +398,12 @@
                     
                     <!-- Quick Visual Cards for Role Selection -->
                     <div class="role-cards-grid">
-                        <div class="role-option-card active" onclick="selectRole('FARMER')" id="card_FARMER">
+                        <div class="role-option-card active" onclick="selectRole('CONSUMER')" id="card_CONSUMER">
+                            <span class="role-icon">🛒</span>
+                            <span class="role-title">Consumer</span>
+                            <span class="role-desc">Fresh Produce & Combos</span>
+                        </div>
+                        <div class="role-option-card" onclick="selectRole('FARMER')" id="card_FARMER">
                             <span class="role-icon">👨‍🌾</span>
                             <span class="role-title">Farmer</span>
                             <span class="role-desc">Direct MSP & Instant Payout</span>
@@ -417,7 +422,8 @@
 
                     <!-- Hidden or select input that binds to Django Form -->
                     <select name="role" id="id_role_select" class="form-input" style="display: none;">
-                        <option value="FARMER" {% if form.role.value == 'FARMER' or not form.role.value %}selected{% endif %}>Farmer</option>
+                        <option value="CONSUMER" {% if form.role.value == 'CONSUMER' or not form.role.value %}selected{% endif %}>Consumer</option>
+                        <option value="FARMER" {% if form.role.value == 'FARMER' %}selected{% endif %}>Farmer</option>
                         <option value="RETAILER" {% if form.role.value == 'RETAILER' %}selected{% endif %}>Retailer</option>
                         <option value="SUPPLIER" {% if form.role.value == 'SUPPLIER' %}selected{% endif %}>Supplier</option>
                     </select>
@@ -507,7 +513,11 @@
             if (activeCard) activeCard.classList.add('active');
 
             // Dynamic placeholder and label adaptation
-            if (role === 'FARMER') {
+            if (role === 'CONSUMER') {
+                identLabel.textContent = 'Phone Number or Email';
+                identInput.placeholder = '+919876543210 or yourname@gmail.com';
+                identHint.textContent = 'Consumers can sign in with mobile number or email address for instant order tracking and delivery updates.';
+            } else if (role === 'FARMER') {
                 identLabel.textContent = 'Mobile Phone Number';
                 identInput.placeholder = '+919876543210 (10+ digits)';
                 identHint.textContent = 'Farmers use their mobile phone number for secure authentication and instant SMS/UPI alerts.';
@@ -525,7 +535,7 @@
         // Initialize state on page load
         document.addEventListener('DOMContentLoaded', () => {
             const roleSelect = document.getElementById('id_role_select');
-            const initialRole = roleSelect ? roleSelect.value : 'FARMER';
+            const initialRole = roleSelect ? roleSelect.value : 'CONSUMER';
             selectRole(initialRole);
         });
     </script>

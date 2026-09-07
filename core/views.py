@@ -16,6 +16,7 @@ from django.urls import reverse
 
 from core.decorators import role_required
 from core.forms import (
+    ConsumerFeedbackForm,
     CropCreateForm,
     CropUpdateForm,
     DemandOrderCreateForm,
@@ -24,6 +25,7 @@ from core.forms import (
 )
 from core.models import (
     Batch,
+    ConsumerFeedback,
     ConsumerOrder,
     ConsumerOrderItem,
     Crop,
@@ -528,6 +530,8 @@ def landing_page_view(request):
             return redirect("retailer_dashboard")
         elif role == User.Role.SUPPLIER:
             return redirect("supplier_dashboard")
+        elif role == User.Role.CONSUMER:
+            return redirect("consumer_dashboard")
         elif role == User.Role.ADMIN or request.user.is_staff:
             return redirect("admin_command_dashboard")
         return redirect(request.user.get_dashboard_url())
@@ -931,6 +935,8 @@ def signup_view(request):
                 return redirect("retailer_dashboard")
             elif user.role == User.Role.SUPPLIER:
                 return redirect("supplier_dashboard")
+            elif user.role == User.Role.CONSUMER:
+                return redirect("consumer_dashboard")
             return redirect(user.get_dashboard_url())
     else:
         form = UserRegistrationForm()
@@ -1266,13 +1272,6 @@ def consumer_checkout_view(request):
     item_type = request.POST.get("item_type", "PRODUCE").strip().upper()
     item_id = request.POST.get("item_id", "").strip()
     quantity_raw = request.POST.get("quantity") or request.POST.get("quantity_kg") or "1"
-    
-    customer_name = request.POST.get("customer_name", "").strip() or "Verified Urban Consumer"
-    customer_phone = request.POST.get("customer_phone", "").strip() or "+91 98765 43210"
-    customer_email = request.POST.get("customer_email", "").strip()
-    delivery_address = request.POST.get("delivery_address", "").strip() or "Doorstep Delivery, Urban Kitchen Cluster"
-    pincode = request.POST.get("pincode", "").strip() or "500033"
-
     try:
         quantity = Decimal(str(quantity_raw))
         if quantity <= Decimal("0.00"):
@@ -1282,11 +1281,33 @@ def consumer_checkout_view(request):
 
     demo_farmer = User.objects.filter(role=User.Role.FARMER).first()
 
+    order_user = request.user if request.user.is_authenticated else None
+
+    req_name = request.POST.get("customer_name", "").strip()
+    req_phone = request.POST.get("customer_phone", "").strip()
+    req_email = request.POST.get("customer_email", "").strip()
+    req_address = request.POST.get("delivery_address", "").strip()
+    req_pincode = request.POST.get("pincode", "").strip()
+
+    if order_user:
+        customer_name = req_name or order_user.get_full_name() or order_user.identifier
+        customer_phone = req_phone or order_user.phone_number or "+91 98765 43210"
+        customer_email = req_email or order_user.email or ""
+        delivery_address = req_address or order_user.address or "Doorstep Delivery, Urban Kitchen Cluster"
+        pincode = req_pincode or order_user.pincode or "500033"
+    else:
+        customer_name = req_name or "Verified Urban Consumer"
+        customer_phone = req_phone or "+91 98765 43210"
+        customer_email = req_email
+        delivery_address = req_address or "Doorstep Delivery, Urban Kitchen Cluster"
+        pincode = req_pincode or "500033"
+
     order = ConsumerOrder(
-        customer_name=customer_name,
+        user=order_user,
+        customer_name=customer_name or "Valued Consumer",
         customer_phone=customer_phone,
         customer_email=customer_email,
-        delivery_address=delivery_address,
+        delivery_address=delivery_address or "Standard Express Dispatch",
         pincode=pincode,
         status=ConsumerOrder.Status.PAID_SETTLED,
         payment_method="UPI_INSTANT",
@@ -1464,6 +1485,118 @@ def consumer_order_success_view(request, order_id):
         "title": f"Order {order.order_id} Confirmed • K2K Farm Direct",
     }
     return render(request, "core/consumer_order_success.html", context)
+
+
+@login_required
+def consumer_dashboard_view(request):
+    """
+    Consumer Portal Dashboard.
+    Provides active consumers with complete visibility into their account, active and delivered orders,
+    live fulfillment timeline, radical transparent farmer payouts, total savings,
+    and direct farmer feedback / review submissions.
+    """
+    # Query orders belonging directly to user, or matching user's phone / email
+    filters = Q(user=request.user)
+    if request.user.phone_number:
+        filters |= Q(customer_phone=request.user.phone_number)
+    if request.user.email:
+        filters |= Q(customer_email=request.user.email)
+
+    orders = (
+        ConsumerOrder.objects.filter(filters)
+        .distinct()
+        .prefetch_related(
+            "items__crop",
+            "items__kit",
+            "items__recipe_combo",
+            "items__farmer",
+            "feedbacks",
+        )
+        .order_by("-created_at")
+    )
+
+    # Automatically associate any unlinked past orders matching phone or email to this active user
+    for o in orders:
+        if not o.user:
+            o.user = request.user
+            o.save(update_fields=["user"])
+
+    total_orders = orders.count()
+    total_spent = sum((o.final_paid_amount for o in orders), Decimal("0.00"))
+    total_discount_saved = sum((o.discount_amount for o in orders), Decimal("0.00"))
+
+    total_farmer_payout = Decimal("0.00")
+    total_items_count = 0
+    for o in orders:
+        for it in o.items.all():
+            total_farmer_payout += it.farmer_payout
+            total_items_count += 1
+
+    # Feedbacks submitted by this consumer
+    feedbacks = (
+        ConsumerFeedback.objects.filter(consumer=request.user)
+        .select_related("order")
+        .order_by("-created_at")
+    )
+
+    feedback_form = ConsumerFeedbackForm()
+
+    context = {
+        "title": "Consumer Portal & Orders • Khet2Kitchen",
+        "orders": orders,
+        "total_orders": total_orders,
+        "total_spent": total_spent,
+        "total_discount_saved": total_discount_saved,
+        "total_farmer_payout": total_farmer_payout,
+        "total_items_count": total_items_count,
+        "feedbacks": feedbacks,
+        "feedback_form": feedback_form,
+    }
+    return render(request, "core/consumer_dashboard.html", context)
+
+
+@login_required
+@require_POST
+def consumer_add_feedback_view(request, order_id):
+    """
+    Handles consumer feedback submission for a specific ConsumerOrder.
+    Saves overall rating, freshness rating, delivery speed, and direct farmer notes.
+    """
+    order = get_object_or_404(ConsumerOrder, order_id=order_id)
+
+    # Verify authorization
+    is_owner = (
+        (order.user == request.user)
+        or (request.user.phone_number and order.customer_phone == request.user.phone_number)
+        or (request.user.email and order.customer_email == request.user.email)
+        or request.user.is_staff
+    )
+
+    if not is_owner:
+        messages.error(request, "You do not have permission to review this order.")
+        return redirect("consumer_dashboard")
+
+    # Link user if not already linked
+    if not order.user:
+        order.user = request.user
+        order.save(update_fields=["user"])
+
+    existing_feedback = getattr(order, "feedback", None)
+    form = ConsumerFeedbackForm(request.POST, instance=existing_feedback)
+    if form.is_valid():
+        feedback = form.save(commit=False)
+        feedback.order = order
+        feedback.consumer = request.user
+        feedback.save()
+        messages.success(
+            request,
+            f"Thank you! Your review and note to the farmers for Order #{order.order_id} have been shared directly."
+        )
+    else:
+        messages.error(request, "Unable to save your feedback. Please check the ratings and try again.")
+
+    next_url = request.POST.get("next") or reverse("consumer_dashboard")
+    return redirect(next_url)
 
 
 

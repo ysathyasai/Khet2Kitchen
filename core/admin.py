@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import (
     Batch,
+    ConsumerFeedback,
     ConsumerOrder,
     ConsumerOrderItem,
     Crop,
@@ -134,12 +135,26 @@ class ConsumerOrderItemInline(admin.TabularInline):
     readonly_fields = ("farmer_payout", "is_settled_to_wallet")
 
 
+class ConsumerFeedbackInline(admin.StackedInline):
+    model = ConsumerFeedback
+    extra = 0
+    readonly_fields = ("created_at",)
+
+
 @admin.register(ConsumerOrder)
 class ConsumerOrderAdmin(admin.ModelAdmin):
-    list_display = ("order_id", "customer_name", "customer_phone", "final_paid_amount", "status", "created_at")
+    list_display = ("order_id", "user", "customer_name", "customer_phone", "final_paid_amount", "status", "created_at")
     list_filter = ("status", "created_at")
-    search_fields = ("order_id", "customer_name", "customer_phone", "customer_email")
+    search_fields = ("order_id", "customer_name", "customer_phone", "customer_email", "user__identifier")
     readonly_fields = ("order_id", "created_at", "updated_at")
-    inlines = [ConsumerOrderItemInline]
+    inlines = [ConsumerOrderItemInline, ConsumerFeedbackInline]
+
+
+@admin.register(ConsumerFeedback)
+class ConsumerFeedbackAdmin(admin.ModelAdmin):
+    list_display = ("order", "consumer", "rating", "freshness_rating", "delivery_rating", "created_at")
+    list_filter = ("rating", "freshness_rating", "delivery_rating", "created_at")
+    search_fields = ("order__order_id", "consumer__identifier", "consumer__phone_number", "comment", "farmer_note")
+    readonly_fields = ("created_at",)
 
 

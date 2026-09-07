@@ -10,6 +10,7 @@ from django.utils import timezone
 from unittest.mock import MagicMock, patch
 from core.models import (
     Batch,
+    ConsumerFeedback,
     ConsumerOrder,
     ConsumerOrderItem,
     Crop,
@@ -1885,4 +1886,227 @@ class ConsumerD2CTests(TestCase):
         self.assertEqual(success_res.status_code, 200)
         self.assertTemplateUsed(success_res, "core/consumer_order_success.html")
         self.assertContains(success_res, order.order_id)
+
+
+class ConsumerAccountAndFeedbackTests(TestCase):
+    """
+    Test suite for Consumer active accounts, order storage,
+    dashboard tracking, and farmer review/feedback system.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.farmer = User.objects.create_user(
+            identifier="+919876543210",
+            phone_number="+919876543210",
+            role=User.Role.FARMER,
+            first_name="Ramesh",
+            last_name="Kumar",
+            password="farmerpassword",
+        )
+        self.farmer_wallet = FarmerWallet.objects.create(
+            farmer=self.farmer,
+            current_balance=Decimal("0.00"),
+        )
+        self.crop = Crop.objects.create(
+            name="Organic Roma Tomato",
+            code="CR-TOM-01",
+            category=Crop.Category.VEGETABLE,
+            base_price=Decimal("25.00"),
+            farmer=self.farmer,
+            is_active=True,
+        )
+        self.consumer = User.objects.create_user(
+            identifier="priya@consumer.in",
+            email="priya@consumer.in",
+            phone_number="+919876543299",
+            role=User.Role.CONSUMER,
+            first_name="Priya",
+            last_name="Reddy",
+            address="Jubilee Hills, Hyderabad",
+            pincode="500033",
+            password="consumerpassword",
+        )
+
+    def test_consumer_role_properties_and_dashboard_url(self):
+        """Verifies Consumer role flags and routing configuration."""
+        self.assertTrue(self.consumer.is_consumer)
+        self.assertFalse(self.farmer.is_consumer)
+        self.assertEqual(self.consumer.get_dashboard_url(), reverse("consumer_dashboard"))
+
+        # Verify landing page smart redirect for authenticated consumer
+        self.client.force_login(self.consumer)
+        res = self.client.get(reverse("home"))
+        self.assertRedirects(res, reverse("consumer_dashboard"))
+
+    def test_consumer_registration_with_email_and_mobile(self):
+        """Verifies consumers can register using either an email or mobile phone."""
+        # 1. Registration via Email
+        res_email = self.client.post(reverse("signup"), {
+            "name": "Kavita Rao",
+            "role": User.Role.CONSUMER,
+            "identifier": "kavita.rao@example.com",
+            "password": "strongpassword123",
+        })
+        self.assertRedirects(res_email, reverse("consumer_dashboard"))
+        user_email = User.objects.get(identifier="kavita.rao@example.com")
+        self.assertEqual(user_email.role, User.Role.CONSUMER)
+        self.assertEqual(user_email.first_name, "Kavita")
+        self.assertEqual(user_email.last_name, "Rao")
+        self.assertEqual(user_email.email, "kavita.rao@example.com")
+        self.assertIsNone(user_email.phone_number)
+
+        # 2. Registration via Mobile Phone Number (log out first)
+        self.client.logout()
+        res_phone = self.client.post(reverse("signup"), {
+            "name": "Arjun Mehta",
+            "role": User.Role.CONSUMER,
+            "identifier": "+919876500099",
+            "password": "strongpassword123",
+        })
+        self.assertRedirects(res_phone, reverse("consumer_dashboard"))
+        user_phone = User.objects.get(identifier="+919876500099")
+        self.assertEqual(user_phone.role, User.Role.CONSUMER)
+        self.assertEqual(user_phone.phone_number, "+919876500099")
+
+    def test_authenticated_consumer_checkout_associates_order_user(self):
+        """Verifies that placing an order while logged in as consumer binds order.user."""
+        self.client.force_login(self.consumer)
+
+        post_data = {
+            "item_type": "PRODUCE",
+            "item_id": self.crop.id,
+            "quantity_kg": "4.00",
+            "delivery_address": "Road 36, Jubilee Hills, Hyderabad",
+            "pincode": "500033",
+        }
+
+        res = self.client.post(reverse("consumer_checkout"), post_data)
+        self.assertEqual(res.status_code, 302)
+
+        order = ConsumerOrder.objects.filter(user=self.consumer).first()
+        self.assertIsNotNone(order)
+        self.assertEqual(order.user, self.consumer)
+        self.assertEqual(order.customer_name, "Priya Reddy")
+        self.assertEqual(order.customer_phone, "+919876543299")
+        self.assertEqual(order.customer_email, "priya@consumer.in")
+        self.assertEqual(order.final_paid_amount, Decimal("100.00"))
+
+    def test_consumer_dashboard_view_renders_with_orders_and_stats(self):
+        """Verifies consumer portal dashboard shows active orders, savings, and farmer impact."""
+        # Create an order for consumer
+        order = ConsumerOrder.objects.create(
+            user=self.consumer,
+            customer_name="Priya Reddy",
+            customer_phone="+919876543299",
+            customer_email="priya@consumer.in",
+            delivery_address="Jubilee Hills, Hyderabad",
+            pincode="500033",
+            total_amount=Decimal("120.00"),
+            discount_amount=Decimal("20.00"),
+            final_paid_amount=Decimal("100.00"),
+            status=ConsumerOrder.Status.PAID_SETTLED,
+        )
+        ConsumerOrderItem.objects.create(
+            order=order,
+            item_type=ConsumerOrderItem.ItemType.PRODUCE,
+            crop=self.crop,
+            farmer=self.farmer,
+            item_name="Organic Roma Tomato",
+            quantity=Decimal("4.00"),
+            unit="kg",
+            unit_price=Decimal("25.00"),
+            subtotal=Decimal("100.00"),
+            farmer_payout=Decimal("92.00"),
+            is_settled_to_wallet=True,
+        )
+
+        self.client.force_login(self.consumer)
+        response = self.client.get(reverse("consumer_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "core/consumer_dashboard.html")
+
+        # Context metrics
+        self.assertEqual(response.context["total_orders"], 1)
+        self.assertEqual(response.context["total_spent"], Decimal("100.00"))
+        self.assertEqual(response.context["total_discount_saved"], Decimal("20.00"))
+        self.assertEqual(response.context["total_farmer_payout"], Decimal("92.00"))
+
+        # HTML assertions
+        self.assertContains(response, order.order_id)
+        self.assertContains(response, "Organic Roma Tomato")
+        self.assertContains(response, "₹92.00")
+        self.assertContains(response, "Rate Produce Freshness & Thank Farmer")
+
+    def test_consumer_feedback_submission_and_direct_farmer_note(self):
+        """Verifies submitting feedback stores ratings and direct farmer appreciation notes."""
+        order = ConsumerOrder.objects.create(
+            user=self.consumer,
+            customer_name="Priya Reddy",
+            customer_phone="+919876543299",
+            customer_email="priya@consumer.in",
+            delivery_address="Jubilee Hills, Hyderabad",
+            pincode="500033",
+            total_amount=Decimal("100.00"),
+            final_paid_amount=Decimal("100.00"),
+            status=ConsumerOrder.Status.DELIVERED,
+        )
+
+        self.client.force_login(self.consumer)
+        feedback_data = {
+            "rating": "5",
+            "freshness_rating": "5",
+            "delivery_rating": "5",
+            "comment": "Absolutely crisp and flavorful tomatoes!",
+            "farmer_note": "Thank you Ramesh ji for growing such pure, chemical-free food!",
+        }
+
+        res = self.client.post(
+            reverse("consumer_add_feedback", args=[order.order_id]),
+            feedback_data,
+        )
+        self.assertEqual(res.status_code, 302)
+
+        feedback = ConsumerFeedback.objects.filter(order=order).first()
+        self.assertIsNotNone(feedback)
+        self.assertEqual(feedback.consumer, self.consumer)
+        self.assertEqual(feedback.rating, 5)
+        self.assertEqual(feedback.freshness_rating, 5)
+        self.assertEqual(feedback.delivery_rating, 5)
+        self.assertEqual(feedback.comment, "Absolutely crisp and flavorful tomatoes!")
+        self.assertEqual(feedback.farmer_note, "Thank you Ramesh ji for growing such pure, chemical-free food!")
+
+        # Verify rendered in dashboard
+        dash_res = self.client.get(reverse("consumer_dashboard"))
+        self.assertContains(dash_res, "Thank you Ramesh ji for growing such pure, chemical-free food!")
+        self.assertContains(dash_res, "Shared with Farmer")
+
+    def test_consumer_feedback_unauthorized_access_prevented(self):
+        """Verifies that an unauthorized user cannot submit feedback on someone else's order."""
+        other_user = User.objects.create_user(
+            identifier="other@consumer.in",
+            email="other@consumer.in",
+            role=User.Role.CONSUMER,
+            password="otherpassword",
+        )
+        order = ConsumerOrder.objects.create(
+            user=self.consumer,
+            customer_name="Priya Reddy",
+            customer_phone="+919876543299",
+            delivery_address="Jubilee Hills",
+            total_amount=Decimal("50.00"),
+            final_paid_amount=Decimal("50.00"),
+            status=ConsumerOrder.Status.DELIVERED,
+        )
+
+        # Log in as other_user and attempt to post feedback for Priya's order
+        self.client.force_login(other_user)
+        res = self.client.post(
+            reverse("consumer_add_feedback", args=[order.order_id]),
+            {"rating": "1", "freshness_rating": "1", "delivery_rating": "1"},
+        )
+        self.assertRedirects(res, reverse("consumer_dashboard"))
+
+        # Confirm no feedback was created
+        self.assertFalse(ConsumerFeedback.objects.filter(order=order).exists())
 

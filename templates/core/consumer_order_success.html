@@ -320,8 +320,11 @@
         </div>
 
         <div class="actions-group">
-            <a href="{% url 'consumer_shop' %}" class="btn-action-primary">
-                <span>🛒</span> Continue Shopping
+            <a href="{% url 'consumer_dashboard' %}" class="btn-action-primary" style="background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-hover)); color: #000;">
+                <span>📦</span> My Orders & Dashboard
+            </a>
+            <a href="{% url 'consumer_shop' %}" class="btn-action-secondary">
+                <span>🛒</span> Farm Store
             </a>
             <a href="{% url 'home' %}" class="btn-action-secondary">
                 <span>🏠</span> Home

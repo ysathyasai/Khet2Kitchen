@@ -5,6 +5,9 @@ from django.utils import timezone
 
 from core.models import (
     Batch,
+    ConsumerFeedback,
+    ConsumerOrder,
+    ConsumerOrderItem,
     Crop,
     DemandOrder,
     FarmerWallet,
@@ -146,7 +149,26 @@ class Command(BaseCommand):
             supplier_ts.save()
         self.stdout.write(self.style.SUCCESS("[OK] Created Suppliers: sales@bioagri.com, sales@bioagri-ts.in (pwd: supplier1234)"))
 
-        # 5. MicroHubs
+        # 5. Consumers (Authenticate via Mobile or Email)
+        consumer1, created = User.objects.get_or_create(
+            identifier="consumer@k2k.in",
+            defaults={
+                "email": "consumer@k2k.in",
+                "phone_number": "+919876543299",
+                "role": User.Role.CONSUMER,
+                "first_name": "Priya",
+                "last_name": "Reddy",
+                "state": "Telangana",
+                "address": "Jubilee Hills, Road No. 36, Hyderabad",
+                "pincode": "500033",
+            },
+        )
+        if created:
+            consumer1.set_password("consumer1234")
+            consumer1.save()
+        self.stdout.write(self.style.SUCCESS("[OK] Created Consumer: consumer@k2k.in (pwd: consumer1234)"))
+
+        # 6. MicroHubs
         hub1, _ = MicroHub.objects.get_or_create(
             code="HUB-NSK-01",
             defaults={
@@ -529,6 +551,48 @@ class Command(BaseCommand):
             },
         )
         self.stdout.write(self.style.SUCCESS("[OK] Seeded Demo AI Recipe Combo: Authentic South Indian Sambar (4 Servings)"))
+
+        # 15. Seed Sample Consumer Order & Feedback for Demo Consumer
+        demo_consumer_order, o_created = ConsumerOrder.objects.get_or_create(
+            order_id="K2K-ORD-DEMO-001",
+            defaults={
+                "user": consumer1,
+                "customer_name": "Priya Reddy",
+                "customer_phone": "+919876543299",
+                "customer_email": "consumer@k2k.in",
+                "delivery_address": "Flat 402, Green Meadows, Jubilee Hills Road No. 36, Hyderabad",
+                "pincode": "500033",
+                "total_amount": Decimal("185.00"),
+                "discount_amount": Decimal("27.75"),
+                "final_paid_amount": Decimal("157.25"),
+                "status": ConsumerOrder.Status.DELIVERED,
+                "payment_method": "UPI_INSTANT",
+            },
+        )
+        if o_created:
+            ConsumerOrderItem.objects.create(
+                order=demo_consumer_order,
+                item_type=ConsumerOrderItem.ItemType.KIT,
+                kit=kit_sambar,
+                farmer=farmer1,
+                item_name="Sambar Essentials Farm Kit",
+                quantity=Decimal("1.00"),
+                unit="kit",
+                unit_price=Decimal("157.25"),
+                subtotal=Decimal("157.25"),
+                farmer_payout=Decimal("141.50"),
+                is_settled_to_wallet=True,
+            )
+            ConsumerFeedback.objects.create(
+                order=demo_consumer_order,
+                consumer=consumer1,
+                rating=5,
+                freshness_rating=5,
+                delivery_rating=5,
+                comment="The farm tomatoes arrived dewy and firm! The aroma reminded me of homegrown vegetables from my grandmother's village.",
+                farmer_note="Dear Ramesh ji, thank you for waking up early to harvest these vegetables. We can taste your hard work in every bite of our dinner!",
+            )
+            self.stdout.write(self.style.SUCCESS("[OK] Seeded Sample Consumer Order & Feedback for Priya Reddy"))
 
         self.stdout.write(self.style.SUCCESS("\n[SUCCESS] Localized demo dataset seeded successfully with full multi-role data isolation!"))
 
