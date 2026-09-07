@@ -6,32 +6,32 @@
 <!-- ======================================================================= -->
 <!-- 1. STRIKING HERO SECTION (FROM REFERENCE IMAGE 4F6E78.JPG)              -->
 <!-- ======================================================================= -->
-<div class="hero-section">
+<div class="hero-section" style="background: var(--hero-bg-gradient, linear-gradient(135deg, #0F2027 0%, #133826 45%, #1A4431 100%)); border-radius: 1.25rem; padding: 2.25rem 2rem; color: #FFFFFF; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(19, 56, 38, 0.25); border: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 2rem;">
     <div style="position: relative; z-index: 2; max-width: 850px;">
         <!-- Network pill -->
-        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; color: #34D399; text-transform: uppercase; margin-bottom: 1.25rem;">
+        <div class="hero-network-pill">
             <span>⚡</span> Smart Agri-Supply Network • APMC Disintermediation
         </div>
 
         <!-- Headline -->
-        <h1 class="hero-title">
+        <h1 class="hero-title" style="color: #FFFFFF;">
             Khet2Kitchen Kisan Gateway
         </h1>
 
         <!-- Subtitle -->
-        <p class="hero-subtitle">
+        <p class="hero-subtitle" style="color: #E2E8F0;">
             Direct Farm-to-Fork Disintermediation Platform. Real-time computer vision quality grading, guaranteed MSP floor protection, and instantaneous UPI settlements directly to your bank account.
         </p>
 
-        <!-- Feature chips -->
+        <!-- Feature chips (High-Contrast Guaranteed on Mobile) -->
         <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.75rem;">
-            <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.8rem; border-radius: 9999px; font-size: 0.78rem; color: #F3F4F6;">
+            <span class="hero-chip">
                 🛡️ 100% Guaranteed MSP Floor
             </span>
-            <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.8rem; border-radius: 9999px; font-size: 0.78rem; color: #F3F4F6;">
+            <span class="hero-chip">
                 ⚡ Zero-Wait Instant UPI Rail
             </span>
-            <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.8rem; border-radius: 9999px; font-size: 0.78rem; color: #F3F4F6;">
+            <span class="hero-chip">
                 🌱 Micro-Hub Cold-Chain Aggregation
             </span>
         </div>
@@ -41,10 +41,10 @@
             <a href="{% url 'farmer_graded_produce' %}" class="btn btn-gold" style="padding: 0.75rem 1.6rem; font-size: 0.95rem; font-weight: 700; border-radius: 0.6rem;">
                 <span>+ Log Harvest / AI Scan</span> →
             </a>
-            <a href="{% url 'farmer_pricing' %}" class="btn btn-secondary" style="background: rgba(255, 255, 255, 0.12); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.75rem 1.4rem; font-size: 0.95rem; border-radius: 0.6rem;">
+            <a href="{% url 'farmer_pricing' %}" class="btn-hero-translucent">
                 <span>⚖️ View MSP Floor & Pricing</span>
             </a>
-            <button type="button" onclick="openVoiceAssistantModal()" class="btn btn-secondary" style="background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.75rem 1.25rem; font-size: 0.95rem; border-radius: 0.6rem;">
+            <button type="button" onclick="openVoiceAssistantModal()" class="btn" style="background: rgba(16, 185, 129, 0.25); color: #A7F3D0; border: 1px solid rgba(52, 211, 153, 0.45); padding: 0.75rem 1.25rem; font-size: 0.95rem; border-radius: 0.6rem; font-weight: 600; cursor: pointer;">
                 <span>🎤 Voice Assistant</span>
             </button>
         </div>

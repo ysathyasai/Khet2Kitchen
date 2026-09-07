@@ -2263,3 +2263,50 @@ class RetailerWholesaleComboTests(TestCase):
         self.assertContains(res, "Commercial Leafy Greens &amp; Salad Pack (50kg)")
 
 
+class MobileOptimizationTests(TestCase):
+    """
+    Verifies mobile responsive classes and high-contrast styling tokens
+    across the landing page, farmer dashboard, and consumer shop.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.farmer = User.objects.create_user(
+            phone_number="+919876543900",
+            password="testpassword123",
+            role=User.Role.FARMER,
+            first_name="Ramesh",
+            last_name="Patil",
+        )
+
+    def test_landing_page_renders_mobile_accessible_navbar(self):
+        """Verifies landing page contains mobile-optimized sign-up buttons and responsive classes."""
+        res = self.client.get(reverse("home"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "mobile-only")
+        self.assertContains(res, "btn-nav-signup")
+        self.assertContains(res, "Sign Up")
+
+    def test_farmer_dashboard_hero_high_contrast(self):
+        """Verifies farmer hero section renders high-contrast badges and gradient background."""
+        self.client.force_login(self.farmer)
+        res = self.client.get(reverse("farmer_dashboard"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "hero-section")
+        self.assertContains(res, "hero-network-pill")
+        self.assertContains(res, "hero-chip")
+        self.assertContains(res, "btn-hero-translucent")
+        self.assertContains(res, "100% Guaranteed MSP Floor")
+        self.assertContains(res, "View MSP Floor")
+
+    def test_consumer_shop_mobile_search_and_auth_fit(self):
+        """Verifies consumer shop renders dedicated mobile search row and responsive join/sign-in buttons."""
+        res = self.client.get(reverse("consumer_shop"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "shop-nav-top")
+        self.assertContains(res, "mobile-search")
+        self.assertContains(res, "btn-nav-join")
+        self.assertContains(res, "btn-nav-signin")
+
+
+

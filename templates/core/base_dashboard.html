@@ -415,6 +415,101 @@
             border-color: #9CA3AF;
         }
 
+        /* =====================================================================
+           HERO SECTION COMPONENT (HIGH-CONTRAST DARK FOREST GREEN GRADIENT)
+           ===================================================================== */
+        .hero-section {
+            background: var(--hero-bg-gradient);
+            border-radius: 1.25rem;
+            padding: 2.25rem 2rem;
+            color: #FFFFFF !important;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(19, 56, 38, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section * {
+            box-sizing: border-box;
+        }
+
+        .hero-title {
+            font-size: clamp(1.65rem, 3.5vw, 2.35rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+            color: #FFFFFF !important;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            color: #E2E8F0 !important;
+            font-size: 0.96rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            max-width: 780px;
+        }
+
+        .hero-network-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.2) !important;
+            border: 1px solid rgba(52, 211, 153, 0.45) !important;
+            padding: 0.35rem 0.9rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #6EE7B7 !important;
+            text-transform: uppercase;
+            margin-bottom: 1.15rem;
+        }
+
+        .hero-chip {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            padding: 0.4rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #FFFFFF !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .hero-cta-group {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero-translucent {
+            background: rgba(255, 255, 255, 0.18) !important;
+            color: #FFFFFF !important;
+            border: 1px solid rgba(255, 255, 255, 0.35) !important;
+            padding: 0.75rem 1.4rem;
+            font-size: 0.92rem;
+            border-radius: 0.6rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-hero-translucent:hover {
+            background: rgba(255, 255, 255, 0.28) !important;
+            color: #FFFFFF !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            transform: translateY(-1px);
+        }
+
         /* Status Pills */
         .status-pill {
             display: inline-flex;
@@ -711,6 +806,36 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.5rem;
+            }
+
+            /* Hero Section Mobile Optimization */
+            .hero-section {
+                padding: 1.5rem 1.15rem !important;
+                border-radius: 1rem !important;
+                margin-bottom: 1.5rem !important;
+            }
+            .hero-title {
+                font-size: 1.55rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            .hero-subtitle {
+                font-size: 0.88rem !important;
+                line-height: 1.5 !important;
+                margin-bottom: 1.25rem !important;
+            }
+            .hero-cta-group {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                gap: 0.65rem !important;
+            }
+            .hero-cta-group .btn,
+            .hero-cta-group a,
+            .hero-cta-group button {
+                width: 100% !important;
+                justify-content: center !important;
+                text-align: center !important;
+                padding: 0.75rem 1rem !important;
             }
         }
 

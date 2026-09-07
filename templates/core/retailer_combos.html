@@ -129,10 +129,25 @@
     </div>
 </div>
 
+<style>
+    .combos-catalog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+    @media (max-width: 640px) {
+        .combos-catalog-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1.15rem !important;
+        }
+    }
+</style>
+
 <!-- =========================================================================
      WHOLESALE COMBOS CATALOG GRID
      ========================================================================= -->
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+<div class="combos-catalog-grid">
     {% for combo in combos %}
     <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-radius: 1rem; overflow: hidden; border: 1px solid var(--card-border); transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 0;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 24px rgba(19, 56, 38, 0.12)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--card-shadow)';">
         <!-- Top Badges -->

@@ -633,13 +633,46 @@
             color: var(--primary-mint);
         }
 
+        .mobile-only {
+            display: none;
+        }
+
         /* Mobile Adjustments */
         @media (max-width: 860px) {
+            .landing-navbar {
+                padding: 0.65rem 1rem !important;
+            }
+            .brand-tag {
+                display: none !important;
+            }
             .nav-links {
-                display: none;
+                display: none !important;
+            }
+            .nav-action-store {
+                display: none !important;
+            }
+            .nav-actions {
+                gap: 0.5rem !important;
+            }
+            .btn-nav-login {
+                padding: 0.4rem 0.65rem !important;
+                font-size: 0.82rem !important;
+            }
+            .btn-nav-signup {
+                padding: 0.45rem 0.9rem !important;
+                font-size: 0.82rem !important;
+                white-space: nowrap !important;
+                flex-shrink: 0 !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
+            .mobile-only {
+                display: inline !important;
             }
             .hero-section {
-                padding-top: 7rem;
+                padding-top: 6rem;
+                padding-bottom: 3.5rem;
             }
             .feature-pills-container {
                 flex-direction: column;
@@ -668,6 +701,27 @@
                 justify-content: center;
             }
         }
+
+        @media (max-width: 440px) {
+            .landing-navbar {
+                padding: 0.55rem 0.75rem !important;
+            }
+            .brand-title {
+                font-size: 1.15rem !important;
+            }
+            .brand-logo-img {
+                width: 30px !important;
+                height: 30px !important;
+            }
+            .btn-nav-login {
+                padding: 0.35rem 0.55rem !important;
+                font-size: 0.78rem !important;
+            }
+            .btn-nav-signup {
+                padding: 0.4rem 0.8rem !important;
+                font-size: 0.8rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -691,9 +745,12 @@
         </ul>
 
         <div class="nav-actions">
-            <a href="{% url 'consumer_shop' %}" class="btn-nav-login" style="border-color: var(--cta-gold); color: var(--cta-gold);">🛒 Consumer Store</a>
+            <a href="{% url 'consumer_shop' %}" class="btn-nav-login nav-action-store" style="border-color: var(--cta-gold); color: var(--cta-gold);">🛒 Consumer Store</a>
             <a href="{% url 'login' %}" class="btn-nav-login">Login</a>
-            <a href="{% url 'signup' %}" class="btn-nav-signup">Sign Up →</a>
+            <a href="{% url 'signup' %}" class="btn-nav-signup">
+                <span class="desktop-only">Sign Up →</span>
+                <span class="mobile-only">Sign Up</span>
+            </a>
         </div>
     </header>
 
