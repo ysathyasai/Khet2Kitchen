@@ -1536,6 +1536,46 @@ class DataIsolationAndDynamicActionTests(TestCase):
         self.assertEqual(hacker_res.status_code, 404)
 
 
+class LandingPageViewTests(TestCase):
+    """Tests for public landing page and smart root redirect behavior."""
 
+    def setUp(self):
+        self.client = Client()
+        self.farmer = User.objects.create_user(
+            phone_number="+919876543290",
+            password="FarmerPassword1!",
+            role=User.Role.FARMER,
+            first_name="Ramesh",
+        )
+        self.retailer = User.objects.create_user(
+            email="retailer@freshbazaar.in",
+            password="RetailerPassword1!",
+            role=User.Role.RETAILER,
+            first_name="Ananya",
+        )
 
+    def test_anonymous_user_landing_page_renders(self):
+        """Anonymous users requesting GET / get 200 OK and see the high-converting landing page."""
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "core/landing.html")
+        self.assertContains(response, "Khet2Kitchen")
+        self.assertContains(response, "The Intelligent Agritech Supply Chain")
+        self.assertContains(response, "100% Transparent Pricing")
+        self.assertContains(response, "AI Optical Grading")
+        self.assertContains(response, "Dynamic Route Optimization")
+        self.assertContains(response, "Join as a Farmer")
 
+    def test_authenticated_farmer_redirects_to_farmer_dashboard(self):
+        """Authenticated farmer requesting GET / is redirected to /farmer/dashboard/."""
+        self.client.login(username="+919876543290", password="FarmerPassword1!")
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("farmer_dashboard"))
+
+    def test_authenticated_retailer_redirects_to_retailer_dashboard(self):
+        """Authenticated retailer requesting GET / is redirected to /retailer/dashboard/."""
+        self.client.login(username="retailer@freshbazaar.in", password="RetailerPassword1!")
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("retailer_dashboard"))

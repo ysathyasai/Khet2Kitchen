@@ -501,8 +501,20 @@ def api_weather_advisory(request):
 
 
 # ==============================================================================
-# Central Dispatcher
+# Central Dispatcher & Public Landing Page
 # ==============================================================================
+
+def landing_page_view(request):
+    """
+    Public-facing landing page for Project Khet2Kitchen (K2K).
+    Smart Redirect: If the user is authenticated, automatically route them
+    to their respective dashboard based on their role (FARMER, RETAILER, SUPPLIER, or Admin).
+    If anonymous, render templates/core/landing.html.
+    """
+    if request.user.is_authenticated:
+        return redirect(request.user.get_dashboard_url())
+    return render(request, "core/landing.html")
+
 
 @login_required
 def dashboard_dispatcher_view(request):

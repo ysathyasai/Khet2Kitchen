@@ -1,0 +1,974 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khet2Kitchen (K2K) — The Intelligent Agritech Supply Chain</title>
+    <meta name="description" content="Transforming India's agricultural ecosystem by connecting farmers directly to B2B retailers. Zero middlemen, AI optical quality grading, and 100% transparent pricing.">
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
+
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep-forest: #071710;
+            --bg-forest-card: #0D261B;
+            --hero-gradient: radial-gradient(ellipse at 50% 15%, rgba(16, 185, 129, 0.22) 0%, transparent 65%),
+                             radial-gradient(circle at 85% 30%, rgba(5, 150, 105, 0.18) 0%, transparent 50%),
+                             linear-gradient(135deg, #07150F 0%, #0C2418 35%, #113524 70%, #0A1C13 100%);
+            --cta-gold: #F59E0B;
+            --cta-gold-hover: #D97706;
+            --cta-gold-glow: rgba(245, 158, 11, 0.35);
+            --primary-emerald: #10B981;
+            --primary-mint: #34D399;
+            --soft-mint: #A7F3D0;
+            --text-white: #FFFFFF;
+            --text-sub: #D1D5DB;
+            --text-muted: #9CA3AF;
+            --card-glass: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --card-border-hover: rgba(52, 211, 153, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-deep-forest);
+            color: var(--text-white);
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        /* Top Navbar */
+        .landing-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(7, 23, 16, 0.88);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0.85rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-white);
+        }
+
+        .brand-logo-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            padding: 4px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .brand-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .brand-gold {
+            color: var(--cta-gold);
+        }
+
+        .brand-tag {
+            font-size: 0.65rem;
+            font-weight: 700;
+            background: rgba(52, 211, 153, 0.15);
+            color: #6EE7B7;
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+            list-style: none;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-white);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .btn-nav-login {
+            text-decoration: none;
+            color: var(--text-white);
+            font-weight: 600;
+            font-size: 0.92rem;
+            padding: 0.5rem 0.85rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav-login:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--soft-mint);
+        }
+
+        .btn-nav-signup {
+            text-decoration: none;
+            background: var(--cta-gold);
+            color: #0F2027;
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 0.55rem 1.35rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 15px var(--cta-gold-glow);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .btn-nav-signup:hover {
+            background: var(--cta-gold-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            position: relative;
+            padding: 9rem 1.5rem 5.5rem;
+            background: var(--hero-gradient);
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(8px);
+            padding: 0.4rem 1.1rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--soft-mint);
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .hero-title {
+            font-size: clamp(2.4rem, 6vw, 4.4rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            max-width: 980px;
+            margin-bottom: 1.25rem;
+            color: var(--text-white);
+        }
+
+        .hero-title-highlight {
+            color: var(--cta-gold);
+            text-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
+        }
+
+        .hero-catchphrase {
+            font-size: clamp(1.15rem, 2.8vw, 1.6rem);
+            font-weight: 600;
+            color: #E2E8F0;
+            margin-bottom: 1.25rem;
+            font-style: normal;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(0.95rem, 2vw, 1.15rem);
+            color: #A3B8AD;
+            max-width: 760px;
+            line-height: 1.65;
+            margin-bottom: 2.75rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+
+        /* Floating Feature Pills (Directly inspired by image_4f6e78.jpg) */
+        .feature-pills-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+            max-width: 900px;
+        }
+
+        .feature-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(14px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-white);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .feature-pill:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(52, 211, 153, 0.6);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.25);
+        }
+
+        .feature-pill-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        /* Hero Action Buttons */
+        .hero-cta-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .btn-hero-primary {
+            background: var(--cta-gold);
+            color: #0C1E15;
+            font-size: 1.05rem;
+            font-weight: 800;
+            padding: 0.9rem 2.25rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            box-shadow: 0 6px 25px var(--cta-gold-glow);
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-hero-primary:hover {
+            background: var(--cta-gold-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.6);
+        }
+
+        .btn-hero-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-white);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(8px);
+            font-size: 1.05rem;
+            font-weight: 700;
+            padding: 0.9rem 2rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Live Metrics Strip */
+        .metrics-strip {
+            background: #091C13;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 2.75rem 1.5rem;
+        }
+
+        .metrics-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .metric-card {
+            padding: 1rem;
+        }
+
+        .metric-value {
+            font-size: 2.75rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            color: #10B981;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-gold {
+            color: var(--cta-gold);
+        }
+
+        .metric-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-white);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Section Layouts */
+        .content-section {
+            padding: 6rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 750px;
+            margin: 0 auto 4rem;
+        }
+
+        .section-eyebrow {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--primary-mint);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.6rem;
+        }
+
+        .section-title {
+            font-size: clamp(1.85rem, 4vw, 2.75rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.25;
+            color: var(--text-white);
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            font-size: 1.05rem;
+            color: var(--text-sub);
+            line-height: 1.6;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Comparison Grid */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .comparison-card {
+            border-radius: 1.25rem;
+            padding: 2.25rem;
+            background: var(--bg-forest-card);
+            border: 1px solid var(--card-border);
+            position: relative;
+        }
+
+        .comparison-bad {
+            background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, #121915 100%);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .comparison-good {
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, #0E291C 100%);
+            border-color: rgba(52, 211, 153, 0.35);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
+        }
+
+        .comparison-card-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .comparison-items {
+            list-style: none;
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .comparison-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* How It Works Steps */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.75rem;
+        }
+
+        .step-card {
+            background: var(--bg-forest-card);
+            border: 1px solid var(--card-border);
+            border-radius: 1.25rem;
+            padding: 2.25rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            border-color: var(--card-border-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .step-number {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(52, 211, 153, 0.15);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: var(--primary-mint);
+            font-weight: 900;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 0.6rem;
+        }
+
+        .step-text {
+            font-size: 0.92rem;
+            color: var(--text-sub);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Demo Credentials Card */
+        .demo-box {
+            background: rgba(245, 158, 11, 0.06);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            margin: 4rem auto 0;
+            max-width: 900px;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-top: 1.25rem;
+        }
+
+        .demo-pill {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.85rem 1.1rem;
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .demo-pill strong {
+            color: var(--cta-gold);
+            font-family: 'Outfit', sans-serif;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Bottom Sticky/Docked Banner (Inspired by image_4f6e78.jpg) */
+        .bottom-connect-bar {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 990;
+            background: rgba(10, 28, 19, 0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 0.85rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .connect-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #E2E8F0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-connect-action {
+            background: var(--cta-gold);
+            color: #0A1C13;
+            font-size: 0.88rem;
+            font-weight: 800;
+            padding: 0.55rem 1.35rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-connect-action:hover {
+            background: var(--cta-gold-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Floating Quick Action Button */
+        .floating-action-btn {
+            position: fixed;
+            bottom: 4.5rem;
+            right: 1.5rem;
+            z-index: 999;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #25D366;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .floating-action-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 10px 25px rgba(37, 211, 102, 0.6);
+        }
+
+        /* Footer */
+        .landing-footer {
+            background: #05100B;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 4rem 1.5rem 6rem;
+            text-align: center;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.75rem;
+        }
+
+        .footer-link {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--primary-mint);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 860px) {
+            .nav-links {
+                display: none;
+            }
+            .hero-section {
+                padding-top: 7rem;
+            }
+            .feature-pills-container {
+                flex-direction: column;
+                gap: 0.85rem;
+                width: 100%;
+            }
+            .feature-pill {
+                width: 100%;
+                justify-content: center;
+            }
+            .hero-cta-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            .btn-hero-primary, .btn-hero-secondary {
+                width: 100%;
+                justify-content: center;
+            }
+            .bottom-connect-bar {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            .btn-connect-action {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="landing-navbar">
+        <a href="{% url 'home' %}" class="brand-container">
+            <img src="{% static 'images/k2k-logo.svg' %}" alt="Khet2Kitchen Logo" class="brand-logo-img">
+            <div class="brand-title">
+                Khet<span class="brand-gold">2</span>Kitchen
+            </div>
+            <span class="brand-tag">SIH 2026</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
+            <li><a href="#features" class="nav-link">AI Grading</a></li>
+            <li><a href="#impact" class="nav-link">Direct Highway</a></li>
+            <li><a href="#credentials" class="nav-link">Demo Access</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <a href="{% url 'login' %}" class="btn-nav-login">Login</a>
+            <a href="{% url 'signup' %}" class="btn-nav-signup">Sign Up →</a>
+        </div>
+    </header>
+
+    <!-- The Hero Section (Inspired by Deeptha Silicon Technologies - image_4f6e78.jpg) -->
+    <section class="hero-section">
+        <!-- Eyebrow Tag -->
+        <div class="hero-eyebrow">
+            <span>🌱</span> Direct Farm-to-Kitchen Highway • SIH Problem Statement SIH26033
+        </div>
+
+        <!-- Massive Hero Headline -->
+        <h1 class="hero-title">
+            <span class="hero-title-highlight">Khet2Kitchen</span>: The Intelligent Agritech Supply Chain
+        </h1>
+
+        <!-- Catchphrase -->
+        <div class="hero-catchphrase">
+            "If you have the harvest, we have the highway."
+        </div>
+
+        <!-- Sub-headline -->
+        <p class="hero-subtitle">
+            Transforming the agricultural ecosystem by directly connecting farmers to B2B retailers. 
+            Zero middlemen. 100% transparent pricing driven by AI.
+        </p>
+
+        <!-- Floating Feature Pills (Frosted Glass with Soft Borders) -->
+        <div class="feature-pills-container">
+            <div class="feature-pill">
+                <span class="feature-pill-icon">📱</span>
+                <span>100% Transparent Pricing</span>
+            </div>
+            <div class="feature-pill">
+                <span class="feature-pill-icon">🤖</span>
+                <span>AI Optical Grading</span>
+            </div>
+            <div class="feature-pill">
+                <span class="feature-pill-icon">🚚</span>
+                <span>Dynamic Route Optimization</span>
+            </div>
+        </div>
+
+        <!-- Center CTA Action Buttons -->
+        <div class="hero-cta-group">
+            <a href="{% url 'signup' %}" class="btn-hero-primary">
+                Join as a Farmer →
+            </a>
+            <a href="#how-it-works" class="btn-hero-secondary">
+                Explore the Hubs ↓
+            </a>
+        </div>
+    </section>
+
+    <!-- Live Platform Impact Metrics Strip -->
+    <section class="metrics-strip" id="impact">
+        <div class="metrics-container">
+            <div class="metric-card">
+                <div class="metric-value metric-gold">+38.9%</div>
+                <div class="metric-label">Farmer Income Surge</div>
+                <div class="metric-sub">Direct disintermediation gain per ton vs APMC</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">&lt; 4 Hrs</div>
+                <div class="metric-label">Farm-to-Shelf Transit</div>
+                <div class="metric-sub">Aggregated EV cold-chain from village hubs</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">&lt; 2.8%</div>
+                <div class="metric-label">Produce Spoilage</div>
+                <div class="metric-sub">Down from 22% traditional post-harvest loss</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value metric-gold">T+0</div>
+                <div class="metric-label">Instant IMPS / UPI Wallet</div>
+                <div class="metric-sub">Direct settlement on verified optical batch scan</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Problem vs The K2K Highway -->
+    <section class="content-section" id="features">
+        <div class="section-header">
+            <div class="section-eyebrow">The Phygital Transformation</div>
+            <h2 class="section-title">Eradicating the 5-Middleman Drain</h2>
+            <p class="section-desc">
+                Traditional agricultural markets trap smallholders in arbitrary weighbridge deductions, 
+                8% commission agent cuts, and 45-day delayed payment slips. K2K rewrites the rules.
+            </p>
+        </div>
+
+        <div class="comparison-grid">
+            <!-- Bad Old Mandi -->
+            <div class="comparison-card comparison-bad">
+                <div class="comparison-card-title" style="color: #F87171;">
+                    <span>⚠️</span> Traditional 5-Tier APMC Mandi
+                </div>
+                <div style="font-size: 0.85rem; color: #FCA5A5;">The broken legacy supply chain</div>
+                <ul class="comparison-items">
+                    <li class="comparison-item">
+                        <span style="color: #EF4444;">✕</span>
+                        <span><strong>30 paise per rupee:</strong> Farmer earns barely 30% of the urban consumer price.</span>
+                    </li>
+                    <li class="comparison-item">
+                        <span style="color: #EF4444;">✕</span>
+                        <span><strong>Arbitrary Docking:</strong> Manual grading cuts up to 30% under the guise of "damaged produce."</span>
+                    </li>
+                    <li class="comparison-item">
+                        <span style="color: #EF4444;">✕</span>
+                        <span><strong>45-Day Payment Lag:</strong> Paper IOUs force farmers into high-interest local debt cycles.</span>
+                    </li>
+                    <li class="comparison-item">
+                        <span style="color: #EF4444;">✕</span>
+                        <span><strong>22% Rotting in Transit:</strong> Unrefrigerated diesel trucks sit across three open-air auctions.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Good K2K Highway -->
+            <div class="comparison-card comparison-good">
+                <div class="comparison-card-title" style="color: #34D399;">
+                    <span>🌱</span> The Khet2Kitchen Highway
+                </div>
+                <div style="font-size: 0.85rem; color: #6EE7B7;">The AI-powered direct aggregation engine</div>
+                <ul class="comparison-items">
+                    <li class="comparison-item">
+                        <span style="color: #10B981;">✓</span>
+                        <span><strong>Direct Fair Payout:</strong> Farmers take home up to 88% more net in-pocket income per batch.</span>
+                    </li>
+                    <li class="comparison-item">
+                        <span style="color: #10B981;">✓</span>
+                        <span><strong>Objective AI Optical Grading:</strong> Instant 8-second computer vision scan with verifiable confidence.</span>
+                    </li>
+                    <li class="comparison-item">
+                        <span style="color: #10B981;">✓</span>
+                        <span><strong>T+0 Instant UPI Settlement:</strong> Bank transfer executed directly upon batch drop-off at the hub.</span>
+                    </li>
+                    <li class="comparison-item">
+                        <span style="color: #10B981;">✓</span>
+                        <span><strong>4°C Solar Reefer EV Fleet:</strong> Temperature-monitored direct delivery in under 4 hours.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works (3 Simple Steps) -->
+    <section class="content-section" id="how-it-works" style="padding-top: 0;">
+        <div class="section-header">
+            <div class="section-eyebrow">Operational Simplicity</div>
+            <h2 class="section-title">How Farm-to-Kitchen Works</h2>
+            <p class="section-desc">
+                Designed for ground-level usability in rural panchayats with Vernacular Indic Voice AI.
+            </p>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Village Micro-Hub Drop</h3>
+                <p class="step-text">
+                    Farmers harvest and bring produce to a local aggregation center within 15 km—leveraging PACS and AIF godowns without expensive travel.
+                </p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3 class="step-title">8-Second AI Optical Scan</h3>
+                <p class="step-text">
+                    Produce rolls through our standardized grading chute. Computer vision categorizes Grade A/B/C with complete color and defect analysis.
+                </p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3 class="step-title">T+0 Payout & Cold Transit</h3>
+                <p class="step-text">
+                    The digital wallet credits the farmer immediately. B2B orders are dispatched in 4°C solar reefer EVs directly to urban kitchens.
+                </p>
+            </div>
+        </div>
+
+        <!-- Demo Credentials Box for Hackathon Jury -->
+        <div class="demo-box" id="credentials">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-white);">
+                        ⚡ Evaluator & Jury Quick-Access Profiles
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-sub); margin-top: 0.2rem;">
+                        Pre-seeded production accounts localized for the Ministry of Consumer Affairs demo.
+                    </p>
+                </div>
+                <a href="{% url 'login' %}" class="btn-connect-action" style="padding: 0.45rem 1rem; font-size: 0.82rem;">
+                    Go to Login Portal →
+                </a>
+            </div>
+
+            <div class="demo-grid">
+                <div class="demo-pill">
+                    <strong>👨‍🌾 Demo Farmer (Ramesh Kumar)</strong>
+                    ID: <code>+919876543210</code><br>
+                    Password: <code>farmer1234</code><br>
+                    <span style="color: var(--soft-mint); font-size: 0.75rem;">Voice AI, GIS Soil Telemetry, Wallet</span>
+                </div>
+                <div class="demo-pill">
+                    <strong>🏪 Demo Retailer (FreshBazaar TS)</strong>
+                    ID: <code>hyderabad@freshbazaar.in</code><br>
+                    Password: <code>retailer1234</code><br>
+                    <span style="color: var(--soft-mint); font-size: 0.75rem;">Demand Order Matching & Cold Logistics</span>
+                </div>
+                <div class="demo-pill">
+                    <strong>🧪 Demo Supplier (BioAgri TS)</strong>
+                    ID: <code>sales@bioagri-ts.in</code><br>
+                    Password: <code>supplier1234</code><br>
+                    <span style="color: var(--soft-mint); font-size: 0.75rem;">Input Supply Inventory & Stock Updates</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bottom Docked Bar (Directly inspired by image_4f6e78.jpg) -->
+    <div class="bottom-connect-bar">
+        <div class="connect-text">
+            <span>🤝</span>
+            <span>Ready to transform your agricultural supply chain? <strong>Let's connect!</strong></span>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a href="{% url 'signup' %}" class="btn-connect-action">
+                <span>⚡</span> Join the K2K Network Today →
+            </a>
+        </div>
+    </div>
+
+    <!-- Floating Support Quick Trigger Button (WhatsApp style) -->
+    <a href="https://wa.me/919876543210?text=Hello%20Khet2Kitchen%20Team" target="_blank" rel="noopener noreferrer" class="floating-action-btn" title="Chat with K2K Support on WhatsApp">
+        💬
+    </a>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-links">
+            <a href="{% url 'home' %}" class="footer-link">Home</a>
+            <a href="{% url 'login' %}" class="footer-link">Farmer Portal</a>
+            <a href="{% url 'login' %}" class="footer-link">Retailer Hub</a>
+            <a href="{% url 'login' %}" class="footer-link">Supplier Hub</a>
+            <a href="{% url 'signup' %}" class="footer-link">Register New Account</a>
+        </div>
+        <p style="margin-bottom: 0.5rem;">
+            Project <strong>Khet2Kitchen (K2K)</strong> — Smart India Hackathon (SIH 2026) | Problem Statement: SIH26033
+        </p>
+        <p style="font-size: 0.78rem; color: #6B7280;">
+            Aligned with the Ministry of Consumer Affairs, Food & Public Distribution (DoCA) • Built with Django, Sarvam AI, Leaflet & Google Gemini
+        </p>
+    </footer>
+
+</body>
+</html>

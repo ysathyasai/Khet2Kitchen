@@ -4,8 +4,8 @@ from django.urls import path
 from core import views
 
 urlpatterns = [
-    # Central Dashboard Dispatcher
-    path("", views.dashboard_dispatcher_view, name="home"),
+    # Central Landing Page & Dashboard Dispatcher
+    path("", views.landing_page_view, name="home"),
     path("dashboard/", views.dashboard_dispatcher_view, name="dashboard_dispatch"),
 
     # Role-Specific Dashboard Routes
