@@ -14,7 +14,7 @@ services:
       - key: ALLOWED_HOSTS
         value: ".onrender.com,localhost,127.0.0.1"
       - key: DATABASE_URL
-        value: "sqlite:///db.sqlite3"
+        value: "postgresql://neondb_owner:npg_ovy2S0LDVQbf@ep-frosty-butterfly-azfq7ty3-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
       - key: SARVAM_API_BASE_URL
         value: "https://api.sarvam.ai"
       - key: GEMINI_MODEL_NAME

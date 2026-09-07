@@ -84,18 +84,20 @@ TEMPLATES = [
 WSGI_APPLICATION = 'k2k.wsgi.application'
 
 # Database Configuration
-# Uses DATABASE_URL for Render / MySQL, with SQLite fallback for local development.
-# Example MySQL URL: mysql://user:password@host:3306/dbname
-DEFAULT_DATABASE_URL = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
-DATABASE_URL = os.getenv('DATABASE_URL', DEFAULT_DATABASE_URL)
-
+# Uses DATABASE_URL for PostgreSQL (Neon) / production, with SQLite fallback for local development.
 DATABASES = {
     'default': dj_database_url.config(
-        default=DATABASE_URL,
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
         conn_health_checks=True,
+        ssl_require=True,
     )
 }
+
+# SQLite does not support sslmode; strip it when falling back to SQLite locally
+if 'sqlite' in DATABASES['default'].get('ENGINE', ''):
+    DATABASES['default'].get('OPTIONS', {}).pop('sslmode', None)
+
 
 # Custom User Model (RBAC)
 AUTH_USER_MODEL = 'core.User'
