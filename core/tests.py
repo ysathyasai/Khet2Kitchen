@@ -7,14 +7,18 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
 
+from unittest.mock import MagicMock, patch
 from core.models import Batch, Crop, DemandOrder, MicroHub, User, FarmerWallet, WalletTransaction, HarvestSchedule
 from core.services import (
     allocate_supply_to_order,
+    fetch_real_weather,
+    generate_agronomic_advisory,
     generate_transparent_pricing_breakdown,
+    get_batch_traceability,
+    get_coordinates_from_pincode,
+    mock_dynamic_route,
     predict_demand,
     process_batch_payout,
-    get_batch_traceability,
-    mock_dynamic_route,
 )
 from core.vision import analyze_crop_image
 from core.voice_services import (
@@ -851,7 +855,9 @@ class VoiceServicesUnitTests(TestCase):
             notes="Morning plucking advised.",
         )
 
-    def test_transcribe_audio_fallback_and_signature(self):
+    @patch("core.sarvam_voice_service.SarvamVoiceService.transcribe_audio")
+    def test_transcribe_audio_fallback_and_signature(self, mock_transcribe):
+        mock_transcribe.return_value = ("मेरा वॉलेट बैलेंस कितना है?", "hi")
         dummy_audio = SimpleUploadedFile("voice.wav", b"RIFF....WAVEfmt ....data....", content_type="audio/wav")
         transcript, lang = transcribe_audio(dummy_audio)
         self.assertIsInstance(transcript, str)
@@ -945,7 +951,9 @@ class VoiceAssistEndpointTests(TestCase):
         self.assertTrue("15000" in cleaned_text or "15,000" in data["response_text"])
         self.assertTrue(len(data["audio_base64"]) > 0)
 
-    def test_farmer_audio_file_upload_success(self):
+    @patch("core.views.SarvamVoiceService.transcribe_audio")
+    def test_farmer_audio_file_upload_success(self, mock_transcribe):
+        mock_transcribe.return_value = ("मेरा वॉलेट बैलेंस कितना है?", "hi-IN")
         self.client.force_login(self.farmer)
         dummy_audio = SimpleUploadedFile("input.wav", b"RIFF....dummy_sound....", content_type="audio/wav")
         response = self.client.post(reverse("api_voice_assist"), {"audio": dummy_audio})
@@ -987,6 +995,183 @@ class VoiceAssistEndpointTests(TestCase):
         d3 = r3.json()
         self.assertEqual(len(d3["conversation_history"]), 1)
         self.assertTrue(d3["detected_language"].startswith("en"))
+
+
+class WeatherIntelligenceServicesTests(TestCase):
+    """Tests Nominatim geocoding, Open-Meteo telemetry parsing, and Gemini advisory generation."""
+
+    @patch("core.services.requests.get")
+    def test_get_coordinates_from_pincode_success(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {
+                "lat": "20.0475524",
+                "lon": "73.8034663",
+                "display_name": "422004, Nashik, Maharashtra, India",
+            }
+        ]
+        mock_get.return_value = mock_response
+
+        lat, lon, display_name = get_coordinates_from_pincode("422004")
+        self.assertAlmostEqual(lat, 20.0475524)
+        self.assertAlmostEqual(lon, 73.8034663)
+        self.assertIn("Nashik", display_name)
+
+    @patch("core.services.requests.get")
+    def test_get_coordinates_from_pincode_empty_fallback(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = []
+        mock_get.return_value = mock_response
+
+        lat, lon, display_name = get_coordinates_from_pincode("999999")
+        self.assertEqual(lat, 17.3850)
+        self.assertEqual(lon, 78.4867)
+        self.assertIn("Hyderabad", display_name)
+
+    @patch("core.services.requests.get")
+    def test_get_coordinates_from_pincode_network_exception_fallback(self, mock_get):
+        import requests
+        mock_get.side_effect = requests.RequestException("DNS resolution failed")
+
+        lat, lon, display_name = get_coordinates_from_pincode("422004")
+        self.assertEqual(lat, 17.3850)
+        self.assertEqual(lon, 78.4867)
+        self.assertIn("Hyderabad", display_name)
+
+    @patch("core.services.requests.get")
+    def test_fetch_real_weather_success(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "current": {
+                "temperature_2m": 27.5,
+                "relative_humidity_2m": 68.0,
+                "precipitation": 1.2,
+                "wind_speed_10m": 15.4,
+            },
+            "hourly": {
+                "soil_temperature_6cm": [24.0, 24.2, 24.5, 24.8],
+                "soil_moisture_3_9cm": [0.42, 0.42, 0.43, 0.43],
+            },
+            "daily": {
+                "temperature_2m_max": [28.5],
+                "temperature_2m_min": [21.0],
+                "precipitation_sum": [3.5],
+            },
+        }
+        mock_get.return_value = mock_response
+
+        weather = fetch_real_weather(20.0475, 73.8035)
+        self.assertEqual(weather["temperature_c"], 27.5)
+        self.assertEqual(weather["relative_humidity_pct"], 68.0)
+        self.assertEqual(weather["precipitation_mm"], 1.2)
+        self.assertEqual(weather["avg_soil_temp_c"], 24.4)
+        self.assertEqual(weather["avg_soil_moisture_pct"], 42.5)
+        self.assertEqual(weather["source"], "Open-Meteo Live API")
+
+    @patch("core.services.requests.get")
+    def test_fetch_real_weather_exception_fallback(self, mock_get):
+        import requests
+        mock_get.side_effect = requests.RequestException("Connection timeout")
+
+        weather = fetch_real_weather(20.0475, 73.8035)
+        self.assertIn("temperature_c", weather)
+        self.assertIn("avg_soil_moisture_pct", weather)
+        self.assertEqual(weather["source"], "Fallback Agronomic Model")
+
+    def test_generate_agronomic_advisory_rule_based_fallback(self):
+        weather_summary = {
+            "temperature_c": 29.0,
+            "relative_humidity_pct": 78.0,
+            "precipitation_mm": 2.5,
+            "wind_speed_kmh": 12.0,
+            "avg_soil_temp_c": 24.0,
+            "avg_soil_moisture_pct": 46.0,
+            "temp_max_c": 31.0,
+            "temp_min_c": 22.0,
+            "precipitation_sum_mm": 6.0,
+        }
+        with patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
+            advisory = generate_agronomic_advisory(weather_summary, "Nashik Hub")
+
+        self.assertIn("weather_headline", advisory)
+        self.assertIn("risks", advisory)
+        self.assertIn("irrigation_harvest_advice", advisory)
+        self.assertIn("recommended_crops", advisory)
+        self.assertTrue(len(advisory["weather_headline"]) > 10)
+        self.assertTrue(len(advisory["risks"]) > 10)
+
+
+class WeatherAdvisoryAPITests(TestCase):
+    """Tests /api/weather-advisory/ endpoint."""
+
+    def setUp(self):
+        self.client = Client()
+
+    @patch("core.views.fetch_real_weather")
+    @patch("core.views.generate_agronomic_advisory")
+    def test_weather_advisory_with_coordinates(self, mock_advisory, mock_weather):
+        mock_weather.return_value = {
+            "temperature_c": 26.5,
+            "relative_humidity_pct": 65.0,
+            "avg_soil_moisture_pct": 40.0,
+        }
+        mock_advisory.return_value = {
+            "weather_headline": "Pleasant morning with moderate humidity.",
+            "risks": "Low pest hazard.",
+            "irrigation_harvest_advice": "Proceed with regular harvesting.",
+            "recommended_crops": "Tomatoes and Onions.",
+        }
+
+        response = self.client.get("/api/weather-advisory/?lat=20.0475&lon=73.8035")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertAlmostEqual(data["location"]["latitude"], 20.0475)
+        self.assertAlmostEqual(data["location"]["longitude"], 73.8035)
+        self.assertIn("weather", data)
+        self.assertIn("advisory", data)
+        self.assertEqual(data["advisory"]["weather_headline"], "Pleasant morning with moderate humidity.")
+
+    @patch("core.views.get_coordinates_from_pincode")
+    @patch("core.views.fetch_real_weather")
+    @patch("core.views.generate_agronomic_advisory")
+    def test_weather_advisory_with_pincode(self, mock_advisory, mock_weather, mock_geo):
+        mock_geo.return_value = (20.0475, 73.8035, "Nashik, Maharashtra")
+        mock_weather.return_value = {
+            "temperature_c": 28.0,
+            "relative_humidity_pct": 60.0,
+            "avg_soil_moisture_pct": 38.0,
+        }
+        mock_advisory.return_value = {
+            "weather_headline": "Sunny and clear.",
+            "risks": "Minimal pest risk.",
+            "irrigation_harvest_advice": "Optimal morning harvest.",
+            "recommended_crops": "Bell Pepper and Cauliflower.",
+        }
+
+        response = self.client.get("/api/weather-advisory/?pincode=422004")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["location"]["pincode"], "422004")
+        self.assertEqual(data["location"]["display_name"], "Nashik, Maharashtra")
+
+    def test_weather_advisory_invalid_coordinates_returns_400(self):
+        response = self.client.get("/api/weather-advisory/?lat=invalid&lon=73.8035")
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertFalse(data["success"])
+        self.assertIn("Invalid latitude or longitude", data["error"])
+
+    def test_weather_advisory_post_method_not_allowed(self):
+        response = self.client.post("/api/weather-advisory/", {})
+        self.assertEqual(response.status_code, 405)
+        data = response.json()
+        self.assertFalse(data["success"])
+
 
 
 

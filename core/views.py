@@ -24,8 +24,11 @@ from core.models import (
 )
 from core.services import (
     allocate_supply_to_order,
+    fetch_real_weather,
+    generate_agronomic_advisory,
     generate_transparent_pricing_breakdown,
     get_batch_traceability,
+    get_coordinates_from_pincode,
     mock_dynamic_route,
     predict_demand,
     process_batch_payout,
@@ -422,6 +425,71 @@ def api_voice_assist(request):
             "response_text": "माफ़ कीजिए, वॉयस सेवा में कुछ तकनीकी समस्या आई है। कृपया कुछ देर बाद प्रयास करें।",
             "audio_source": "browser_speech",
         }, status=500)
+
+
+# ==============================================================================
+# Real-Time Agronomic Weather Intelligence API Endpoint
+# ==============================================================================
+
+def api_weather_advisory(request):
+    """
+    Real-time Agronomic Weather Intelligence API.
+    Accepts GET query parameters:
+      - lat & lon: Direct geographic coordinates.
+      - pincode: 6-digit Indian postal code (resolved via Nominatim).
+      - location_name: Optional human-readable region label.
+
+    Resolves coordinates, queries Open-Meteo telemetry (weather, soil temperature,
+    volumetric soil moisture), generates Gemini AI agronomic advisory,
+    and returns a unified JSON payload with HTTP status 200.
+    """
+    if request.method != "GET":
+        return JsonResponse({"success": False, "error": "Method not allowed. Use GET."}, status=405)
+
+    lat_param = request.GET.get("lat")
+    lon_param = request.GET.get("lon")
+    pincode = request.GET.get("pincode", "").strip()
+    custom_location = request.GET.get("location_name", "").strip()
+
+    lat = None
+    lon = None
+    resolved_name = custom_location
+
+    if lat_param and lon_param:
+        try:
+            lat = float(lat_param)
+            lon = float(lon_param)
+            if not resolved_name:
+                resolved_name = f"Coordinates ({lat:.3f}°N, {lon:.3f}°E)"
+        except (ValueError, TypeError):
+            return JsonResponse({"success": False, "error": "Invalid latitude or longitude format."}, status=400)
+    elif pincode:
+        lat, lon, geo_name = get_coordinates_from_pincode(pincode)
+        if not resolved_name:
+            resolved_name = geo_name
+    elif request.user.is_authenticated and getattr(request.user, "pincode", None):
+        pincode = request.user.pincode
+        lat, lon, geo_name = get_coordinates_from_pincode(pincode)
+        if not resolved_name:
+            resolved_name = geo_name
+    else:
+        # Default fallback to central Ag-Hub (Hyderabad / Nashik)
+        lat, lon, resolved_name = 17.3850, 78.4867, "Hyderabad Regional Ag-Hub, Telangana, India"
+
+    weather_data = fetch_real_weather(lat, lon)
+    advisory_data = generate_agronomic_advisory(weather_data, resolved_name)
+
+    return JsonResponse({
+        "success": True,
+        "location": {
+            "latitude": lat,
+            "longitude": lon,
+            "display_name": resolved_name,
+            "pincode": pincode or "",
+        },
+        "weather": weather_data,
+        "advisory": advisory_data,
+    }, status=200)
 
 
 # ==============================================================================

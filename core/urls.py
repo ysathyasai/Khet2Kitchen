@@ -34,6 +34,9 @@ urlpatterns = [
     path("api/voice/assist/", views.api_voice_assist, name="api_voice_assist"),
     path("api/v1/voice-assistant/process-command/", views.api_voice_assist, name="api_voice_assist_v1"),
 
+    # Real-time Agronomic Weather Intelligence API
+    path("api/weather-advisory/", views.api_weather_advisory, name="api_weather_advisory"),
+
     # Authentication Routes
     path(
         "login/",
