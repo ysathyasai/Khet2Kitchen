@@ -56,9 +56,7 @@ def transcribe_audio(audio_file) -> Tuple[str, str]:
         locale = SarvamVoiceService.normalize_language_code(short_lang)
         return transcript, locale
 
-    # Resilient fallback transcription if audio is mock/unintelligible or API fails
-    logger.info("Using resilient fallback transcription.")
-    return "मेरा वॉलेट बैलेंस कितना है और अगली फसल कब काटनी है?", "hi-IN"
+    return "", "auto"
 
 
 # ==============================================================================
@@ -99,30 +97,35 @@ def detect_spoken_language(text: str, req_lang: str = "auto") -> str:
     Accurately detects if query is spoken in English vs Hindi vs other Indic languages.
     Prevents English speech from being forced into Hindi Devanagari synthesis.
     """
-    if req_lang and req_lang not in ("auto", "unknown"):
-        return SarvamVoiceService.normalize_language_code(req_lang)
+    text_clean = (text or "").strip()
 
-    text_lower = (text or "").lower()
-
-    # 1. Direct Latin/English letters
-    if re.search(r"[a-zA-Z]{2,}", text):
-        return "en-IN"
+    # 1. If the spoken/transcribed text contains clear Latin/English words, it IS English!
+    # Even if the UI language selector was set to default 'hi-IN' or 'auto'
+    if re.search(r"[a-zA-Z]{3,}", text_clean):
+        indic_chars = len(re.findall(r"[\u0900-\u0D7F]", text_clean))
+        latin_words = len(re.findall(r"\b[a-zA-Z]{2,}\b", text_clean))
+        if latin_words >= 2 or indic_chars == 0:
+            return "en-IN"
 
     # 2. Phonetic / Transliterated English words captured in Devanagari
     phonetic_english_markers = [
         "आई एम", "हेलो", "एक्चुअली", "वांट", "टोमेटो", "पॉसिबल",
         "प्लीज", "थैंक यू", "ओके", "मॉर्निंग", "इवनिंग", "सेल", "मनी", "बैलेंस"
     ]
-    english_score = sum(1 for m in phonetic_english_markers if m in text)
-    if english_score >= 1 and not ("क्या" in text or "कितना" in text or "कब" in text or "कहाँ" in text or "नमस्ते" in text):
+    english_score = sum(1 for m in phonetic_english_markers if m in text_clean)
+    if english_score >= 1 and not ("क्या" in text_clean or "कितना" in text_clean or "कब" in text_clean or "कहाँ" in text_clean or "नमस्ते" in text_clean):
         return "en-IN"
 
-    # 3. Marathi markers
-    if any(m in text for m in ["माझं", "आहे", "नाही", "सांगा", "काढणी"]):
+    # 3. Explicit language request (if user explicitly selected a language pill)
+    if req_lang and req_lang not in ("auto", "unknown"):
+        return SarvamVoiceService.normalize_language_code(req_lang)
+
+    # 4. Marathi markers
+    if any(m in text_clean for m in ["माझं", "आहे", "नाही", "सांगा", "काढणी"]):
         return "mr-IN"
 
-    # 4. Devanagari defaults to Hindi
-    if re.search(r"[\u0900-\u097F]", text):
+    # 5. Devanagari defaults to Hindi
+    if re.search(r"[\u0900-\u097F]", text_clean):
         return "hi-IN"
 
     return "en-IN"

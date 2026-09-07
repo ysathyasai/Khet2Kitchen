@@ -336,9 +336,25 @@ def api_voice_assist(request):
             elif query_text:
                 transcribed_text = query_text
             else:
-                transcribed_text, _ = transcribe_audio(audio_file)
+                transcribed_text = ""
         else:
             transcribed_text = query_text
+
+        if not transcribed_text:
+            is_en = req_lang.startswith("en")
+            fallback_msg = (
+                "I couldn't hear your voice clearly. Please tap the microphone to speak again."
+                if is_en
+                else "माफ़ कीजिए, आपकी आवाज़ साफ़ नहीं आई। कृपया दोबारा बोलें।"
+            )
+            return JsonResponse({
+                "success": False,
+                "error": "Could not understand audio. Please try speaking again.",
+                "response_text": fallback_msg,
+                "voice_reply_text": fallback_msg,
+                "audio_source": "browser_speech",
+                "language_code": "en-IN" if is_en else "hi-IN",
+            })
 
         # Determine exact spoken language (English vs Indic)
         language_code = detect_spoken_language(

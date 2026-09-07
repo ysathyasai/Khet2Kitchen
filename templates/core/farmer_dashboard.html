@@ -1262,8 +1262,8 @@
         formData.append("audio", audioBlob, "farmer_recording.webm");
         formData.append("language", currentSelectedLanguage);
 
-        // Only attach live transcribed text if an explicit language is selected or text is clearly recognized
-        if (liveTranscribedQuery && liveTranscribedQuery.trim() && currentSelectedLanguage !== "auto") {
+        // Attach live transcribed text whenever available to ensure high fidelity even with network latency
+        if (liveTranscribedQuery && liveTranscribedQuery.trim()) {
             console.log("[K2K Voice] Attaching live transcribed text:", liveTranscribedQuery);
             formData.append("text", liveTranscribedQuery.trim());
         }
