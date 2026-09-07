@@ -4,12 +4,17 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import (
     Batch,
+    ConsumerOrder,
+    ConsumerOrderItem,
     Crop,
     DemandOrder,
     FarmerWallet,
     HarvestSchedule,
     InputSupply,
+    Kit,
+    KitItem,
     MicroHub,
+    RecipeCombo,
     User,
     WalletTransaction,
 )
@@ -98,5 +103,43 @@ class InputSupplyAdmin(admin.ModelAdmin):
     list_filter = ("category", "status", "hub")
     search_fields = ("name", "supplier__identifier", "supplier__email")
     readonly_fields = ("created_at", "updated_at")
+
+
+class KitItemInline(admin.TabularInline):
+    from core.models import KitItem
+    model = KitItem
+    extra = 1
+
+
+@admin.register(Kit)
+class KitAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "category", "discount_percentage", "badge_text", "is_active", "created_at")
+    list_filter = ("category", "is_active")
+    search_fields = ("name", "code")
+    inlines = [KitItemInline]
+
+
+@admin.register(RecipeCombo)
+class RecipeComboAdmin(admin.ModelAdmin):
+    list_display = ("dish_name", "combo_id", "servings", "combo_price", "discount_percentage", "created_at")
+    list_filter = ("servings", "created_at")
+    search_fields = ("dish_name", "combo_id")
+    readonly_fields = ("combo_id", "created_at")
+
+
+class ConsumerOrderItemInline(admin.TabularInline):
+    from core.models import ConsumerOrderItem
+    model = ConsumerOrderItem
+    extra = 0
+    readonly_fields = ("farmer_payout", "is_settled_to_wallet")
+
+
+@admin.register(ConsumerOrder)
+class ConsumerOrderAdmin(admin.ModelAdmin):
+    list_display = ("order_id", "customer_name", "customer_phone", "final_paid_amount", "status", "created_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("order_id", "customer_name", "customer_phone", "customer_email")
+    readonly_fields = ("order_id", "created_at", "updated_at")
+    inlines = [ConsumerOrderItemInline]
 
 

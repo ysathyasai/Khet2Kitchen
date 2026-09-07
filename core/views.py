@@ -11,6 +11,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import TemplateDoesNotExist
 from django.views.decorators.http import require_POST
 
+from django.db.models import Q
+from django.urls import reverse
+
 from core.decorators import role_required
 from core.forms import (
     CropCreateForm,
@@ -21,15 +24,21 @@ from core.forms import (
 )
 from core.models import (
     Batch,
+    ConsumerOrder,
+    ConsumerOrderItem,
     Crop,
     DemandOrder,
     FarmerWallet,
     HarvestSchedule,
     InputSupply,
+    Kit,
+    KitItem,
     MicroHub,
+    RecipeCombo,
     User,
     WalletTransaction,
 )
+from core.ai_recipe import generate_recipe_combo
 from core.services import (
     allocate_supply_to_order,
     fetch_real_weather,
@@ -1135,5 +1144,326 @@ def update_input_supply_view(request, supply_id):
         messages.error(request, f"Error updating inventory: {exc}")
 
     return redirect("supplier_dashboard")
+
+
+# ==============================================================================
+# Direct-to-Consumer (D2C) Marketplace & AI Recipe Combos
+# ==============================================================================
+
+def consumer_shop_view(request):
+    """
+    Public-facing D2C farm store displaying direct farmer produce,
+    pre-packaged vegetable kits, and the AI Recipe Combo builder.
+    """
+    category = request.GET.get("category", "all").strip().lower()
+    search_query = request.GET.get("q", "").strip()
+
+    # Query Active Pre-packaged Kits
+    kits_qs = Kit.objects.filter(is_active=True).prefetch_related("items__crop")
+    if search_query:
+        kits_qs = kits_qs.filter(
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(code__icontains=search_query)
+        )
+
+    # Query Active Direct Farm Produce
+    crops_qs = Crop.objects.filter(is_active=True).select_related("farmer")
+    if search_query:
+        crops_qs = crops_qs.filter(
+            Q(name__icontains=search_query) |
+            Q(category__icontains=search_query) |
+            Q(code__icontains=search_query)
+        )
+
+    # Query Recent/Popular Recipe Combos
+    combos_qs = RecipeCombo.objects.all().order_by("-created_at")[:6]
+    if search_query:
+        combos_qs = combos_qs.filter(dish_name__icontains=search_query)
+
+    # Preset quick-selection dishes for the AI combo generator
+    preset_dishes = [
+        {"name": "Sambar", "icon": "🍲", "tag": "South Indian Classic"},
+        {"name": "Biryani", "icon": "🍛", "tag": "Fragrant Dum Style"},
+        {"name": "Palak Paneer", "icon": "🥬", "tag": "Iron-Rich Greens"},
+        {"name": "Pav Bhaji", "icon": "🥔", "tag": "Mumbai Street Special"},
+        {"name": "Dal Tadka", "icon": "🥣", "tag": "Dhaba Style Protein"},
+        {"name": "Detox Salad", "icon": "🥗", "tag": "Farm-Fresh Raw"},
+    ]
+
+    context = {
+        "kits": kits_qs,
+        "crops": crops_qs,
+        "recent_combos": combos_qs,
+        "preset_dishes": preset_dishes,
+        "active_category": category,
+        "search_query": search_query,
+        "title": "K2K Direct Farm Store • 100% Traceable Direct to Consumer",
+    }
+    return render(request, "core/consumer_shop.html", context)
+
+
+def ai_combo_builder_view(request):
+    """
+    AI Dish-to-Combo Engine view: Accepts dish name and serving count,
+    calculates required crop grammage, maps to active catalog produce,
+    applies a 15% bundle discount, and returns dynamic pricing with transparent farmer payouts.
+    Supports both JSON API (for modal/AJAX) and standalone HTML view.
+    """
+    is_json = (
+        request.headers.get("x-requested-with") == "XMLHttpRequest" or
+        request.GET.get("format") == "json" or
+        request.content_type == "application/json" or
+        request.method == "POST"
+    )
+
+    dish_name = "Sambar"
+    servings = 4
+
+    if request.method == "POST":
+        try:
+            if request.content_type == "application/json" and request.body:
+                body_data = json.loads(request.body.decode("utf-8"))
+                dish_name = body_data.get("dish_name") or body_data.get("dish") or dish_name
+                servings = body_data.get("servings") or servings
+            else:
+                dish_name = request.POST.get("dish_name") or request.POST.get("dish") or dish_name
+                servings = request.POST.get("servings") or servings
+        except Exception as exc:
+            logger.warning("Error parsing POST in ai_combo_builder_view: %s", exc)
+    else:
+        dish_name = request.GET.get("dish_name") or request.GET.get("dish") or dish_name
+        servings = request.GET.get("servings") or servings
+
+    try:
+        servings = int(servings)
+    except (ValueError, TypeError):
+        servings = 4
+
+    combo_data = generate_recipe_combo(dish_name=dish_name, servings=servings, persist=True)
+
+    if is_json:
+        return JsonResponse({"status": "success", "combo": combo_data})
+
+    # Standalone HTML detail view
+    context = {
+        "combo": combo_data,
+        "dish_name": dish_name,
+        "servings": servings,
+        "title": f"AI Recipe Combo: {combo_data.get('dish_name')} - K2K Direct",
+    }
+    return render(request, "core/consumer_combo_detail.html", context)
+
+
+@require_POST
+def consumer_checkout_view(request):
+    """
+    Direct D2C 1-Click Checkout:
+    Places a ConsumerOrder for Produce, Kits, or Recipe Combos,
+    and automatically executes instantaneous direct digital wallet credits
+    to the respective farmer(s) in FarmerWallet with an immutable audit entry.
+    """
+    item_type = request.POST.get("item_type", "PRODUCE").strip().upper()
+    item_id = request.POST.get("item_id", "").strip()
+    quantity_raw = request.POST.get("quantity") or request.POST.get("quantity_kg") or "1"
+    
+    customer_name = request.POST.get("customer_name", "").strip() or "Verified Urban Consumer"
+    customer_phone = request.POST.get("customer_phone", "").strip() or "+91 98765 43210"
+    customer_email = request.POST.get("customer_email", "").strip()
+    delivery_address = request.POST.get("delivery_address", "").strip() or "Doorstep Delivery, Urban Kitchen Cluster"
+    pincode = request.POST.get("pincode", "").strip() or "500033"
+
+    try:
+        quantity = Decimal(str(quantity_raw))
+        if quantity <= Decimal("0.00"):
+            quantity = Decimal("1.00")
+    except Exception:
+        quantity = Decimal("1.00")
+
+    demo_farmer = User.objects.filter(role=User.Role.FARMER).first()
+
+    order = ConsumerOrder(
+        customer_name=customer_name,
+        customer_phone=customer_phone,
+        customer_email=customer_email,
+        delivery_address=delivery_address,
+        pincode=pincode,
+        status=ConsumerOrder.Status.PAID_SETTLED,
+        payment_method="UPI_INSTANT",
+    )
+
+    total_settled_to_farmers = Decimal("0.00")
+
+    if item_type == "KIT":
+        kit = get_object_or_404(Kit, id=item_id)
+        qty_int = int(quantity)
+        bundle_price = kit.calculate_bundle_price()
+        orig_price = kit.calculate_original_price() * Decimal(str(qty_int))
+        subtotal = (bundle_price * Decimal(str(qty_int))).quantize(Decimal("0.01"))
+        discount = (orig_price - subtotal).quantize(Decimal("0.01"))
+
+        order.total_amount = orig_price
+        order.discount_amount = discount
+        order.final_paid_amount = subtotal
+        order.save()
+
+        # Determine primary farmer from kit items or fallback
+        first_item = kit.items.select_related("crop__farmer").first()
+        primary_farmer = (first_item.crop.farmer if first_item and first_item.crop else None) or demo_farmer
+
+        kit_farmer_payout = (subtotal * Decimal("0.90")).quantize(Decimal("0.01"))
+
+        ConsumerOrderItem.objects.create(
+            order=order,
+            item_type=ConsumerOrderItem.ItemType.KIT,
+            kit=kit,
+            farmer=primary_farmer,
+            item_name=kit.name,
+            quantity=Decimal(str(qty_int)),
+            unit="kit",
+            unit_price=bundle_price,
+            subtotal=subtotal,
+            farmer_payout=kit_farmer_payout,
+            is_settled_to_wallet=True,
+        )
+
+        # Credit farmers directly for each component item in kit
+        kit_items = list(kit.items.select_related("crop__farmer"))
+        if kit_items:
+            for k_item in kit_items:
+                crop_farmer = k_item.crop.farmer or primary_farmer
+                if crop_farmer:
+                    wallet, _ = FarmerWallet.objects.get_or_create(farmer=crop_farmer)
+                    item_kg = Decimal(str(k_item.quantity_grams)) / Decimal("1000.00")
+                    item_val = item_kg * k_item.crop.base_price * Decimal(str(qty_int))
+                    payout_share = (item_val * (Decimal("100.00") - kit.discount_percentage) / Decimal("100.00") * Decimal("0.90")).quantize(Decimal("0.01"))
+                    if payout_share > Decimal("0.00"):
+                        wallet.credit(payout_share, f"D2C Kit Sale: {kit.name} ({k_item.crop.name}) - Order {order.order_id}")
+                        total_settled_to_farmers += payout_share
+        elif primary_farmer:
+            wallet, _ = FarmerWallet.objects.get_or_create(farmer=primary_farmer)
+            wallet.credit(kit_farmer_payout, f"D2C Kit Sale: {kit.name} - Order {order.order_id}")
+            total_settled_to_farmers += kit_farmer_payout
+
+    elif item_type == "COMBO":
+        combo = RecipeCombo.objects.filter(Q(id=item_id) if item_id.isdigit() else Q(combo_id=item_id)).first()
+        if not combo:
+            # Generate on the fly
+            dish = request.POST.get("dish_name") or "Sambar"
+            servings_cnt = int(request.POST.get("servings") or 4)
+            c_data = generate_recipe_combo(dish, servings_cnt, persist=True)
+            combo = RecipeCombo.objects.get(id=c_data["combo_db_id"])
+
+        subtotal = combo.combo_price
+        orig_price = combo.original_price
+        discount = (orig_price - subtotal).quantize(Decimal("0.01"))
+
+        order.total_amount = orig_price
+        order.discount_amount = discount
+        order.final_paid_amount = subtotal
+        order.save()
+
+        total_combo_payout = (subtotal * Decimal("0.90")).quantize(Decimal("0.01"))
+
+        ConsumerOrderItem.objects.create(
+            order=order,
+            item_type=ConsumerOrderItem.ItemType.COMBO,
+            recipe_combo=combo,
+            farmer=demo_farmer,
+            item_name=f"{combo.dish_name} Combo ({combo.servings} Servings)",
+            quantity=Decimal("1.00"),
+            unit="combo",
+            unit_price=combo.combo_price,
+            subtotal=subtotal,
+            farmer_payout=total_combo_payout,
+            is_settled_to_wallet=True,
+        )
+
+        # Distribute direct payouts to each farmer linked in the combo ingredients
+        credited_in_combo = Decimal("0.00")
+        for ing in combo.items_breakdown:
+            f_id = ing.get("farmer_id")
+            farmer_obj = User.objects.filter(id=f_id).first() if f_id else demo_farmer
+            if farmer_obj:
+                wallet, _ = FarmerWallet.objects.get_or_create(farmer=farmer_obj)
+                ing_price = Decimal(str(ing.get("standalone_price", "0.00")))
+                payout_share = (ing_price * Decimal("0.85") * Decimal("0.90")).quantize(Decimal("0.01"))
+                if payout_share > Decimal("0.00"):
+                    wallet.credit(
+                        payout_share,
+                        f"D2C AI Combo: {ing.get('crop_name')} in {combo.dish_name} - Order {order.order_id}"
+                    )
+                    credited_in_combo += payout_share
+                    total_settled_to_farmers += payout_share
+
+        if credited_in_combo == Decimal("0.00") and demo_farmer:
+            wallet, _ = FarmerWallet.objects.get_or_create(farmer=demo_farmer)
+            wallet.credit(total_combo_payout, f"D2C AI Combo: {combo.dish_name} - Order {order.order_id}")
+            total_settled_to_farmers += total_combo_payout
+
+    else:
+        # Direct Farm Produce
+        crop = get_object_or_404(Crop, id=item_id)
+        subtotal = (quantity * crop.base_price).quantize(Decimal("0.01"))
+        order.total_amount = subtotal
+        order.discount_amount = Decimal("0.00")
+        order.final_paid_amount = subtotal
+        order.save()
+
+        farmer = crop.farmer or demo_farmer
+        farmer_payout = (subtotal * Decimal("0.92")).quantize(Decimal("0.01"))
+
+        ConsumerOrderItem.objects.create(
+            order=order,
+            item_type=ConsumerOrderItem.ItemType.PRODUCE,
+            crop=crop,
+            farmer=farmer,
+            item_name=f"Farm Fresh {crop.name}",
+            quantity=quantity,
+            unit="kg",
+            unit_price=crop.base_price,
+            subtotal=subtotal,
+            farmer_payout=farmer_payout,
+            is_settled_to_wallet=True,
+        )
+
+        if farmer:
+            wallet, _ = FarmerWallet.objects.get_or_create(farmer=farmer)
+            wallet.credit(farmer_payout, f"D2C Direct Produce Sale: {quantity}kg {crop.name} - Order {order.order_id}")
+            total_settled_to_farmers += farmer_payout
+
+    messages.success(
+        request,
+        f"Order {order.order_id} confirmed! ₹{total_settled_to_farmers} was credited directly into farmer digital wallets."
+    )
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("format") == "json":
+        return JsonResponse({
+            "status": "success",
+            "order_id": order.order_id,
+            "redirect_url": reverse("consumer_order_success", args=[order.order_id]),
+            "settled_amount": float(total_settled_to_farmers),
+        })
+
+    return redirect("consumer_order_success", order_id=order.order_id)
+
+
+def consumer_order_success_view(request, order_id):
+    """
+    Renders receipt of consumer purchase with radical supply chain transparency,
+    displaying itemized farmer payouts credited directly to farmer wallets.
+    """
+    order = get_object_or_404(ConsumerOrder, order_id=order_id)
+    items = order.items.select_related("crop", "kit", "recipe_combo", "farmer").all()
+    total_farmer_payout = sum((item.farmer_payout for item in items), Decimal("0.00"))
+
+    context = {
+        "order": order,
+        "items": items,
+        "total_farmer_payout": total_farmer_payout,
+        "title": f"Order {order.order_id} Confirmed • K2K Farm Direct",
+    }
+    return render(request, "core/consumer_order_success.html", context)
+
 
 

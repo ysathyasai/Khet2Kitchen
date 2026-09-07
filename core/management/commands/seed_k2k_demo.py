@@ -10,7 +10,10 @@ from core.models import (
     FarmerWallet,
     HarvestSchedule,
     InputSupply,
+    Kit,
+    KitItem,
     MicroHub,
+    RecipeCombo,
     User,
     WalletTransaction,
 )
@@ -443,4 +446,89 @@ class Command(BaseCommand):
         )
         self.stdout.write(self.style.SUCCESS("[OK] Seeded AI Harvest Schedules for Farmers"))
 
+        # 13. Pre-Packaged Vegetable Kits (D2C Marketplace)
+        kit_sambar, _ = Kit.objects.get_or_create(
+            code="KIT-D2C-SBR-01",
+            defaults={
+                "name": "Sambar Essentials Farm Kit",
+                "category": Kit.Category.VEGETABLE,
+                "description": "Handpicked fresh vegetables for authentic South Indian Sambar: juicy field tomatoes, piquant red onions, and hot green chillies directly from farmer Ramesh Kumar.",
+                "discount_percentage": Decimal("15.00"),
+                "badge_text": "15% OFF • Best Seller",
+                "is_active": True,
+            },
+        )
+        KitItem.objects.get_or_create(kit=kit_sambar, crop=tomato, defaults={"quantity_grams": 1000})
+        KitItem.objects.get_or_create(kit=kit_sambar, crop=onion, defaults={"quantity_grams": 500})
+        KitItem.objects.get_or_create(kit=kit_sambar, crop=chilli, defaults={"quantity_grams": 100})
+
+        kit_curry, _ = Kit.objects.get_or_create(
+            code="KIT-D2C-CRY-01",
+            defaults={
+                "name": "Daily Curry Veggie Box",
+                "category": Kit.Category.VEGETABLE,
+                "description": "Essential daily staple box containing premium Nashik red onions, field tomatoes, and fragrant chillies for wholesome everyday family meals.",
+                "discount_percentage": Decimal("12.00"),
+                "badge_text": "Kitchen Essential",
+                "is_active": True,
+            },
+        )
+        KitItem.objects.get_or_create(kit=kit_curry, crop=onion, defaults={"quantity_grams": 1000})
+        KitItem.objects.get_or_create(kit=kit_curry, crop=tomato, defaults={"quantity_grams": 800})
+        KitItem.objects.get_or_create(kit=kit_curry, crop=chilli, defaults={"quantity_grams": 80})
+
+        kit_leafy, _ = Kit.objects.get_or_create(
+            code="KIT-D2C-GRN-01",
+            defaults={
+                "name": "Leafy Greens & Immunity Kit",
+                "category": Kit.Category.HERBS,
+                "description": "Rich in dietary fiber and essential micronutrients. Freshly harvested greens, tomatoes, and organic chillies.",
+                "discount_percentage": Decimal("15.00"),
+                "badge_text": "Farm Fresh • 15% OFF",
+                "is_active": True,
+            },
+        )
+        KitItem.objects.get_or_create(kit=kit_leafy, crop=tomato, defaults={"quantity_grams": 600})
+        KitItem.objects.get_or_create(kit=kit_leafy, crop=onion, defaults={"quantity_grams": 400})
+        KitItem.objects.get_or_create(kit=kit_leafy, crop=chilli, defaults={"quantity_grams": 120})
+
+        kit_fruit, _ = Kit.objects.get_or_create(
+            code="KIT-D2C-SLD-01",
+            defaults={
+                "name": "Salad & Immunity Fruit Box",
+                "category": Kit.Category.FRUIT,
+                "description": "Nutrient-dense raw salad basket with Ratnagiri sweet mangoes, juicy field tomatoes, and mild salad onions.",
+                "discount_percentage": Decimal("10.00"),
+                "badge_text": "10% OFF • Vitamin C Boost",
+                "is_active": True,
+            },
+        )
+        KitItem.objects.get_or_create(kit=kit_fruit, crop=mango, defaults={"quantity_grams": 1000})
+        KitItem.objects.get_or_create(kit=kit_fruit, crop=tomato, defaults={"quantity_grams": 500})
+        KitItem.objects.get_or_create(kit=kit_fruit, crop=onion, defaults={"quantity_grams": 300})
+
+        self.stdout.write(self.style.SUCCESS("[OK] Seeded 4 D2C Consumer Kits (Sambar, Curry Box, Leafy Greens, Fruit Box)"))
+
+        # 14. Demo Pre-Generated Recipe Combo
+        RecipeCombo.objects.get_or_create(
+            dish_name="Authentic South Indian Sambar",
+            servings=4,
+            defaults={
+                "combo_id": "K2K-CMB-SAMBAR-DEMO",
+                "prep_time_minutes": 25,
+                "culinary_notes": "A nutrient-rich lentil and vegetable stew with a fragrant tamarind-coriander temper.",
+                "total_weight_kg": Decimal("0.60"),
+                "original_price": Decimal("21.85"),
+                "discount_percentage": Decimal("15.00"),
+                "combo_price": Decimal("18.57"),
+                "items_breakdown": [
+                    {"crop_name": "Tomato", "quantity_grams": 300, "role": "Broth base", "standalone_price": 6.60},
+                    {"crop_name": "Onion", "quantity_grams": 250, "role": "Savory depth", "standalone_price": 7.00},
+                    {"crop_name": "Chilli", "quantity_grams": 50, "role": "Piquant spice", "standalone_price": 8.25},
+                ],
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("[OK] Seeded Demo AI Recipe Combo: Authentic South Indian Sambar (4 Servings)"))
+
         self.stdout.write(self.style.SUCCESS("\n[SUCCESS] Localized demo dataset seeded successfully with full multi-role data isolation!"))
+

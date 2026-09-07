@@ -1,0 +1,1583 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title|default:"K2K Direct Farm Store • 100% Traceable Direct to Consumer" }}</title>
+    <meta name="description" content="Buy farm-fresh produce and vegetable kits directly from verified Indian farmers with AI recipe-to-combo smart calculations and instant farmer wallet settlements.">
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
+
+    <!-- Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #071710;
+            --bg-card: #0D261B;
+            --bg-card-hover: #123325;
+            --bg-surface: #102B1F;
+            --brand-green: #133826;
+            --primary-emerald: #10B981;
+            --primary-mint: #34D399;
+            --accent-gold: #F59E0B;
+            --accent-gold-hover: #D97706;
+            --accent-gold-glow: rgba(245, 158, 11, 0.25);
+            --soft-cream: #F4F6F1;
+            --text-white: #FFFFFF;
+            --text-sub: #D1D5DB;
+            --text-muted: #9CA3AF;
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --border-glass-hover: rgba(52, 211, 153, 0.35);
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--soft-cream);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navbar */
+        .shop-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(7, 23, 16, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 0.85rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-white);
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            padding: 4px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .brand-text {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-gold {
+            color: var(--accent-gold);
+        }
+
+        .d2c-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-gold);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-search-form {
+            flex: 1;
+            max-width: 460px;
+            display: flex;
+            position: relative;
+        }
+
+        .nav-search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-glass);
+            border-radius: 9999px;
+            padding: 0.6rem 1.25rem 0.6rem 2.6rem;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-search-input:focus {
+            border-color: var(--primary-mint);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+        }
+
+        .search-icon-pos {
+            position: absolute;
+            left: 0.95rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            pointer-events: none;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-nav-action {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-glass);
+            color: var(--soft-cream);
+            padding: 0.55rem 1.1rem;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav-action:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .btn-nav-gold {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-hover));
+            color: #000;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 4px 14px var(--accent-gold-glow);
+        }
+
+        .btn-nav-gold:hover {
+            background: linear-gradient(135deg, #FBBF24, #D97706);
+            color: #000;
+            transform: translateY(-1px);
+        }
+
+        /* Hero Banner */
+        .shop-hero {
+            background: radial-gradient(ellipse at 50% 20%, rgba(16, 185, 129, 0.18) 0%, transparent 60%),
+                        linear-gradient(180deg, #071710 0%, #0C261B 100%);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 3rem 2rem 2.5rem;
+            text-align: center;
+        }
+
+        .hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #6EE7B7;
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+            color: #FFFFFF;
+        }
+
+        .hero-gold {
+            background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-sub {
+            max-width: 680px;
+            margin: 0 auto 2rem;
+            color: var(--text-sub);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* AI Recipe-to-Combo Search Card */
+        .ai-engine-container {
+            max-width: 960px;
+            margin: -2rem auto 3rem;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .ai-engine-card {
+            background: linear-gradient(145deg, rgba(16, 43, 31, 0.95), rgba(7, 23, 16, 0.98));
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 30px -10px rgba(245, 158, 11, 0.2);
+            backdrop-filter: blur(20px);
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .ai-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .ai-icon-pulse {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-gold), #B45309);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 15px var(--accent-gold-glow);
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+            100% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(245, 158, 11, 0.6); }
+        }
+
+        .ai-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .ai-tagline {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .ai-discount-pill {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #6EE7B7;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .ai-input-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .ai-input-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group-styled {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-label-styled {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .ai-text-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 0.85rem;
+            padding: 0.85rem 1.25rem;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .ai-text-field:focus {
+            border-color: var(--accent-gold);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px var(--accent-gold-glow);
+        }
+
+        .servings-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 0.85rem;
+            padding: 0.85rem 1.25rem;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .servings-select option {
+            background: #0D261B;
+            color: #fff;
+        }
+
+        .btn-ai-generate {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-hover));
+            color: #000;
+            border: none;
+            border-radius: 0.85rem;
+            padding: 0 1.75rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 6px 18px var(--accent-gold-glow);
+            transition: all 0.2s ease;
+            height: 52px;
+            align-self: flex-end;
+        }
+
+        .btn-ai-generate:hover {
+            background: linear-gradient(135deg, #FBBF24, #D97706);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45);
+        }
+
+        .preset-chips-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .preset-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .preset-chip {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-sub);
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .preset-chip:hover {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: var(--accent-gold);
+            transform: translateY(-1px);
+        }
+
+        /* AI Result Dynamic Container */
+        #aiResultContainer {
+            margin-top: 1.75rem;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .combo-result-box {
+            background: rgba(7, 23, 16, 0.8);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+        }
+
+        .combo-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .combo-dish-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .combo-meta-pills {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-pill {
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            color: var(--text-sub);
+        }
+
+        .combo-price-panel {
+            text-align: right;
+        }
+
+        .price-orig-striked {
+            text-decoration: line-through;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .price-combo-bold {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+        }
+
+        .savings-chip-green {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34D399;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+
+        .ingredients-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.9rem;
+        }
+
+        .ingredients-table th {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .ingredients-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--soft-cream);
+        }
+
+        .farmer-credit-note {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid #10B981;
+            padding: 0.75rem 1rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.85rem;
+            color: #A7F3D0;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .btn-buy-combo-direct {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #fff;
+            border: none;
+            border-radius: 0.85rem;
+            padding: 0.9rem 2rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-buy-combo-direct:hover {
+            background: linear-gradient(135deg, #34D399, #059669);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Filter Tabs */
+        .store-content-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem 5rem;
+            flex: 1;
+        }
+
+        .filter-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+            padding: 0.5rem 1.1rem;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-sub);
+            border: 1px solid var(--border-glass);
+            transition: all 0.2s ease;
+        }
+
+        .filter-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .filter-tab.active {
+            background: var(--brand-green);
+            color: #fff;
+            border-color: var(--primary-mint);
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.25);
+        }
+
+        /* Section Headings */
+        .section-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .section-badge-count {
+            background: rgba(255, 255, 255, 0.08);
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            color: var(--text-sub);
+        }
+
+        /* Product Grids */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.75rem;
+            margin-bottom: 3.5rem;
+        }
+
+        /* Kit Card */
+        .kit-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 1.25rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .kit-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-glass-hover);
+            box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(52, 211, 153, 0.2);
+        }
+
+        .kit-banner-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-hover));
+            color: #000;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            box-shadow: 0 2px 8px var(--accent-gold-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .kit-visual {
+            height: 150px;
+            background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.25) 0%, #081B13 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .kit-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .kit-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 0.4rem;
+        }
+
+        .kit-desc {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .kit-contents-list {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--soft-cream);
+        }
+
+        .kit-item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.2rem 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+
+        .kit-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .kit-price-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .kit-price-big {
+            font-size: 1.45rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+        }
+
+        .kit-orig-strike {
+            font-size: 0.85rem;
+            text-decoration: line-through;
+            color: var(--text-muted);
+            margin-right: 0.4rem;
+        }
+
+        .btn-card-checkout {
+            background: linear-gradient(135deg, var(--brand-green), #0D261B);
+            border: 1px solid rgba(52, 211, 153, 0.4);
+            color: #fff;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-card-checkout:hover {
+            background: linear-gradient(135deg, #10B981, #059669);
+            border-color: #34D399;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+        }
+
+        /* Produce Card */
+        .produce-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 1.25rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .produce-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-glass-hover);
+        }
+
+        .produce-visual {
+            height: 140px;
+            background: radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.18) 0%, #091C13 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            border-bottom: 1px solid var(--border-glass);
+            position: relative;
+        }
+
+        .freshness-pill {
+            position: absolute;
+            bottom: 0.6rem;
+            left: 0.85rem;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #6EE7B7;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 9999px;
+        }
+
+        .produce-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .produce-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .produce-farmer {
+            font-size: 0.8rem;
+            color: var(--primary-mint);
+            font-weight: 600;
+            margin-top: 0.2rem;
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .produce-price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+            margin-bottom: 1rem;
+        }
+
+        .produce-price {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--soft-cream);
+        }
+
+        .unit-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Modal Backdrop & Popup */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .modal-card {
+            background: linear-gradient(145deg, #0D261B, #071710);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 540px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+        }
+
+        .modal-sub {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 1.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-field {
+            margin-bottom: 1rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+        }
+
+        .modal-field input, .modal-field textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 0.65rem;
+            padding: 0.65rem 0.95rem;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.92rem;
+            outline: none;
+        }
+
+        .modal-field input:focus, .modal-field textarea:focus {
+            border-color: var(--primary-mint);
+            box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.25);
+        }
+
+        .summary-receipt {
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 0.85rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.88rem;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.35rem;
+        }
+
+        .receipt-row.total-bold {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            border-top: 1px solid var(--border-glass);
+            padding-top: 0.6rem;
+            margin-top: 0.6rem;
+        }
+
+        .btn-confirm-pay {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-hover));
+            color: #000;
+            border: none;
+            border-radius: 0.85rem;
+            padding: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 6px 20px var(--accent-gold-glow);
+            transition: all 0.2s ease;
+        }
+
+        .btn-confirm-pay:hover {
+            background: linear-gradient(135deg, #FBBF24, #D97706);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        .shop-footer {
+            background: #040D09;
+            border-top: 1px solid var(--border-glass);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .footer-note {
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navbar -->
+    <header class="shop-nav">
+        <a href="{% url 'home' %}" class="brand-link">
+            <img src="{% static 'images/k2k-logo.svg' %}" alt="K2K Logo" class="brand-logo">
+            <div class="brand-text">
+                Khet<span class="brand-gold">2</span>Kitchen
+            </div>
+            <span class="d2c-badge">D2C Farm Store</span>
+        </a>
+
+        <!-- Global Product Search -->
+        <form action="{% url 'consumer_shop' %}" method="GET" class="nav-search-form">
+            <span class="search-icon-pos">🔍</span>
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search fresh crops, kits, or dishes..." class="nav-search-input">
+        </form>
+
+        <div class="nav-actions">
+            <a href="#ai-engine" class="btn-nav-action btn-nav-gold">
+                <span>🤖</span> AI Recipe Combo
+            </a>
+            <a href="{% url 'login' %}" class="btn-nav-action">
+                <span>👤</span> Portal Sign In
+            </a>
+        </div>
+    </header>
+
+    <!-- Shop Hero Banner -->
+    <section class="shop-hero">
+        <div class="hero-pill">
+            <span>🌾</span> Zero Middlemen • 100% Direct to Farmer Payouts
+        </div>
+        <h1 class="hero-title">
+            Fresh From <span class="hero-gold">Khet</span> Directly To Your <span class="hero-gold">Kitchen</span>
+        </h1>
+        <p class="hero-sub">
+            Skip the mandi markups. Buy fresh produce harvested this morning, pre-packaged vegetable kits with bundle savings, or let our AI calculate the exact ingredients for your daily meals.
+        </p>
+    </section>
+
+    <!-- AI Recipe-to-Combo Search Engine Section -->
+    <div class="ai-engine-container" id="ai-engine">
+        <div class="ai-engine-card">
+            <div class="ai-header">
+                <div class="ai-title-wrap">
+                    <div class="ai-icon-pulse">🍲</div>
+                    <div>
+                        <h2 class="ai-title">AI "Recipe-to-Combo" Engine</h2>
+                        <p class="ai-tagline">Enter what you want to cook. Google Gemini calculates exact vegetable weights & bundles them at 15% OFF.</p>
+                    </div>
+                </div>
+                <div class="ai-discount-pill">
+                    <span>⚡</span> 15% Combo Bundle Discount
+                </div>
+            </div>
+
+            <!-- Input Bar -->
+            <form id="aiComboForm" onsubmit="event.preventDefault(); triggerAICombo();">
+                <div class="ai-input-grid">
+                    <div class="input-group-styled">
+                        <label class="input-label-styled">What do you want to cook today?</label>
+                        <input type="text" id="dishInput" placeholder="e.g. Sambar, Veg Biryani, Palak Paneer, Pav Bhaji..." value="Sambar" class="ai-text-field" required>
+                    </div>
+                    <div class="input-group-styled">
+                        <label class="input-label-styled">Serving Count</label>
+                        <select id="servingsSelect" class="servingsSelect servings-select">
+                            <option value="2">2 Members</option>
+                            <option value="4" selected>4 Members</option>
+                            <option value="6">6 Members</option>
+                            <option value="8">8 Members</option>
+                            <option value="10">10 Members</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="btnGenerateCombo" class="btn-ai-generate">
+                        <span>✨</span> Generate Combo
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Preset Chips -->
+            <div class="preset-chips-wrap">
+                <span class="preset-label">Popular dishes:</span>
+                {% for preset in preset_dishes %}
+                <button type="button" class="preset-chip" onclick="selectPresetDish('{{ preset.name }}')">
+                    <span>{{ preset.icon }}</span> {{ preset.name }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Dynamic AI Result Box -->
+            <div id="aiResultContainer">
+                <div class="combo-result-box">
+                    <div class="combo-result-header">
+                        <div>
+                            <h3 class="combo-dish-title" id="comboDishTitle">
+                                🍲 Authentic South Indian Sambar
+                            </h3>
+                            <div class="combo-meta-pills">
+                                <span class="meta-pill" id="comboServingsPill">👥 4 Servings</span>
+                                <span class="meta-pill" id="comboWeightPill">⚖️ 1.2 kg Fresh Produce</span>
+                                <span class="meta-pill" id="comboTimePill">⏱️ 25 Mins Prep</span>
+                            </div>
+                            <p id="comboNotesText" style="font-size: 0.85rem; color: #A7F3D0; margin-top: 0.5rem; font-family: 'Inter', sans-serif;">
+                                Rich lentil and vegetable stew with a fragrant tamarind-coriander temper.
+                            </p>
+                        </div>
+                        <div class="combo-price-panel">
+                            <div>
+                                <span class="price-orig-striked" id="comboOrigPrice">₹120.00</span>
+                                <span class="savings-chip-green" id="comboSavingsBadge">SAVE ₹18 (15% OFF)</span>
+                            </div>
+                            <div class="price-combo-bold" id="comboFinalPrice">₹102.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Ingredients breakdown table -->
+                    <table class="ingredients-table">
+                        <thead>
+                            <tr>
+                                <th>Ingredient</th>
+                                <th>Quantity</th>
+                                <th>Culinary Role</th>
+                                <th>Farmer Producer</th>
+                                <th style="text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comboIngredientsBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+
+                    <div class="farmer-credit-note">
+                        <span>💳</span>
+                        <span><strong>Direct Farmer Payout:</strong> 90% of this combo payment (₹<span id="comboFarmerPayout">91.80</span>) will be credited directly to the farmer's UPI digital wallet in real time.</span>
+                    </div>
+
+                    <button type="button" class="btn-buy-combo-direct" onclick="openComboCheckoutModal()">
+                        <span>🛍️</span> Buy AI Combo Directly From Farmer (₹<span id="comboPayBtnPrice">102.00</span>)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Catalog & Product Grids -->
+    <main class="store-content-wrap">
+        <!-- Filter Tabs -->
+        <div class="filter-nav-bar">
+            <div class="filter-tabs">
+                <a href="?category=all" class="filter-tab {% if active_category == 'all' or not active_category %}active{% endif %}">
+                    All Offerings
+                </a>
+                <a href="?category=kits" class="filter-tab {% if active_category == 'kits' %}active{% endif %}">
+                    Pre-Packaged Kits 📦
+                </a>
+                <a href="?category=produce" class="filter-tab {% if active_category == 'produce' %}active{% endif %}">
+                    Direct Farm Produce 🌾
+                </a>
+                <a href="?category=combos" class="filter-tab {% if active_category == 'combos' %}active{% endif %}">
+                    Recent AI Combos 🍲
+                </a>
+            </div>
+            {% if search_query %}
+            <div style="font-size: 0.9rem; color: var(--text-sub);">
+                Results for: <strong style="color: var(--accent-gold);">"{{ search_query }}"</strong>
+                <a href="{% url 'consumer_shop' %}" style="color: var(--primary-mint); margin-left: 0.5rem; text-decoration: none;">Clear ×</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Section 1: Pre-Packaged Kits -->
+        {% if active_category == 'all' or active_category == 'kits' %}
+        <div class="section-header-row">
+            <h2 class="section-title">
+                <span>📦</span> Pre-Packaged Vegetable Kits
+            </h2>
+            <span class="section-badge-count">{{ kits|length }} Kits Available</span>
+        </div>
+
+        <div class="products-grid">
+            {% for kit in kits %}
+            <div class="kit-card">
+                {% if kit.badge_text %}
+                <div class="kit-banner-badge">{{ kit.badge_text }}</div>
+                {% endif %}
+                <div class="kit-visual">
+                    {% if "Leafy" in kit.name or "Greens" in kit.name %}🥬
+                    {% elif "Sambar" in kit.name %}🍲
+                    {% elif "Curry" in kit.name %}🍛
+                    {% elif "Salad" in kit.name %}🥗
+                    {% else %}🧺{% endif %}
+                </div>
+                <div class="kit-body">
+                    <h3 class="kit-title">{{ kit.name }}</h3>
+                    <p class="kit-desc">{{ kit.description }}</p>
+
+                    <div class="kit-contents-list">
+                        {% for item in kit.items.all %}
+                        <div class="kit-item-row">
+                            <span>{{ item.quantity_grams }}g {{ item.crop.name }}</span>
+                            <span style="color: var(--primary-mint);">₹{{ item.get_standalone_price }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="kit-item-row">
+                            <span>Assorted seasonal vegetables</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="kit-price-row">
+                        <div>
+                            <span class="kit-orig-strike">₹{{ kit.calculate_original_price }}</span>
+                            <span class="savings-chip-green">SAVE {{ kit.discount_percentage }}%</span>
+                            <div class="kit-price-big">₹{{ kit.calculate_bundle_price }}</div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.78rem; color: var(--text-muted);">
+                            Approx. {{ kit.total_weight_grams }}g bundle
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-card-checkout" onclick="openKitCheckoutModal('{{ kit.id }}', '{{ kit.name|escapejs }}', '{{ kit.calculate_bundle_price }}', '{{ kit.calculate_original_price }}', '{{ kit.get_savings }}')">
+                        <span>🛒</span> Buy Kit Directly (₹{{ kit.calculate_bundle_price }})
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; padding: 2.5rem; text-align: center; background: var(--bg-card); border-radius: 1rem; border: 1px dashed var(--border-glass);">
+                <p style="color: var(--text-sub);">No packaged kits found matching your criteria.</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Section 2: Direct Farm Produce -->
+        {% if active_category == 'all' or active_category == 'produce' %}
+        <div class="section-header-row">
+            <h2 class="section-title">
+                <span>🌾</span> Fresh Harvest Crops
+            </h2>
+            <span class="section-badge-count">{{ crops|length }} Crops Live</span>
+        </div>
+
+        <div class="products-grid">
+            {% for crop in crops %}
+            <div class="produce-card">
+                <div class="produce-visual">
+                    {% if "Tomato" in crop.name %}🍅
+                    {% elif "Onion" in crop.name %}🧅
+                    {% elif "Chilli" in crop.name %}🌶️
+                    {% elif "Potato" in crop.name %}🥔
+                    {% elif "Mango" in crop.name %}🥭
+                    {% elif "Spinach" in crop.name or "Palak" in crop.name %}🥬
+                    {% else %}🥕{% endif %}
+                    <span class="freshness-pill">🌱 Harvested Today</span>
+                </div>
+                <div class="produce-body">
+                    <h3 class="produce-title">{{ crop.name }}</h3>
+                    <div class="produce-farmer">
+                        <span>🧑‍🌾</span>
+                        <span>{{ crop.farmer.get_full_name|default:"Verified Partner Farmer" }} ({{ crop.farmer.state|default:"Telangana" }})</span>
+                    </div>
+
+                    <div class="produce-price-row">
+                        <div>
+                            <span class="produce-price">₹{{ crop.base_price }}</span>
+                            <span class="unit-label">/ kg</span>
+                        </div>
+                        <span style="font-size: 0.78rem; color: #34D399; font-weight: 600;">Grade A Premium</span>
+                    </div>
+
+                    <button type="button" class="btn-card-checkout" onclick="openProduceCheckoutModal('{{ crop.id }}', '{{ crop.name|escapejs }}', '{{ crop.base_price }}', '{{ crop.farmer.get_full_name|default:'Verified Farmer'|escapejs }}')">
+                        <span>⚡</span> Buy Direct From Farmer
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; padding: 2.5rem; text-align: center; background: var(--bg-card); border-radius: 1rem; border: 1px dashed var(--border-glass);">
+                <p style="color: var(--text-sub);">No direct crops currently listed.</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Section 3: Popular Recipe Combos -->
+        {% if active_category == 'all' or active_category == 'combos' %}
+        {% if recent_combos %}
+        <div class="section-header-row">
+            <h2 class="section-title">
+                <span>🍲</span> Popular AI Recipe Combos
+            </h2>
+            <span class="section-badge-count">{{ recent_combos|length }} Combos</span>
+        </div>
+
+        <div class="products-grid">
+            {% for combo in recent_combos %}
+            <div class="kit-card">
+                <div class="kit-banner-badge">{{ combo.servings }} Servings</div>
+                <div class="kit-visual">🍲</div>
+                <div class="kit-body">
+                    <h3 class="kit-title">{{ combo.dish_name }} Combo</h3>
+                    <p class="kit-desc">{{ combo.culinary_notes|truncatechars:90 }}</p>
+
+                    <div class="kit-price-row">
+                        <div>
+                            <span class="kit-orig-strike">₹{{ combo.original_price }}</span>
+                            <span class="savings-chip-green">SAVE 15%</span>
+                            <div class="kit-price-big">₹{{ combo.combo_price }}</div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted);">
+                            {{ combo.total_weight_kg }} kg produce
+                        </div>
+                    </div>
+
+                    <a href="{% url 'ai_combo_builder' %}?dish={{ combo.dish_name|urlencode }}&servings={{ combo.servings }}" class="btn-card-checkout" style="text-decoration: none;">
+                        <span>🔍</span> View Recipe Breakdown
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
+    </main>
+
+    <!-- 1-Click Direct Farmer Checkout Modal -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" onclick="closeCheckoutModal()">×</button>
+            <h3 class="modal-title">Direct-to-Farmer 1-Click Checkout</h3>
+            <p class="modal-sub">Payment will be settled instantly into the farmer's digital wallet via UPI rails.</p>
+
+            <form action="{% url 'consumer_checkout' %}" method="POST" id="checkoutForm">
+                {% csrf_token %}
+                <input type="hidden" name="item_type" id="modalItemType" value="PRODUCE">
+                <input type="hidden" name="item_id" id="modalItemId" value="">
+                <input type="hidden" name="dish_name" id="modalDishName" value="">
+                <input type="hidden" name="servings" id="modalServings" value="">
+
+                <!-- Quantity field (dynamic based on item type) -->
+                <div class="modal-field" id="qtyFieldGroup">
+                    <label>Quantity (<span id="modalUnitLabel">kg</span>)</label>
+                    <input type="number" name="quantity" id="modalQuantity" value="1" min="1" max="50" step="1" onchange="recalculateModalTotal()">
+                </div>
+
+                <div class="modal-field">
+                    <label>Customer Full Name</label>
+                    <input type="text" name="customer_name" value="Ananya Sharma" required>
+                </div>
+
+                <div class="modal-field">
+                    <label>Phone (UPI Enabled)</label>
+                    <input type="text" name="customer_phone" value="+91 98765 43210" required>
+                </div>
+
+                <div class="modal-field">
+                    <label>Doorstep Delivery Address</label>
+                    <textarea name="delivery_address" rows="2" required>Flat 402, Green Meadows, Jubilee Hills, Hyderabad</textarea>
+                </div>
+
+                <div class="modal-field">
+                    <label>PIN Code</label>
+                    <input type="text" name="pincode" value="500033" required>
+                </div>
+
+                <!-- Live Price Summary Receipt -->
+                <div class="summary-receipt">
+                    <div class="receipt-row">
+                        <span id="modalItemSummaryName">Fresh Item</span>
+                        <span id="modalOriginalPrice">₹0.00</span>
+                    </div>
+                    <div class="receipt-row" id="modalDiscountRow" style="color: #34D399;">
+                        <span>Bundle Discount (15%)</span>
+                        <span id="modalDiscountAmount">-₹0.00</span>
+                    </div>
+                    <div class="receipt-row total-bold">
+                        <span>Total Payable (UPI Instant)</span>
+                        <span id="modalFinalPrice">₹0.00</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #A7F3D0; margin-top: 0.5rem;">
+                        ⚡ ₹<span id="modalFarmerPayoutPreview">0.00</span> credited directly to farmer wallet.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-confirm-pay">
+                    <span>🚀</span> Confirm Order & Pay via Instant UPI
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="shop-footer">
+        <p class="footer-note">
+            <strong>Khet2Kitchen (K2K) Consumer Highway</strong> • Powered by Google Gemini AI & Direct UPI Settlement.<br>
+            Empowering 100,000+ smallholder farmers with transparent farmgate realization and zero-middleman commerce.
+        </p>
+    </footer>
+
+    <!-- JavaScript for Interactive AI Recipe Engine & Checkout Modal -->
+    <script>
+        let currentComboData = null;
+        let activeUnitPrice = 0;
+        let activeDiscountPct = 0;
+
+        function selectPresetDish(dishName) {
+            document.getElementById('dishInput').value = dishName;
+            triggerAICombo();
+        }
+
+        async function triggerAICombo() {
+            const dish = document.getElementById('dishInput').value.trim();
+            const servings = document.getElementById('servingsSelect').value;
+            const btn = document.getElementById('btnGenerateCombo');
+            const resultBox = document.getElementById('aiResultContainer');
+
+            if (!dish) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Calculating...';
+
+            try {
+                const url = `{% url 'ai_combo_builder' %}?dish_name=${encodeURIComponent(dish)}&servings=${servings}&format=json`;
+                const resp = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await resp.json();
+
+                if (data.status === 'success' && data.combo) {
+                    currentComboData = data.combo;
+                    renderComboResult(data.combo);
+                    resultBox.style.display = 'block';
+                    resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            } catch (err) {
+                console.error("Error generating combo:", err);
+                alert("Could not reach AI recipe service. Please try again.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>✨</span> Generate Combo';
+            }
+        }
+
+        function renderComboResult(combo) {
+            document.getElementById('comboDishTitle').innerHTML = `🍲 ${combo.dish_name}`;
+            document.getElementById('comboServingsPill').innerText = `👥 ${combo.servings} Servings`;
+            document.getElementById('comboWeightPill').innerText = `⚖️ ${combo.total_weight_kg} kg Produce`;
+            document.getElementById('comboTimePill').innerText = `⏱️ ${combo.prep_time_minutes} Mins Prep`;
+            document.getElementById('comboNotesText').innerText = combo.culinary_notes;
+
+            document.getElementById('comboOrigPrice').innerText = `₹${combo.original_price.toFixed(2)}`;
+            document.getElementById('comboFinalPrice').innerText = `₹${combo.combo_price.toFixed(2)}`;
+            document.getElementById('comboPayBtnPrice').innerText = combo.combo_price.toFixed(2);
+            document.getElementById('comboSavingsBadge').innerText = `SAVE ₹${combo.total_savings.toFixed(2)} (${combo.discount_percentage}% OFF)`;
+            document.getElementById('comboFarmerPayout').innerText = combo.farmer_payout.toFixed(2);
+
+            const tbody = document.getElementById('comboIngredientsBody');
+            tbody.innerHTML = '';
+
+            combo.items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${item.crop_name}</strong></td>
+                    <td>${item.quantity_grams}g</td>
+                    <td style="color: var(--text-muted);">${item.role}</td>
+                    <td style="color: var(--primary-mint); font-size: 0.8rem;">🧑‍🌾 ${item.farmer_name}</td>
+                    <td style="text-align: right; font-weight: 700;">₹${item.standalone_price.toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function openComboCheckoutModal() {
+            if (!currentComboData) return;
+            document.getElementById('modalItemType').value = 'COMBO';
+            document.getElementById('modalItemId').value = currentComboData.combo_db_id || currentComboData.combo_id;
+            document.getElementById('modalDishName').value = currentComboData.dish_name;
+            document.getElementById('modalServings').value = currentComboData.servings;
+
+            document.getElementById('qtyFieldGroup').style.display = 'none';
+            document.getElementById('modalItemSummaryName').innerText = `${currentComboData.dish_name} (${currentComboData.servings} Servings)`;
+            document.getElementById('modalOriginalPrice').innerText = `₹${currentComboData.original_price.toFixed(2)}`;
+            document.getElementById('modalDiscountRow').style.display = 'flex';
+            document.getElementById('modalDiscountAmount').innerText = `-₹${currentComboData.total_savings.toFixed(2)}`;
+            document.getElementById('modalFinalPrice').innerText = `₹${currentComboData.combo_price.toFixed(2)}`;
+            document.getElementById('modalFarmerPayoutPreview').innerText = currentComboData.farmer_payout.toFixed(2);
+
+            document.getElementById('checkoutModal').style.display = 'flex';
+        }
+
+        function openKitCheckoutModal(kitId, kitName, bundlePrice, origPrice, savings) {
+            document.getElementById('modalItemType').value = 'KIT';
+            document.getElementById('modalItemId').value = kitId;
+            document.getElementById('modalDishName').value = '';
+            document.getElementById('modalServings').value = '';
+
+            activeUnitPrice = parseFloat(bundlePrice);
+            activeDiscountPct = parseFloat(savings);
+
+            document.getElementById('qtyFieldGroup').style.display = 'block';
+            document.getElementById('modalUnitLabel').innerText = 'kits';
+            document.getElementById('modalQuantity').value = 1;
+
+            document.getElementById('modalItemSummaryName').innerText = `${kitName} (1 Kit)`;
+            document.getElementById('modalOriginalPrice').innerText = `₹${parseFloat(origPrice).toFixed(2)}`;
+            document.getElementById('modalDiscountRow').style.display = 'flex';
+            document.getElementById('modalDiscountAmount').innerText = `-₹${parseFloat(savings).toFixed(2)}`;
+            document.getElementById('modalFinalPrice').innerText = `₹${activeUnitPrice.toFixed(2)}`;
+            document.getElementById('modalFarmerPayoutPreview').innerText = (activeUnitPrice * 0.9).toFixed(2);
+
+            document.getElementById('checkoutModal').style.display = 'flex';
+        }
+
+        function openProduceCheckoutModal(cropId, cropName, basePrice, farmerName) {
+            document.getElementById('modalItemType').value = 'PRODUCE';
+            document.getElementById('modalItemId').value = cropId;
+            document.getElementById('modalDishName').value = '';
+            document.getElementById('modalServings').value = '';
+
+            activeUnitPrice = parseFloat(basePrice);
+            activeDiscountPct = 0;
+
+            document.getElementById('qtyFieldGroup').style.display = 'block';
+            document.getElementById('modalUnitLabel').innerText = 'kg';
+            document.getElementById('modalQuantity').value = 1;
+
+            document.getElementById('modalItemSummaryName').innerText = `Fresh ${cropName} (${farmerName})`;
+            document.getElementById('modalOriginalPrice').innerText = `₹${activeUnitPrice.toFixed(2)}`;
+            document.getElementById('modalDiscountRow').style.display = 'none';
+            document.getElementById('modalFinalPrice').innerText = `₹${activeUnitPrice.toFixed(2)}`;
+            document.getElementById('modalFarmerPayoutPreview').innerText = (activeUnitPrice * 0.92).toFixed(2);
+
+            document.getElementById('checkoutModal').style.display = 'flex';
+        }
+
+        function recalculateModalTotal() {
+            const itemType = document.getElementById('modalItemType').value;
+            const qty = Math.max(1, parseFloat(document.getElementById('modalQuantity').value) || 1);
+
+            if (itemType === 'PRODUCE') {
+                const total = activeUnitPrice * qty;
+                document.getElementById('modalOriginalPrice').innerText = `₹${total.toFixed(2)}`;
+                document.getElementById('modalFinalPrice').innerText = `₹${total.toFixed(2)}`;
+                document.getElementById('modalFarmerPayoutPreview').innerText = (total * 0.92).toFixed(2);
+            } else if (itemType === 'KIT') {
+                const total = activeUnitPrice * qty;
+                document.getElementById('modalFinalPrice').innerText = `₹${total.toFixed(2)}`;
+                document.getElementById('modalFarmerPayoutPreview').innerText = (total * 0.9).toFixed(2);
+            }
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkoutModal').style.display = 'none';
+        }
+
+        // Close modal on escape key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeCheckoutModal();
+        });
+    </script>
+</body>
+</html>

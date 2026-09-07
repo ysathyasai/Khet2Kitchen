@@ -1,0 +1,333 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title|default:"Order Confirmed • Khet2Kitchen Direct Farm" }}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
+
+    <!-- Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #071710;
+            --bg-card: #0D261B;
+            --brand-green: #133826;
+            --primary-emerald: #10B981;
+            --primary-mint: #34D399;
+            --accent-gold: #F59E0B;
+            --soft-cream: #F4F6F1;
+            --text-sub: #D1D5DB;
+            --text-muted: #9CA3AF;
+            --border-glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--soft-cream);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+        }
+
+        .receipt-card {
+            background: linear-gradient(145deg, #0D261B, #071710);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            border-radius: 1.75rem;
+            width: 100%;
+            max-width: 640px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.15);
+            position: relative;
+        }
+
+        .success-badge {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #fff;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .receipt-title {
+            text-align: center;
+            font-size: 1.85rem;
+            font-weight: 900;
+            margin-bottom: 0.35rem;
+            color: #fff;
+        }
+
+        .receipt-subtitle {
+            text-align: center;
+            font-size: 0.92rem;
+            color: var(--text-sub);
+            margin-bottom: 2rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Settlement Transparency Banner */
+        .settlement-banner {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08));
+            border: 1px solid rgba(52, 211, 153, 0.4);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .settlement-icon {
+            font-size: 2rem;
+        }
+
+        .settlement-text-bold {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #6EE7B7;
+        }
+
+        .settlement-desc {
+            font-size: 0.82rem;
+            color: var(--soft-cream);
+            font-family: 'Inter', sans-serif;
+            margin-top: 0.2rem;
+        }
+
+        /* Order Details Table */
+        .order-meta-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1.75rem;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+
+        .meta-row:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+        }
+
+        .meta-val {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .items-header {
+            font-size: 1.05rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            color: #fff;
+        }
+
+        .line-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .line-item-title {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .line-item-farmer {
+            font-size: 0.78rem;
+            color: var(--primary-mint);
+        }
+
+        .totals-summary {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px solid var(--border-glass);
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            font-size: 0.95rem;
+        }
+
+        .grand-total {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .actions-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2.5rem;
+        }
+
+        .btn-action-primary {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-emerald), #059669);
+            color: #fff;
+            padding: 0.9rem 1.5rem;
+            border-radius: 0.85rem;
+            text-decoration: none;
+            font-weight: 800;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-action-secondary {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-glass);
+            color: var(--soft-cream);
+            padding: 0.9rem 1.5rem;
+            border-radius: 0.85rem;
+            text-decoration: none;
+            font-weight: 700;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="receipt-card">
+        <div class="success-badge">✓</div>
+        <h1 class="receipt-title">Order Confirmed!</h1>
+        <p class="receipt-subtitle">Direct Farmgate Purchase via Khet2Kitchen Highway</p>
+
+        <!-- Radical Transparency Farmer Payout Banner -->
+        <div class="settlement-banner">
+            <div class="settlement-icon">💳</div>
+            <div>
+                <div class="settlement-text-bold">₹{{ total_farmer_payout|floatformat:2 }} Credited to Farmer Wallet</div>
+                <div class="settlement-desc">
+                    100% direct instant UPI credit to the verified farmer's digital wallet. No middlemen, no commission deductions.
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Metadata -->
+        <div class="order-meta-box">
+            <div class="meta-row">
+                <span class="meta-label">Order Identifier</span>
+                <span class="meta-val" style="color: var(--accent-gold);">{{ order.order_id }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Customer</span>
+                <span class="meta-val">{{ order.customer_name }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Delivery Destination</span>
+                <span class="meta-val">{{ order.delivery_address }}, {{ order.pincode }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Payment Status</span>
+                <span class="meta-val" style="color: #34D399;">✓ {{ order.get_status_display }} (UPI Instant)</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Timestamp</span>
+                <span class="meta-val">{{ order.created_at|date:"d M Y, h:i A" }}</span>
+            </div>
+        </div>
+
+        <!-- Purchased Line Items -->
+        <h3 class="items-header">Purchased Produce & Kits</h3>
+        {% for item in items %}
+        <div class="line-item-row">
+            <div>
+                <div class="line-item-title">{{ item.item_name }}</div>
+                <div class="line-item-farmer">
+                    🧑‍🌾 Producer: {{ item.farmer.get_full_name|default:"K2K Verified Partner Farmer" }} • Instant Credit: ₹{{ item.farmer_payout|floatformat:2 }}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 700; color: #fff;">₹{{ item.subtotal|floatformat:2 }}</div>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">{{ item.quantity }} {{ item.unit }}</div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Totals Summary -->
+        <div class="totals-summary">
+            {% if order.discount_amount > 0 %}
+            <div class="total-row" style="color: var(--text-muted);">
+                <span>Original Standalone Price</span>
+                <span style="text-decoration: line-through;">₹{{ order.total_amount|floatformat:2 }}</span>
+            </div>
+            <div class="total-row" style="color: #34D399; font-weight: 600;">
+                <span>D2C Bundle Savings (15% OFF)</span>
+                <span>-₹{{ order.discount_amount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            <div class="total-row grand-total">
+                <span>Final Paid Amount</span>
+                <span>₹{{ order.final_paid_amount|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <div class="actions-group">
+            <a href="{% url 'consumer_shop' %}" class="btn-action-primary">
+                <span>🛒</span> Continue Shopping
+            </a>
+            <a href="{% url 'home' %}" class="btn-action-secondary">
+                <span>🏠</span> Home
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

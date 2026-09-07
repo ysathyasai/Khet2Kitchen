@@ -812,3 +812,248 @@ class HarvestSchedule(models.Model):
         return self.recommended_date < timezone.now().date() and self.status == self.Status.PENDING
 
 
+# ==============================================================================
+# 4. DIRECT-TO-CONSUMER (D2C) & AI RECIPE COMBO MODELS
+# ==============================================================================
+
+class Kit(models.Model):
+    """
+    Pre-packaged vegetable/produce bundle offered to consumers at a discounted bundle price.
+    E.g., Leafy Greens Detox Kit, Sambar Essentials Box, Daily Curry Veggie Kit.
+    """
+    class Category(models.TextChoices):
+        VEGETABLE = "VEGETABLE", _("Fresh Vegetables")
+        FRUIT = "FRUIT", _("Seasonal Fruits")
+        HERBS = "HERBS", _("Fresh Herbs & Greens")
+        COMBO = "COMBO", _("Curated Box / Combo")
+
+    name = models.CharField(max_length=150, verbose_name=_("Kit Name"))
+    code = models.CharField(max_length=50, unique=True, verbose_name=_("Kit Code"))
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        default=Category.COMBO,
+        verbose_name=_("Category"),
+    )
+    description = models.TextField(verbose_name=_("Description / Highlights"))
+    badge_text = models.CharField(
+        max_length=50,
+        blank=True,
+        default="15% OFF",
+        verbose_name=_("Promotional Badge"),
+    )
+    discount_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("15.00"),
+        validators=[MinValueValidator(Decimal("0.00")), MaxValueValidator(Decimal("90.00"))],
+        verbose_name=_("Bundle Discount (%)"),
+    )
+    is_active = models.BooleanField(default=True, verbose_name=_("Active in Store"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Consumer Kit")
+        verbose_name_plural = _("Consumer Kits")
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.code}) - ₹{self.calculate_bundle_price()}"
+
+    def calculate_original_price(self) -> Decimal:
+        """Calculates total undiscounted sum of all individual kit items."""
+        total = sum((item.get_standalone_price() for item in self.items.all()), Decimal("0.00"))
+        return total.quantize(Decimal("0.01"))
+
+    def calculate_bundle_price(self) -> Decimal:
+        """Calculates bundle price after applying discount_percentage."""
+        orig = self.calculate_original_price()
+        if self.discount_percentage > Decimal("0.00"):
+            discount_multiplier = (Decimal("100.00") - self.discount_percentage) / Decimal("100.00")
+            return (orig * discount_multiplier).quantize(Decimal("0.01"))
+        return orig
+
+    def get_savings(self) -> Decimal:
+        """Calculates rupee savings for the consumer."""
+        return (self.calculate_original_price() - self.calculate_bundle_price()).quantize(Decimal("0.01"))
+
+    def total_weight_grams(self) -> int:
+        return sum(item.quantity_grams for item in self.items.all())
+
+
+class KitItem(models.Model):
+    """Individual crop/produce component inside a Kit."""
+    kit = models.ForeignKey(Kit, on_delete=models.CASCADE, related_name="items", verbose_name=_("Kit"))
+    crop = models.ForeignKey(Crop, on_delete=models.CASCADE, related_name="kit_appearances", verbose_name=_("Crop Produce"))
+    quantity_grams = models.PositiveIntegerField(
+        default=500,
+        validators=[MinValueValidator(10)],
+        verbose_name=_("Quantity (Grams)"),
+        help_text=_("Produce weight in grams included in each kit bundle."),
+    )
+
+    class Meta:
+        verbose_name = _("Kit Item")
+        verbose_name_plural = _("Kit Items")
+        unique_together = ("kit", "crop")
+
+    def __str__(self):
+        return f"{self.quantity_grams}g {self.crop.name} in {self.kit.name}"
+
+    def get_standalone_price(self) -> Decimal:
+        """Computes standalone value based on crop base price per kg."""
+        kg = Decimal(str(self.quantity_grams)) / Decimal("1000.00")
+        return (kg * self.crop.base_price).quantize(Decimal("0.01"))
+
+
+class RecipeCombo(models.Model):
+    """
+    AI-generated or predefined recipe ingredient combo (e.g. Sambar for 4 people).
+    """
+    combo_id = models.CharField(max_length=60, unique=True, editable=False, verbose_name=_("Combo Identifier"))
+    dish_name = models.CharField(max_length=150, verbose_name=_("Dish Name"))
+    servings = models.PositiveIntegerField(default=4, verbose_name=_("Servings Count"))
+    prep_time_minutes = models.PositiveIntegerField(default=30, verbose_name=_("Estimated Prep Time (mins)"))
+    culinary_notes = models.TextField(blank=True, verbose_name=_("Culinary Notes / Tips"))
+    total_weight_kg = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=Decimal("1.00"),
+        verbose_name=_("Total Weight (kg)"),
+    )
+    original_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("Undiscounted Price (₹)"),
+    )
+    discount_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("15.00"),
+        verbose_name=_("Bundle Discount (%)"),
+    )
+    combo_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("Discounted Combo Price (₹)"),
+    )
+    items_breakdown = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Ingredients Breakdown JSON"),
+        help_text=_("List of ingredients with crop_name, quantity_grams, role, and price."),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Recipe Combo")
+        verbose_name_plural = _("Recipe Combos")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.dish_name} Combo ({self.servings} Servings) - ₹{self.combo_price}"
+
+    def save(self, *args, **kwargs):
+        if not self.combo_id:
+            token = uuid.uuid4().hex[:8].upper()
+            slug = re.sub(r'[^a-zA-Z0-9]', '', self.dish_name)[:6].upper()
+            self.combo_id = f"K2K-CMB-{slug}-{token}"
+        super().save(*args, **kwargs)
+
+
+class ConsumerOrder(models.Model):
+    """
+    Tracks Direct-to-Consumer (D2C) marketplace orders with real-time
+    farmer wallet payouts upon payment.
+    """
+    class Status(models.TextChoices):
+        PLACED = "PLACED", _("Order Placed")
+        PAID_SETTLED = "PAID_SETTLED", _("Paid & Farmer Settled")
+        PACKED = "PACKED", _("Packed at Micro-Hub")
+        DISPATCHED = "DISPATCHED", _("Out for Cold Delivery")
+        DELIVERED = "DELIVERED", _("Delivered to Kitchen")
+        CANCELLED = "CANCELLED", _("Cancelled")
+
+    order_id = models.CharField(max_length=50, unique=True, editable=False, db_index=True)
+    customer_name = models.CharField(max_length=150, verbose_name=_("Customer Name"))
+    customer_phone = models.CharField(max_length=20, verbose_name=_("Customer Phone"))
+    customer_email = models.EmailField(max_length=255, blank=True, verbose_name=_("Customer Email"))
+    delivery_address = models.TextField(verbose_name=_("Delivery Address"))
+    pincode = models.CharField(max_length=10, blank=True, verbose_name=_("PIN Code"))
+
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    final_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+
+    status = models.CharField(max_length=30, choices=Status.choices, default=Status.PAID_SETTLED)
+    payment_method = models.CharField(max_length=30, default="UPI_INSTANT")
+    payment_ref = models.CharField(max_length=100, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Consumer D2C Order")
+        verbose_name_plural = _("Consumer D2C Orders")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.order_id} - {self.customer_name} (₹{self.final_paid_amount})"
+
+    def save(self, *args, **kwargs):
+        if not self.order_id:
+            date_str = timezone.now().strftime("%Y%m%d")
+            token = uuid.uuid4().hex[:6].upper()
+            self.order_id = f"K2K-D2C-{date_str}-{token}"
+        super().save(*args, **kwargs)
+
+
+class ConsumerOrderItem(models.Model):
+    """
+    Individual line item in a ConsumerOrder, attributing revenue
+    and payouts directly to individual farmers.
+    """
+    class ItemType(models.TextChoices):
+        PRODUCE = "PRODUCE", _("Direct Farm Produce")
+        KIT = "KIT", _("Pre-Packaged Kit")
+        COMBO = "COMBO", _("AI Recipe Combo")
+
+    order = models.ForeignKey(ConsumerOrder, on_delete=models.CASCADE, related_name="items")
+    item_type = models.CharField(max_length=20, choices=ItemType.choices, default=ItemType.PRODUCE)
+    crop = models.ForeignKey(Crop, null=True, blank=True, on_delete=models.SET_NULL)
+    kit = models.ForeignKey(Kit, null=True, blank=True, on_delete=models.SET_NULL)
+    recipe_combo = models.ForeignKey(RecipeCombo, null=True, blank=True, on_delete=models.SET_NULL)
+    farmer = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        limit_choices_to={"role": User.Role.FARMER},
+        related_name="d2c_sales",
+        verbose_name=_("Farmer Producer"),
+    )
+
+    item_name = models.CharField(max_length=150)
+    quantity = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("1.00"))
+    unit = models.CharField(max_length=30, default="kg")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    farmer_payout = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text=_("Net direct payout credited to the farmer's wallet (e.g. 90% of subtotal)."),
+    )
+    is_settled_to_wallet = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = _("Consumer Order Item")
+        verbose_name_plural = _("Consumer Order Items")
+
+    def __str__(self):
+        return f"{self.item_name} x {self.quantity} {self.unit} (Order {self.order.order_id})"
+
+

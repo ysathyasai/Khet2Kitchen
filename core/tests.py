@@ -8,7 +8,24 @@ from django.urls import reverse
 from django.utils import timezone
 
 from unittest.mock import MagicMock, patch
-from core.models import Batch, Crop, DemandOrder, MicroHub, User, FarmerWallet, WalletTransaction, HarvestSchedule, InputSupply
+from core.models import (
+    Batch,
+    ConsumerOrder,
+    ConsumerOrderItem,
+    Crop,
+    DemandOrder,
+    FarmerWallet,
+    HarvestSchedule,
+    InputSupply,
+    Kit,
+    KitItem,
+    MicroHub,
+    RecipeCombo,
+    User,
+    WalletTransaction,
+)
+from core.ai_recipe import generate_recipe_combo
+
 from core.services import (
     allocate_supply_to_order,
     fetch_real_weather,
@@ -1597,3 +1614,275 @@ class LandingPageViewTests(TestCase):
         res = self.client.get(reverse("login"))
         self.assertEqual(res.status_code, 302)
         self.assertRedirects(res, reverse("farmer_dashboard"))
+
+
+class ConsumerD2CTests(TestCase):
+    """
+    Unit & integration tests for Direct-to-Consumer (D2C) marketplace,
+    pre-packaged vegetable kits, AI recipe-to-combo engine, and direct farmer wallet payouts.
+    """
+
+    def setUp(self):
+        self.client = Client()
+
+        # Create demo farmer and wallet
+        self.farmer = User.objects.create_user(
+            identifier="+919876543222",
+            phone_number="+919876543222",
+            role=User.Role.FARMER,
+            first_name="Ramesh",
+            last_name="Kumar",
+        )
+        self.farmer_wallet = FarmerWallet.objects.create(
+            farmer=self.farmer,
+            current_balance=Decimal("0.00"),
+        )
+
+        # Create crops assigned to this farmer
+        self.crop_tomato = Crop.objects.create(
+            code="CROP-TST-TOM-01",
+            name="Roma Field Tomato",
+            category=Crop.Category.VEGETABLE,
+            base_price=Decimal("20.00"),
+            farmer=self.farmer,
+            is_active=True,
+        )
+        self.crop_onion = Crop.objects.create(
+            code="CROP-TST-ONN-01",
+            name="Red Onion",
+            category=Crop.Category.VEGETABLE,
+            base_price=Decimal("30.00"),
+            farmer=self.farmer,
+            is_active=True,
+        )
+        self.crop_chilli = Crop.objects.create(
+            code="CROP-TST-CHL-01",
+            name="Green Chilli",
+            category=Crop.Category.SPICE,
+            base_price=Decimal("100.00"),
+            farmer=self.farmer,
+            is_active=True,
+        )
+
+        # Create a sample consumer Kit
+        self.kit = Kit.objects.create(
+            name="Sambar Essentials Test Kit",
+            code="KIT-TST-SBR-01",
+            category=Kit.Category.VEGETABLE,
+            description="Tomato + Onion + Chilli bundle for Sambar",
+            discount_percentage=Decimal("15.00"),
+            badge_text="15% OFF",
+            is_active=True,
+        )
+        # Kit items: 1000g Tomato (₹20.00), 500g Onion (₹15.00) => Total Orig = ₹35.00
+        KitItem.objects.create(kit=self.kit, crop=self.crop_tomato, quantity_grams=1000)
+        KitItem.objects.create(kit=self.kit, crop=self.crop_onion, quantity_grams=500)
+
+    def test_kit_creation_and_pricing_calculation(self):
+        """Validates bundle pricing calculation, discount deductions, and consumer savings."""
+        orig_price = self.kit.calculate_original_price()
+        self.assertEqual(orig_price, Decimal("35.00"))
+
+        # 15% discount on ₹35.00 = ₹29.75
+        bundle_price = self.kit.calculate_bundle_price()
+        self.assertEqual(bundle_price, Decimal("29.75"))
+
+        # Savings = 35.00 - 29.75 = 5.25
+        savings = self.kit.get_savings()
+        self.assertEqual(savings, Decimal("5.25"))
+
+        # Total weight
+        self.assertEqual(self.kit.total_weight_grams(), 1500)
+
+    @patch("core.ai_recipe.query_gemini_recipe", return_value=None)
+    def test_ai_dish_combo_calculation_and_servings_scaling(self, mock_gemini):
+        """Validates that the AI recipe engine dynamically scales ingredient quantities based on member count."""
+        combo_4 = generate_recipe_combo("Sambar", servings=4, persist=False)
+        self.assertEqual(combo_4["servings"], 4)
+        self.assertTrue(any("Tomato" in item["crop_name"] for item in combo_4["items"]))
+
+        combo_8 = generate_recipe_combo("Sambar", servings=8, persist=False)
+        self.assertEqual(combo_8["servings"], 8)
+
+        # Total produce weight for 8 members should be exactly double 4 members (0.60kg vs 1.20kg)
+        self.assertAlmostEqual(combo_8["total_weight_kg"], combo_4["total_weight_kg"] * 2, delta=0.01)
+
+        # Payout should be 90% of combo price
+        expected_payout = (Decimal(str(combo_4["combo_price"])) * Decimal("0.90")).quantize(Decimal("0.01"))
+        self.assertEqual(Decimal(str(combo_4["farmer_payout"])), expected_payout)
+
+    @patch("core.ai_recipe.query_gemini_recipe")
+    def test_ai_dish_combo_with_gemini_structured_response(self, mock_gemini):
+        """Validates that when Gemini API returns structured JSON, it is parsed and mapped correctly."""
+        mock_gemini.return_value = {
+            "dish_title": "Chef Special Hyderabadi Biryani",
+            "prep_time_minutes": 40,
+            "culinary_notes": "Slow-cooked dum vegetables with caramelized onions.",
+            "ingredients": [
+                {"crop_name": "Tomato", "quantity_grams": 400, "role": "Gravy acidity"},
+                {"crop_name": "Onion", "quantity_grams": 500, "role": "Crispy birista"},
+            ],
+        }
+        combo = generate_recipe_combo("Biryani", servings=4, persist=False)
+        self.assertEqual(combo["dish_name"], "Chef Special Hyderabadi Biryani")
+        self.assertEqual(combo["prep_time_minutes"], 40)
+        self.assertEqual(len(combo["items"]), 2)
+        self.assertEqual(combo["discount_percentage"], 15.0)
+
+
+    def test_direct_d2c_kit_order_and_farmer_wallet_credit(self):
+        """
+        Validates placing a D2C kit order creates a settled ConsumerOrder
+        and immediately credits the farmer's FarmerWallet with an immutable ledger entry.
+        """
+        initial_balance = self.farmer_wallet.current_balance
+        self.assertEqual(initial_balance, Decimal("0.00"))
+
+        post_data = {
+            "item_type": "KIT",
+            "item_id": self.kit.id,
+            "quantity": "2",
+            "customer_name": "Priya Verma",
+            "customer_phone": "+91 91234 56789",
+            "customer_email": "priya@example.com",
+            "delivery_address": "Flat 301, Lakeview Apts, Gachibowli, Hyderabad",
+            "pincode": "500032",
+        }
+
+        response = self.client.post(reverse("consumer_checkout"), post_data)
+        self.assertEqual(response.status_code, 302)
+
+        order = ConsumerOrder.objects.filter(customer_name="Priya Verma").first()
+        self.assertIsNotNone(order)
+        self.assertEqual(order.status, ConsumerOrder.Status.PAID_SETTLED)
+        self.assertEqual(order.payment_method, "UPI_INSTANT")
+
+        # 2 kits @ 29.75 = 59.50 final paid amount
+        self.assertEqual(order.final_paid_amount, Decimal("59.50"))
+
+        # Check line item
+        line_item = order.items.first()
+        self.assertIsNotNone(line_item)
+        self.assertTrue(line_item.is_settled_to_wallet)
+
+        # Refresh farmer wallet and check credit
+        self.farmer_wallet.refresh_from_db()
+        self.assertGreater(self.farmer_wallet.current_balance, initial_balance)
+
+        # Verify wallet transaction ledger
+        tx = self.farmer_wallet.transactions.first()
+        self.assertIsNotNone(tx)
+        self.assertEqual(tx.transaction_type, WalletTransaction.TransactionType.CREDIT)
+        self.assertIn("D2C Kit Sale", tx.description)
+
+    def test_direct_d2c_produce_order_and_farmer_wallet_credit(self):
+        """Validates placing a direct produce order credits the specific crop farmer."""
+        post_data = {
+            "item_type": "PRODUCE",
+            "item_id": self.crop_tomato.id,
+            "quantity_kg": "5.00",
+            "customer_name": "Rohan Gupta",
+            "customer_phone": "+91 99887 76655",
+            "delivery_address": "Banjara Hills, Hyderabad",
+            "pincode": "500034",
+        }
+
+        res = self.client.post(reverse("consumer_checkout"), post_data)
+        self.assertEqual(res.status_code, 302)
+
+        order = ConsumerOrder.objects.filter(customer_name="Rohan Gupta").first()
+        self.assertIsNotNone(order)
+        # 5kg * ₹20/kg = ₹100.00
+        self.assertEqual(order.final_paid_amount, Decimal("100.00"))
+
+        self.farmer_wallet.refresh_from_db()
+        # 92% of ₹100 = ₹92.00 credited
+        self.assertEqual(self.farmer_wallet.current_balance, Decimal("92.00"))
+
+    def test_direct_d2c_combo_order_creation_and_settlement(self):
+        """Validates purchasing an AI recipe combo creates order and settles to farmer wallet."""
+        combo = RecipeCombo.objects.create(
+            dish_name="Authentic South Indian Sambar",
+            servings=4,
+            prep_time_minutes=25,
+            culinary_notes="Nutrient-dense sambar",
+            total_weight_kg=Decimal("1.20"),
+            original_price=Decimal("100.00"),
+            discount_percentage=Decimal("15.00"),
+            combo_price=Decimal("85.00"),
+            items_breakdown=[
+                {
+                    "crop_id": self.crop_tomato.id,
+                    "crop_name": "Roma Field Tomato",
+                    "quantity_grams": 400,
+                    "role": "Tangy broth base",
+                    "base_price_per_kg": 20.00,
+                    "standalone_price": 8.00,
+                    "farmer_id": self.farmer.id,
+                    "farmer_name": "Ramesh Kumar",
+                    "farmer_location": "Telangana",
+                }
+            ],
+        )
+
+        post_data = {
+            "item_type": "COMBO",
+            "item_id": combo.id,
+            "customer_name": "Deepak Joshi",
+            "customer_phone": "+91 94400 12345",
+            "delivery_address": "Kondapur, Hyderabad",
+            "pincode": "500084",
+        }
+
+        res = self.client.post(reverse("consumer_checkout"), post_data)
+        self.assertEqual(res.status_code, 302)
+
+        order = ConsumerOrder.objects.filter(customer_name="Deepak Joshi").first()
+        self.assertIsNotNone(order)
+        self.assertEqual(order.final_paid_amount, Decimal("85.00"))
+
+        # Verify farmer wallet credited
+        self.farmer_wallet.refresh_from_db()
+        self.assertGreater(self.farmer_wallet.current_balance, Decimal("0.00"))
+
+    def test_consumer_shop_and_combo_views_render_successfully(self):
+        """Validates public accessibility and correct template rendering for consumer portal."""
+        # 1. Shop view
+        shop_res = self.client.get(reverse("consumer_shop"))
+        self.assertEqual(shop_res.status_code, 200)
+        self.assertTemplateUsed(shop_res, "core/consumer_shop.html")
+        self.assertContains(shop_res, "Khet2Kitchen")
+        self.assertContains(shop_res, "D2C Farm Store")
+        self.assertContains(shop_res, "Sambar Essentials Test Kit")
+
+        # 2. AI Combo Builder HTML view
+        combo_res = self.client.get(reverse("ai_combo_builder") + "?dish_name=Sambar&servings=4")
+        self.assertEqual(combo_res.status_code, 200)
+        self.assertTemplateUsed(combo_res, "core/consumer_combo_detail.html")
+        self.assertContains(combo_res, "Sambar")
+
+        # 3. AI Combo Builder JSON API
+        api_res = self.client.get(
+            reverse("ai_combo_builder") + "?dish_name=Sambar&servings=4&format=json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(api_res.status_code, 200)
+        json_data = api_res.json()
+        self.assertEqual(json_data["status"], "success")
+        self.assertIn("combo", json_data)
+
+        # 4. Order Success view
+        order = ConsumerOrder.objects.create(
+            customer_name="Test Consumer",
+            customer_phone="+91 99999 88888",
+            delivery_address="Hitech City, Hyderabad",
+            pincode="500081",
+            total_amount=Decimal("100.00"),
+            final_paid_amount=Decimal("85.00"),
+            status=ConsumerOrder.Status.PAID_SETTLED,
+        )
+        success_res = self.client.get(reverse("consumer_order_success", args=[order.order_id]))
+        self.assertEqual(success_res.status_code, 200)
+        self.assertTemplateUsed(success_res, "core/consumer_order_success.html")
+        self.assertContains(success_res, order.order_id)
+

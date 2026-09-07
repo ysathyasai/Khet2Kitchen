@@ -1,0 +1,450 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title|default:"AI Recipe Combo Breakdown • K2K Direct Farm" }}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
+
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #071710;
+            --bg-card: #0D261B;
+            --brand-green: #133826;
+            --primary-emerald: #10B981;
+            --primary-mint: #34D399;
+            --accent-gold: #F59E0B;
+            --accent-gold-hover: #D97706;
+            --accent-gold-glow: rgba(245, 158, 11, 0.25);
+            --soft-cream: #F4F6F1;
+            --text-sub: #D1D5DB;
+            --text-muted: #9CA3AF;
+            --border-glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--soft-cream);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .header-nav {
+            background: rgba(7, 23, 16, 0.92);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 800;
+            font-size: 1.25rem;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 2.5rem auto 4rem;
+            padding: 0 1.5rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--primary-mint);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .combo-hero-card {
+            background: linear-gradient(145deg, #0D261B, #071710);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 1.5rem;
+            padding: 2.25rem;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+            margin-bottom: 2rem;
+        }
+
+        .hero-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .dish-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .pills-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-glass);
+            color: var(--text-sub);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .pill-gold {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: var(--accent-gold);
+        }
+
+        .price-box {
+            text-align: right;
+        }
+
+        .price-orig {
+            text-decoration: line-through;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .price-final {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+        }
+
+        .savings-tag {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34D399;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+
+        .chef-notes-box {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 4px solid var(--primary-emerald);
+            padding: 1rem 1.25rem;
+            border-radius: 0 10px 10px 0;
+            font-size: 0.95rem;
+            color: #A7F3D0;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .section-heading {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ingredients-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .ingredient-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-glass);
+            border-radius: 1rem;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .ing-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .ing-icon {
+            font-size: 1.75rem;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ing-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .ing-role {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .ing-farmer {
+            font-size: 0.78rem;
+            color: var(--primary-mint);
+            font-weight: 600;
+            margin-top: 0.2rem;
+        }
+
+        .ing-right {
+            text-align: right;
+        }
+
+        .ing-qty {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .ing-price {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .checkout-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        @media (max-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .field-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
+        .field-group input, .field-group textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 0.65rem;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .btn-order-now {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-hover));
+            color: #000;
+            border: none;
+            border-radius: 0.85rem;
+            padding: 1rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            box-shadow: 0 6px 20px var(--accent-gold-glow);
+            transition: all 0.2s ease;
+        }
+
+        .btn-order-now:hover {
+            background: linear-gradient(135deg, #FBBF24, #D97706);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-nav">
+        <a href="{% url 'consumer_shop' %}" class="brand-link">
+            <span>🌾</span> Khet<span style="color: var(--accent-gold);">2</span>Kitchen Direct
+        </a>
+        <a href="{% url 'consumer_shop' %}" style="color: var(--primary-mint); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+            ← Back to Store
+        </a>
+    </header>
+
+    <div class="container">
+        <a href="{% url 'consumer_shop' %}" class="back-link">
+            <span>←</span> Back to All Produce & Kits
+        </a>
+
+        <!-- Combo Hero Breakdown Card -->
+        <div class="combo-hero-card">
+            <div class="hero-top">
+                <div>
+                    <h1 class="dish-title">
+                        <span>🍲</span> {{ combo.dish_name }}
+                    </h1>
+                    <div class="pills-row">
+                        <span class="pill pill-gold">👥 {{ combo.servings }} Servings</span>
+                        <span class="pill">⚖️ {{ combo.total_weight_kg }} kg Fresh Produce</span>
+                        <span class="pill">⏱️ {{ combo.prep_time_minutes }} Mins Prep Time</span>
+                        <span class="pill" style="background: rgba(16, 185, 129, 0.15); color: #34D399; border-color: rgba(52, 211, 153, 0.3);">
+                            ⚡ Gemini AI Scaled
+                        </span>
+                    </div>
+                </div>
+                <div class="price-box">
+                    <div>
+                        <span class="price-orig">₹{{ combo.original_price|floatformat:2 }}</span>
+                        <span class="savings-tag">SAVE ₹{{ combo.total_savings|floatformat:2 }} ({{ combo.discount_percentage }}% OFF)</span>
+                    </div>
+                    <div class="price-final">₹{{ combo.combo_price|floatformat:2 }}</div>
+                </div>
+            </div>
+
+            <div class="chef-notes-box">
+                <strong>👨‍🍳 Agronomic & Culinary Note:</strong> {{ combo.culinary_notes }}
+            </div>
+
+            <!-- Ingredients Breakdown -->
+            <h2 class="section-heading">
+                <span>🥕</span> Farm-Fresh Ingredients (Scaled for {{ combo.servings }} People)
+            </h2>
+
+            <div class="ingredients-list">
+                {% for item in combo.items %}
+                <div class="ingredient-card">
+                    <div class="ing-left">
+                        <div class="ing-icon">
+                            {% if "Tomato" in item.crop_name %}🍅
+                            {% elif "Onion" in item.crop_name %}🧅
+                            {% elif "Chilli" in item.crop_name %}🌶️
+                            {% elif "Mango" in item.crop_name %}🥭
+                            {% elif "Potato" in item.crop_name %}🥔
+                            {% else %}🥬{% endif %}
+                        </div>
+                        <div>
+                            <div class="ing-name">{{ item.crop_name }}</div>
+                            <div class="ing-role">{{ item.role }}</div>
+                            <div class="ing-farmer">🧑‍🌾 {{ item.farmer_name }} ({{ item.farmer_location }})</div>
+                        </div>
+                    </div>
+                    <div class="ing-right">
+                        <div class="ing-qty">{{ item.quantity_grams }}g</div>
+                        <div class="ing-price">₹{{ item.standalone_price|floatformat:2 }} (at ₹{{ item.base_price_per_kg }}/kg)</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.12); border-radius: 10px; padding: 1rem; color: #6EE7B7; font-size: 0.88rem; display: flex; align-items: center; gap: 0.6rem;">
+                <span>💳</span>
+                <span><strong>Instant Farmer Settlement:</strong> ₹{{ combo.farmer_payout|floatformat:2 }} (90% of order total) will be settled into the verified farmers' digital UPI wallets immediately upon checkout.</span>
+            </div>
+        </div>
+
+        <!-- 1-Click Checkout Form Box -->
+        <div class="checkout-box">
+            <h2 class="section-heading">
+                <span>🛍️</span> Complete 1-Click Direct Purchase
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 1.5rem; font-family: 'Inter', sans-serif;">
+                No grocery delivery markups. Freshly picked from farms this morning and dispatched to your kitchen.
+            </p>
+
+            <form action="{% url 'consumer_checkout' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="item_type" value="COMBO">
+                <input type="hidden" name="item_id" value="{{ combo.combo_db_id|default:combo.combo_id }}">
+                <input type="hidden" name="dish_name" value="{{ combo.dish_name }}">
+                <input type="hidden" name="servings" value="{{ combo.servings }}">
+
+                <div class="form-grid">
+                    <div class="field-group">
+                        <label>Your Name</label>
+                        <input type="text" name="customer_name" value="Ananya Sharma" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Phone Number (UPI Enabled)</label>
+                        <input type="text" name="customer_phone" value="+91 98765 43210" required>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="field-group">
+                        <label>Doorstep Delivery Address</label>
+                        <input type="text" name="delivery_address" value="Flat 402, Green Meadows, Jubilee Hills, Hyderabad" required>
+                    </div>
+                    <div class="field-group">
+                        <label>PIN Code</label>
+                        <input type="text" name="pincode" value="500033" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-order-now">
+                    <span>🚀</span> Confirm Order & Pay ₹{{ combo.combo_price|floatformat:2 }} via UPI Instant
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
