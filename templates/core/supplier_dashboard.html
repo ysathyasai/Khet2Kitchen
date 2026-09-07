@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Supplier Portal - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🚜</span> Agricultural Input Supplier Portal
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+            Direct input vendor channel for <strong>{{ user.get_full_name }}</strong> (✉️ {{ user.email }})
+        </p>
+    </div>
+    <div>
+        <span class="badge badge-warning" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+            ● Supplier Network Active
+        </span>
+    </div>
+</div>
+
+<div class="grid-cards">
+    <div class="card">
+        <div class="card-header">
+            <span class="metric-label">Connected Farmer Clusters</span>
+            <span style="font-size: 1.5rem;">🌾</span>
+        </div>
+        <div class="metric-value">4</div>
+        <div class="metric-label" style="color: #fbbf24;">Linked via Micro-Hub distribution</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="metric-label">Active Drop-off Hubs</span>
+            <span style="font-size: 1.5rem;">🏬</span>
+        </div>
+        <div class="metric-value">{{ active_hubs.count }}</div>
+        <div class="metric-label">Pick-up and consignment points</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="metric-label">Fulfillment Rail</span>
+            <span style="font-size: 1.5rem;">⚡</span>
+        </div>
+        <div class="metric-value" style="color: #34d399;">Direct</div>
+        <div class="metric-label">Zero intermediaries</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span>🌱</span> Certified Farm Input Distribution Points (Micro-Hubs)
+    </h2>
+    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
+        Suppliers deliver organic bio-fertilizers, seeds, drip irrigation equipment, and crated packaging directly to micro-hubs for farmer collection.
+    </p>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Hub Code</th>
+                    <th>Hub Name</th>
+                    <th>District</th>
+                    <th>State</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hub in active_hubs %}
+                <tr>
+                    <td><code>{{ hub.code }}</code></td>
+                    <td><strong>{{ hub.name }}</strong></td>
+                    <td>{{ hub.district }}</td>
+                    <td>{{ hub.state }}</td>
+                    <td><span class="badge badge-success">Operational</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        No hubs currently registered.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

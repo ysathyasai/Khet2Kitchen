@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+
+{% block title %}Retailer B2B Portal - Khet2Kitchen{% endblock %}
+
+{% block content %}
+<!-- Flash Messages for Supply Allocation Actions -->
+{% if messages %}
+    <div style="margin-bottom: 1.5rem;">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Header & Direct Rail Status -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🏬</span> Retailer Procurement & AI Demand Portal
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+            Direct-from-farm procurement for <strong>{{ user.get_full_name }}</strong> (✉️ {{ user.email }})
+        </p>
+    </div>
+    <div>
+        <span class="badge badge-info" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+            ● B2B Pre-Order Direct Rail Active
+        </span>
+    </div>
+</div>
+
+<!-- Overview Metric Cards -->
+<div class="grid-cards">
+    <div class="card" style="border-left: 4px solid #3b82f6;">
+        <div class="card-header">
+            <span class="metric-label">Active Pre-Orders</span>
+            <span style="font-size: 1.5rem;">🛒</span>
+        </div>
+        <div class="metric-value">{{ demand_orders.count }}</div>
+        <div class="metric-label" style="color: #60a5fa;">Pending & allocated shipments</div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #10b981;">
+        <div class="card-header">
+            <span class="metric-label">AI Demand Recommendations</span>
+            <span style="font-size: 1.5rem;">🧠</span>
+        </div>
+        <div class="metric-value" style="color: #34d399;">{{ ai_recommended_orders|length }}</div>
+        <div class="metric-label">Predictive pre-order opportunities</div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div class="card-header">
+            <span class="metric-label">Procurement Cost Advantage</span>
+            <span style="font-size: 1.5rem;">⚡</span>
+        </div>
+        <div class="metric-value" style="color: #fbbf24;">~22% Saved</div>
+        <div class="metric-label">Disintermediated wholesale pricing</div>
+    </div>
+</div>
+
+<!-- AI DEMAND FORECAST & RECOMMENDED ORDERS (K2K Intelligence Engine) -->
+<div class="card" style="margin-bottom: 2rem; border-color: rgba(59, 130, 246, 0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🧠</span> AI Demand Forecast & Recommended Pre-Orders
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                Powered by K2K Intelligence Engine: real-time consumption cycles and micro-hub harvest arrivals.
+            </p>
+        </div>
+        <span class="badge badge-success" style="font-size: 0.8rem;">Live Predictive Rail</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+        {% for forecast in ai_recommended_orders %}
+        <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div>
+                        <div style="font-size: 1.15rem; font-weight: 700;">{{ forecast.crop_name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ forecast.crop_category }} • Target: {{ forecast.target_date }}</div>
+                    </div>
+                    <span class="badge {% if forecast.trend == 'HIGH_DEMAND' %}badge-success{% else %}badge-info{% endif %}">
+                        {{ forecast.trend }}
+                    </span>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin: 1rem 0; padding: 0.75rem; background: rgba(15, 23, 42, 0.5); border-radius: 0.5rem; border: 1px solid var(--border);">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Recommended Volume</div>
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #60a5fa;">{{ forecast.predicted_volume_kg }} kg</div>
+                    </div>
+                    <div style="flex: 1; border-left: 1px solid var(--border); padding-left: 1rem;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Expected Price</div>
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #34d399;">₹{{ forecast.expected_price_per_kg }}/kg</div>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1rem;">
+                    {{ forecast.rationale }}
+                </p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 0.75rem; font-size: 0.8rem;">
+                <span style="color: var(--text-muted);">Model Confidence: <strong style="color: #34d399;">{{ forecast.confidence_score }}%</strong></span>
+                <span style="color: #60a5fa; font-weight: 500;">Direct Micro-Hub Rail</span>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">AI forecasts are updating for the upcoming harvest cycle.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Demand Orders Management (Pre-Orders) with Automated Supply Allocation -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                <span>📋</span> My Pre-Orders & Allocation Status
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                Click <strong>"Auto-Match Supply"</strong> to execute the matching algorithm against real-time micro-hub batches.
+            </p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Crop</th>
+                    <th>Required Volume</th>
+                    <th>Required Date</th>
+                    <th>Estimated Cost</th>
+                    <th>Status</th>
+                    <th>Supply Matching Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in demand_orders %}
+                <tr>
+                    <td><code>{{ order.order_id }}</code></td>
+                    <td><strong>{{ order.crop.name }}</strong></td>
+                    <td>{{ order.required_volume_kg }} kg</td>
+                    <td>{{ order.required_date }}</td>
+                    <td style="font-weight: 600; color: #34d399;">₹{{ order.calculate_estimated_cost }}</td>
+                    <td>
+                        <span class="badge {% if order.status == 'FULFILLED' %}badge-success{% elif order.status == 'ALLOCATED' %}badge-info{% else %}badge-warning{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if order.status != 'FULFILLED' %}
+                            <form action="{% url 'allocate_order' order.order_id %}" method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                                    ⚡ Auto-Match Supply
+                                </button>
+                            </form>
+                        {% else %}
+                            <span style="color: #34d399; font-size: 0.85rem; font-weight: 600;">✓ Fully Matched</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No pre-orders placed yet. Submit a demand order above to reserve fresh produce directly from micro-hubs.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- FEATURE 3: FARM-TO-FORK BATCH TRACEABILITY & PROVENANCE TIMELINE -->
+<!-- ========================================================================= -->
+<div class="card" style="margin-bottom: 2rem; border-color: rgba(16, 185, 129, 0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔍</span> Batch Traceability & Farm-to-Fork Provenance
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                Verify full supply chain transparency: geolocated farm harvest, micro-hub AI grading, and guaranteed farmer payout.
+            </p>
+        </div>
+        <span class="badge badge-success" style="font-size: 0.8rem;">100% Transparent Chain</span>
+    </div>
+
+    <!-- Quick Batch Selection Chips -->
+    {% if recent_active_batches %}
+    <div style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Recent Hub Batches:</span>
+        {% for b in recent_active_batches %}
+        <button type="button" onclick="traceBatch('{{ b.batch_id }}')"
+            style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border); color: #34d399; padding: 0.3rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;"
+            onmouseover="this.style.borderColor='#34d399'; this.style.background='rgba(52, 211, 153, 0.1)';"
+            onmouseout="this.style.borderColor='var(--border)'; this.style.background='rgba(30, 41, 59, 0.8)';">
+            🏷️ {{ b.batch_id }} ({{ b.crop.name }})
+        </button>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Search Input Form -->
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; max-width: 650px;">
+        <input type="text" id="traceBatchInput" placeholder="Enter Batch ID (e.g., K2K-BTH-101)..."
+            style="flex: 1; padding: 0.75rem 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 0.95rem;">
+        <button type="button" id="traceBatchBtn" onclick="traceBatch()" class="btn btn-primary" style="white-space: nowrap;">
+            🔎 Trace Provenance
+        </button>
+    </div>
+
+    <!-- Live Traceability Results Container -->
+    <div id="traceResults" style="display: none; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem;">
+        <!-- Header Info -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+                <span id="traceCropName" style="font-size: 1.35rem; font-weight: 700; color: var(--text);">Crop</span>
+                <span id="traceBatchBadge" class="badge badge-info" style="margin-left: 0.5rem;">Batch ID</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                Volume: <strong id="traceVolume" style="color: #60a5fa;">0 kg</strong> | Current Status: <strong id="traceStatus" style="color: #34d399;">Active</strong>
+            </div>
+        </div>
+
+        <!-- 4-Stage Visual Provenance Timeline -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; position: relative;">
+            <!-- Stage 1: Farm Origin -->
+            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #10b981;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <div style="background: rgba(16, 185, 129, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                        🌱
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 1: Origin</div>
+                        <div style="font-size: 0.95rem; font-weight: 600;">Farm Harvest</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; line-height: 1.6;">
+                    <div>Farmer: <strong id="traceFarmer" style="color: var(--text);">-</strong></div>
+                    <div>Origin: <span id="traceRegion" style="color: var(--text-muted);">-</span></div>
+                    <div style="margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted);">🕒 <span id="traceHarvestDate">-</span></div>
+                </div>
+            </div>
+
+            <!-- Stage 2: Micro-Hub AI Quality Inspection -->
+            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #3b82f6;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <div style="background: rgba(59, 130, 246, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                        🤖
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 2: Grading</div>
+                        <div style="font-size: 0.95rem; font-weight: 600;">AI Vision Inspection</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; line-height: 1.6;">
+                    <div>Hub: <strong id="traceHub" style="color: var(--text);">-</strong></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.25rem 0;">
+                        <span>Grade:</span>
+                        <span id="traceGrade" class="badge badge-success" style="font-size: 0.85rem;">Grade A</span>
+                    </div>
+                    <div>Confidence: <strong id="traceConfidence" style="color: #34d399;">0%</strong></div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">🕒 <span id="traceInspectDate">-</span></div>
+                </div>
+            </div>
+
+            <!-- Stage 3: Guaranteed Settlement -->
+            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #f59e0b;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <div style="background: rgba(245, 158, 11, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                        💳
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 3: Settlement</div>
+                        <div style="font-size: 0.95rem; font-weight: 600;">Direct Farmer Payout</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; line-height: 1.6;">
+                    <div>Net Payout: <strong id="tracePayout" style="color: #34d399; font-size: 1rem;">₹0</strong></div>
+                    <div>Status: <span id="traceSettlementStatus" class="badge badge-success" style="font-size: 0.75rem;">SETTLED</span></div>
+                    <div>Middlemen Cut Saved: <strong id="traceSaved" style="color: #fbbf24;">₹0</strong></div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">⚡ Instant Wallet Credit</div>
+                </div>
+            </div>
+
+            <!-- Stage 4: Urban Cold-Chain Dispatch -->
+            <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1.25rem; border-top: 4px solid #8b5cf6;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <div style="background: rgba(139, 92, 246, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                        🚛
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stage 4: Cold-Chain</div>
+                        <div style="font-size: 0.95rem; font-weight: 600;">Reefer Van Transit</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; line-height: 1.6;">
+                    <div>Transit Temp: <strong id="traceTemp" style="color: #60a5fa;">4°C - 8°C</strong></div>
+                    <div>Vehicle: <span id="traceVehicle" style="color: var(--text-muted);">-</span></div>
+                    <div>Delivery ETA: <span id="traceEta" style="color: #a78bfa; font-weight: 600;">-</span></div>
+                    <div style="font-size: 0.75rem; color: #34d399; margin-top: 0.25rem;">✓ Zero Multi-Tier Spoilage</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- FEATURE 4: DYNAMIC REEFER DISPATCH ROUTING & CO2 SAVINGS -->
+<!-- ========================================================================= -->
+<div class="card" style="margin-bottom: 2rem; border-color: rgba(59, 130, 246, 0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h2 style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🚚</span> Dynamic Reefer Route Optimization & Cold-Chain Dispatch
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                AI multi-stop route sequencing prioritizes high-perishability greens and models real-time EV carbon reductions.
+            </p>
+        </div>
+        <button type="button" onclick="loadRoutePlan()" class="btn btn-secondary" style="font-size: 0.85rem;">
+            🔄 Refresh Route Plan
+        </button>
+    </div>
+
+    <!-- Active Reefer Vehicle Stats -->
+    <div id="routeHeader" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Assigned Reefer Van</div>
+            <div id="routeVehicleId" style="font-size: 1.1rem; font-weight: 700; color: #60a5fa;">REEFER-EV-04</div>
+            <div id="routeVehicleType" style="font-size: 0.75rem; color: var(--text-muted);">Tata Ace EV Reefer (Active Chiller 4°C)</div>
+        </div>
+        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Departure Micro-Hub</div>
+            <div id="routeHubName" style="font-size: 1.1rem; font-weight: 700; color: #34d399;">Kolar East Micro-Hub</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Direct Farm Aggregation Zone</div>
+        </div>
+        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Cargo Volume</div>
+            <div id="routeTotalVol" style="font-size: 1.1rem; font-weight: 700; color: #fbbf24;">Loading...</div>
+            <div id="routeStopsCount" style="font-size: 0.75rem; color: var(--text-muted);">Optimized Drops</div>
+        </div>
+        <div style="background: var(--surface-card); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border);">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">🌱 Clean Transit Impact</div>
+            <div id="routeCo2Savings" style="font-size: 1.1rem; font-weight: 700; color: #4ade80;">18.4 kg CO₂</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Saved vs Diesel Fleets</div>
+        </div>
+    </div>
+
+    <!-- Route Stops Table -->
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Stop #</th>
+                    <th>Destination Retailer</th>
+                    <th>Produce Cargo</th>
+                    <th>Volume</th>
+                    <th>Perishability Priority</th>
+                    <th>Distance</th>
+                    <th>ETA</th>
+                </tr>
+            </thead>
+            <tbody id="routeStopsBody">
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                        Loading optimized cold-chain route stops...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Produce Catalog & Baseline Pricing -->
+<div class="card">
+    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span>🥬</span> Available Produce Catalog & Baseline Benchmarks
+    </h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+        {% for crop in market_catalog %}
+        <div style="background: var(--surface-card); padding: 1.25rem; border-radius: 0.5rem; border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <span style="font-weight: 600; font-size: 1.1rem;">{{ crop.name }}</span>
+                <span class="badge badge-info">{{ crop.get_category_display }}</span>
+            </div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: #34d399; margin-bottom: 0.25rem;">
+                ₹{{ crop.base_price }} <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 400;">/ kg</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.5rem;">
+                Shelf Life: <strong>{{ crop.shelf_life_days }} Days</strong>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Produce catalog is currently updating.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Vanilla JavaScript for Traceability & Dynamic Route Planner -->
+<script>
+// Trace Batch Function
+async function traceBatch(preselectedId) {
+    const input = document.getElementById("traceBatchInput");
+    const batchId = (preselectedId || input.value || "").trim();
+    if (!batchId) {
+        alert("Please enter or select a valid Batch ID.");
+        return;
+    }
+
+    input.value = batchId;
+    const btn = document.getElementById("traceBatchBtn");
+    const resultsDiv = document.getElementById("traceResults");
+    btn.disabled = true;
+    btn.innerText = "Tracing...";
+
+    try {
+        const response = await fetch(`/api/trace-batch/${encodeURIComponent(batchId)}/`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            alert(data.error || "Batch not found. Please verify the Batch ID.");
+            return;
+        }
+
+        const trace = data.traceability;
+        document.getElementById("traceCropName").innerText = trace.crop_name + " (" + trace.crop_category + ")";
+        document.getElementById("traceBatchBadge").innerText = trace.batch_id;
+        document.getElementById("traceVolume").innerText = trace.volume_kg + " kg";
+        document.getElementById("traceStatus").innerText = trace.current_status;
+
+        // Stage 1: Origin
+        document.getElementById("traceFarmer").innerText = trace.farm_origin.farmer_name;
+        document.getElementById("traceRegion").innerText = trace.farm_origin.region;
+        document.getElementById("traceHarvestDate").innerText = trace.farm_origin.harvested_at;
+
+        // Stage 2: AI Hub Inspection
+        document.getElementById("traceHub").innerText = trace.hub_inspection.hub_name + " (" + trace.hub_inspection.location + ")";
+        const gradeBadge = document.getElementById("traceGrade");
+        gradeBadge.innerText = "Grade " + trace.hub_inspection.ai_grade;
+        if (trace.hub_inspection.ai_grade === "A") {
+            gradeBadge.className = "badge badge-success";
+        } else if (trace.hub_inspection.ai_grade === "B") {
+            gradeBadge.className = "badge badge-info";
+        } else {
+            gradeBadge.className = "badge badge-warning";
+        }
+        document.getElementById("traceConfidence").innerText = trace.hub_inspection.confidence_score + "%";
+        document.getElementById("traceInspectDate").innerText = trace.hub_inspection.inspected_at;
+
+        // Stage 3: Settlement
+        document.getElementById("tracePayout").innerText = "₹" + trace.financial_settlement.net_payout.toLocaleString('en-IN');
+        document.getElementById("traceSettlementStatus").innerText = trace.financial_settlement.settlement_status;
+        document.getElementById("traceSaved").innerText = "₹" + trace.financial_settlement.disintermediation_saving.toLocaleString('en-IN');
+
+        // Stage 4: Logistics
+        document.getElementById("traceTemp").innerText = trace.logistics_cold_chain.cold_chain_temp;
+        document.getElementById("traceVehicle").innerText = trace.logistics_cold_chain.vehicle_type;
+        document.getElementById("traceEta").innerText = trace.logistics_cold_chain.estimated_arrival;
+
+        resultsDiv.style.display = "block";
+        resultsDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (err) {
+        console.error("Traceability fetch error:", err);
+        alert("Failed to trace batch provenance. Check console for details.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "🔎 Trace Provenance";
+    }
+}
+
+// Dynamic Route Planner Function
+async function loadRoutePlan() {
+    try {
+        const res = await fetch("/api/route-plan/");
+        const data = await res.json();
+        if (!data.success) return;
+
+        const plan = data.route_plan;
+        document.getElementById("routeVehicleId").innerText = plan.dispatch_vehicle.id;
+        document.getElementById("routeVehicleType").innerText = plan.dispatch_vehicle.type;
+        document.getElementById("routeHubName").innerText = plan.hub_name;
+        document.getElementById("routeTotalVol").innerText = plan.total_volume_kg + " kg";
+        document.getElementById("routeStopsCount").innerText = plan.total_stops + " Delivery Stops (" + plan.total_estimated_time_minutes + " mins)";
+        document.getElementById("routeCo2Savings").innerText = plan.dispatch_vehicle.co2_savings_kg + " kg CO₂";
+
+        const tbody = document.getElementById("routeStopsBody");
+        tbody.innerHTML = "";
+
+        if (plan.optimized_stops.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding:1.5rem;">No active stops scheduled.</td></tr>';
+            return;
+        }
+
+        plan.optimized_stops.forEach(stop => {
+            const tr = document.createElement("tr");
+            const isHigh = stop.priority.includes("HIGH");
+            tr.innerHTML = `
+                <td><strong style="color: #60a5fa;">#${stop.stop_number}</strong></td>
+                <td><strong>${stop.retailer_name}</strong></td>
+                <td>${stop.crop}</td>
+                <td style="font-weight:600;">${stop.volume_kg} kg</td>
+                <td><span class="badge ${isHigh ? 'badge-warning' : 'badge-info'}">${stop.priority}</span></td>
+                <td>${stop.distance_km} km</td>
+                <td style="color: #34d399; font-weight:600;">+${stop.eta_minutes} mins</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Route plan error:", err);
+    }
+}
+
+// Auto-load route plan on page ready
+document.addEventListener("DOMContentLoaded", () => {
+    loadRoutePlan();
+});
+</script>
+{% endblock %}
+

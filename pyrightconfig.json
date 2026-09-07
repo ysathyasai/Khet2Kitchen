@@ -1,0 +1,11 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "typeCheckingMode": "off",
+  "reportMissingTypeStubs": "none",
+  "include": [
+    "core",
+    "k2k",
+    "manage.py"
+  ]
+}

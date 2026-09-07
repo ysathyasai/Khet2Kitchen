@@ -1,0 +1,73 @@
+<svg viewBox="7.893687707641196 6.999999999999999 125.5813953488372 126.53846153846153" xmlns="http://www.w3.org/2000/svg" style="max-height: 500px" width="125.5813953488372" height="126.53846153846153">
+  <defs>
+    
+    <linearGradient y2="100%" x2="100%" y1="0%" x1="0%" id="leafGrad">
+      <stop stop-color="#34d399" offset="0%"/>
+      <stop stop-color="#059669" offset="100%"/>
+    </linearGradient>
+
+    <linearGradient y2="0%" x2="100%" y1="100%" x1="0%" id="clocheGrad">
+      <stop stop-color="#059669" offset="0%"/>
+      <stop stop-color="#10b981" offset="100%"/>
+    </linearGradient>
+
+    <linearGradient y2="100%" x2="100%" y1="0%" x1="0%" id="glowRing">
+      <stop stop-opacity="0.3" stop-color="#10b981" offset="0%"/>
+      <stop stop-opacity="0.05" stop-color="#047857" offset="100%"/>
+    </linearGradient>
+  </defs>
+
+  
+  <g transform="translate(10, 10)" id="logo-icon">
+    
+    <circle opacity="0.85" stroke-dasharray="4 3" stroke-width="1.8" stroke="#10b981" fill="url(#glowRing)" r="54" cy="60" cx="60"/>
+
+    
+    <path stroke-linecap="round" stroke-width="4.5" stroke="#064e3b" d="M 28 86 L 92 86"/>
+    <path opacity="0.9" stroke-linecap="round" stroke-width="2.5" stroke="#10b981" d="M 22 92 L 98 92"/>
+
+    
+    <path stroke-linejoin="round" stroke-width="4" stroke="url(#clocheGrad)" fill="none" d="M 34 82 C 34 52, 86 52, 86 82 Z"/>
+    
+    <circle fill="#047857" r="4.5" cy="49" cx="60"/>
+
+    
+    <path fill="url(#leafGrad)" d="M 60 76 C 60 55, 78 40, 93 33 C 93 52, 81 72, 60 76 Z"/>
+    
+    <path opacity="0.8" stroke-linecap="round" stroke-width="1.8" stroke="#ffffff" fill="none" d="M 64 71 C 73 60, 82 48, 88 38"/>
+
+    
+    <circle fill="#047857" r="3" cy="86" cx="28"/>
+    <circle fill="#10b981" r="3" cy="86" cx="60"/>
+    <circle fill="#059669" r="3" cy="86" cx="92"/>
+  </g>
+
+  
+  <g transform="translate(145, 0)" id="logo-text">
+    
+    <text letter-spacing="-1" font-weight="900" font-size="46" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" y="68" x="0">
+      <tspan fill="#064e3b">K</tspan>
+      <tspan fill="#10b981">2</tspan>
+      <tspan fill="#064e3b">K</tspan>
+    </text>
+
+    
+    <text letter-spacing="-0.5" fill="#0f172a" font-weight="700" font-size="28" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" y="66" x="110">
+      Khet<tspan fill="#059669">2</tspan>Kitchen
+    </text>
+
+    
+    <text letter-spacing="1.8" fill="#475569" font-weight="600" font-size="11.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" y="96" x="2">
+      FARM-TO-RETAIL LIFECYCLE ENGINE
+    </text>
+
+    
+    <g transform="translate(2, 108)">
+      <rect stroke-width="1" stroke="#a7f3d0" fill="#ecfdf5" rx="3" height="15" width="70" y="0" x="0"/>
+      <text text-anchor="middle" fill="#047857" font-weight="700" font-size="8.5" font-family="system-ui, -apple-system, sans-serif" y="11" x="35">DIRECT B2B</text>
+
+      <rect stroke-width="1" stroke="#a7f3d0" fill="#ecfdf5" rx="3" height="15" width="80" y="0" x="76"/>
+      <text text-anchor="middle" fill="#047857" font-weight="700" font-size="8.5" font-family="system-ui, -apple-system, sans-serif" y="11" x="116">AI-POWERED</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="clocheGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+
+    <linearGradient id="glowRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#047857" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+
+  <!-- ICON CONTAINER (Transparent background, centered vertically) -->
+  <g id="logo-icon" transform="translate(10, 10)">
+    <!-- Tech/Logistics Node Ring (Transparent Halo) -->
+    <circle cx="60" cy="60" r="54" fill="url(#glowRing)" stroke="#10b981" stroke-width="1.8" stroke-dasharray="4 3" opacity="0.85" />
+
+    <!-- Kitchen Cloche Base Plate (Direct Route Foundation) -->
+    <path d="M 28 86 L 92 86" stroke="#064e3b" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 22 92 L 98 92" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" opacity="0.9" />
+
+    <!-- Kitchen Cloche Dome (Kitchen / Urban Direct Market) -->
+    <path d="M 34 82 C 34 52, 86 52, 86 82 Z" fill="none" stroke="url(#clocheGrad)" stroke-width="4" stroke-linejoin="round" />
+    <!-- Cloche Handle -->
+    <circle cx="60" cy="49" r="4.5" fill="#047857" />
+
+    <!-- Sprouting Farm Leaf (Khet / Agriculture - Rising upward & outward) -->
+    <path d="M 60 76 C 60 55, 78 40, 93 33 C 93 52, 81 72, 60 76 Z" fill="url(#leafGrad)" />
+    <!-- Leaf Inner Vein (Digital Precision / Route Connection) -->
+    <path d="M 64 71 C 73 60, 82 48, 88 38" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.8" />
+
+    <!-- Connecting Traceability Route (Khet -> Hub -> Kitchen) -->
+    <circle cx="28" cy="86" r="3" fill="#047857" />
+    <circle cx="60" cy="86" r="3" fill="#10b981" />
+    <circle cx="92" cy="86" r="3" fill="#059669" />
+  </g>
+
+  <!-- TYPOGRAPHY / WORDMARK (Transparent Canvas) -->
+  <g id="logo-text" transform="translate(145, 0)">
+    <!-- Primary K2K Branding -->
+    <text x="0" y="68" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="46" font-weight="900" letter-spacing="-1">
+      <tspan fill="#064e3b">K</tspan>
+      <tspan fill="#10b981">2</tspan>
+      <tspan fill="#064e3b">K</tspan>
+    </text>
+
+    <!-- Subtitle Name -->
+    <text x="110" y="66" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" fill="#0f172a" letter-spacing="-0.5">
+      Khet<tspan fill="#059669">2</tspan>Kitchen
+    </text>
+
+    <!-- Tagline & Architecture Identity -->
+    <text x="2" y="96" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="600" fill="#475569" letter-spacing="1.8">
+      FARM-TO-RETAIL LIFECYCLE ENGINE
+    </text>
+
+    <!-- Operational Trust Indicators -->
+    <g transform="translate(2, 108)">
+      <rect x="0" y="0" width="70" height="15" rx="3" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1" />
+      <text x="35" y="11" font-family="system-ui, -apple-system, sans-serif" font-size="8.5" font-weight="700" fill="#047857" text-anchor="middle">DIRECT B2B</text>
+
+      <rect x="76" y="0" width="80" height="15" rx="3" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1" />
+      <text x="116" y="11" font-family="system-ui, -apple-system, sans-serif" font-size="8.5" font-weight="700" fill="#047857" text-anchor="middle">AI-POWERED</text>
+    </g>
+  </g>
+</svg>

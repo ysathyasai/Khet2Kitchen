@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Login - Project Khet2Kitchen{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 3rem auto; background: var(--surface); padding: 2.5rem; border-radius: 1rem; border: 1px solid var(--border); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <img src="{% static 'images/k2k-logo.svg' %}" alt="Khet2Kitchen Logo" style="height: 64px; width: 64px; margin-bottom: 0.75rem; display: inline-block; filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.5));">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">K2K Unified Portal Login</h1>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">
+            Farmers sign in with Mobile Number.<br>Retailers, Suppliers & Admins use Email.
+        </p>
+    </div>
+
+    {% if form.errors %}
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem;">
+            Invalid credentials. Please check your identifier and password.
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <div style="margin-bottom: 1.25rem;">
+            <label for="id_username" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-muted);">
+                Mobile Number or Email
+            </label>
+            <input type="text" name="username" autofocus required id="id_username" 
+                placeholder="+919876543210 or user@retailer.com"
+                style="width: 100%; padding: 0.75rem 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s;"
+                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label for="id_password" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-muted);">
+                Password / OTP
+            </label>
+            <input type="password" name="password" required id="id_password"
+                placeholder="••••••••"
+                style="width: 100%; padding: 0.75rem 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s;"
+                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; font-weight: 600;">
+            Sign In to K2K
+        </button>
+    </form>
+
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+        <p>🔒 Role-based routing will automatically redirect you to your authorized dashboard.</p>
+    </div>
+</div>
+{% endblock %}
