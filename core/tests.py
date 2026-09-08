@@ -46,6 +46,11 @@ from core.voice_services import (
     process_intent_with_gemini,
     transcribe_audio,
 )
+from core.otp_services import (
+    EmailOTPService,
+    FirebaseService,
+    normalize_phone_number,
+)
 
 
 class UserModelTests(TestCase):
@@ -1321,6 +1326,86 @@ class UserRegistrationTests(TestCase):
         self.assertTemplateUsed(response, "core/signup.html")
         self.assertContains(response, "Join Khet2Kitchen")
         self.assertContains(response, "Complete Registration")
+        self.assertContains(response, "btn-request-otp")
+        self.assertContains(response, "recaptcha-container")
+        self.assertContains(response, "id_firebase_id_token")
+
+    def test_signup_with_valid_email_otp(self):
+        email = "new.procure@freshbazaar.in"
+        success, msg, otp = EmailOTPService.send_otp(email)
+        self.assertTrue(success)
+
+        signup_data = {
+            "name": "New Retailer",
+            "role": "RETAILER",
+            "identifier": email,
+            "password": otp,
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertRedirects(response, reverse("retailer_dashboard"))
+
+        user = User.objects.get(identifier=email)
+        self.assertEqual(user.email, email)
+        self.assertEqual(user.role, User.Role.RETAILER)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    @patch("core.otp_services.FirebaseService.verify_id_token")
+    def test_signup_with_verified_firebase_sms_token(self, mock_verify):
+        phone = "+919876543111"
+        mock_verify.return_value = (True, "Token verified", {"phone_number": phone})
+
+        signup_data = {
+            "name": "Suresh Patil",
+            "role": "FARMER",
+            "identifier": "9876543111",
+            "password": "TemporaryPass123!",
+            "firebase_id_token": "mock_firebase_sms_jwt",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertRedirects(response, reverse("farmer_dashboard"))
+
+        user = User.objects.get(identifier=phone)
+        self.assertEqual(user.phone_number, phone)
+        self.assertEqual(user.first_name, "Suresh")
+        self.assertEqual(user.last_name, "Patil")
+        self.assertTrue(hasattr(user, "wallet"))
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    @patch("core.otp_services.FirebaseService.verify_id_token")
+    def test_signup_existing_user_via_firebase_token_logs_in(self, mock_verify):
+        phone = "+919876543222"
+        existing = User.objects.create_user(
+            phone_number=phone,
+            role=User.Role.FARMER,
+            first_name="Already",
+            last_name="Registered",
+        )
+        mock_verify.return_value = (True, "Token verified", {"phone_number": phone})
+
+        signup_data = {
+            "name": "Already Registered",
+            "role": "FARMER",
+            "identifier": phone,
+            "password": "Password123!",
+            "firebase_id_token": "mock_firebase_sms_jwt",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertRedirects(response, reverse("farmer_dashboard"))
+        self.assertEqual(int(self.client.session["_auth_user_id"]), existing.pk)
+
+    def test_farmer_signup_10_digit_phone_normalized(self):
+        signup_data = {
+            "name": "Ten Digit Farmer",
+            "role": "FARMER",
+            "identifier": "9876543888",
+            "password": "Password123!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertRedirects(response, reverse("farmer_dashboard"))
+
+        user = User.objects.get(identifier="+919876543888")
+        self.assertEqual(user.phone_number, "+919876543888")
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
 
 
 class DataIsolationAndDynamicActionTests(TestCase):

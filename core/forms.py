@@ -7,6 +7,7 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from .models import User, FarmerWallet, Crop, DemandOrder, InputSupply, MicroHub, ConsumerFeedback
+from .otp_services import normalize_phone_number
 
 
 class UserRegistrationForm(forms.ModelForm):
@@ -82,15 +83,27 @@ class UserRegistrationForm(forms.ModelForm):
         if not identifier:
             raise ValidationError(_("Please enter a phone number or email address."))
 
-        # Unique identifier validation
-        if User.objects.filter(identifier=identifier).exists():
-            raise ValidationError(_("An account with this identifier already exists."))
-
         role = self.cleaned_data.get("role")
         if role == User.Role.FARMER:
             digits_only = re.sub(r"\D", "", identifier)
             if len(digits_only) < 10:
                 raise ValidationError(_("Farmer identifier must be a valid mobile phone number with at least 10 digits."))
+            normalized_phone = normalize_phone_number(identifier)
+            if normalized_phone:
+                identifier = normalized_phone
+        elif role == User.Role.CONSUMER and "@" not in identifier:
+            digits_only = re.sub(r"\D", "", identifier)
+            if len(digits_only) < 10:
+                raise ValidationError(_("Consumer phone number must have at least 10 digits."))
+            normalized_phone = normalize_phone_number(identifier)
+            if normalized_phone:
+                identifier = normalized_phone
+
+        # Unique identifier validation
+        if User.objects.filter(identifier=identifier).exists():
+            raise ValidationError(_("An account with this identifier already exists."))
+
+        if role == User.Role.FARMER:
             if User.objects.filter(phone_number=identifier).exists():
                 raise ValidationError(_("An account with this mobile phone number already exists."))
         elif role in (User.Role.RETAILER, User.Role.SUPPLIER):
@@ -109,9 +122,6 @@ class UserRegistrationForm(forms.ModelForm):
                 if User.objects.filter(email=identifier.lower()).exists():
                     raise ValidationError(_("An account with this email address already exists."))
             else:
-                digits_only = re.sub(r"\D", "", identifier)
-                if len(digits_only) < 10:
-                    raise ValidationError(_("Consumer phone number must have at least 10 digits."))
                 if User.objects.filter(phone_number=identifier).exists():
                     raise ValidationError(_("An account with this mobile phone number already exists."))
 
@@ -123,7 +133,9 @@ class UserRegistrationForm(forms.ModelForm):
         identifier = cleaned_data.get("identifier")
 
         if role and identifier:
-            if role == User.Role.FARMER:
+            if User.objects.filter(identifier=identifier).exists():
+                self.add_error("identifier", _("An account with this identifier already exists."))
+            elif role == User.Role.FARMER:
                 digits_only = re.sub(r"\D", "", identifier)
                 if len(digits_only) < 10:
                     self.add_error("identifier", _("Farmer identifier must be a valid mobile phone number with at least 10 digits."))

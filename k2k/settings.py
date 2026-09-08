@@ -4,6 +4,7 @@ Configured for Role-Based Access Control, MySQL support, and Render deployment.
 """
 
 import os
+import sys
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
@@ -87,14 +88,23 @@ WSGI_APPLICATION = 'k2k.wsgi.application'
 
 # Database Configuration
 # Uses DATABASE_URL for PostgreSQL (Neon) / production, with SQLite fallback for local development.
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        conn_health_checks=True,
-        ssl_require=True,
-    )
-}
+# Uses isolated in-memory SQLite during automated test runs for speed and safety.
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
+    }
 
 # SQLite does not support sslmode; strip it when falling back to SQLite locally
 if 'sqlite' in DATABASES['default'].get('ENGINE', ''):

@@ -1273,13 +1273,83 @@ def login_view(request):
 def signup_view(request):
     """
     Secure User Registration (Signup) view for Project Khet2Kitchen (K2K).
-    Supports FARMER, RETAILER, and SUPPLIER registration with automatic
-    wallet provisioning, credential mirroring, and dynamic role-based dashboard routing.
+    Supports Password, Email OTP, and Firebase SMS OTP registration.
+    Automatically provisions wallet, mirrors credentials, and routes dynamically.
     """
     if request.user.is_authenticated:
         return redirect(request.user.get_dashboard_url())
 
     if request.method == "POST":
+        firebase_id_token = request.POST.get("firebase_id_token", "").strip()
+        raw_identifier = request.POST.get("identifier", "").strip()
+        raw_password = request.POST.get("password", "").strip()
+
+        # ----------------------------------------------------------------------
+        # 1. Firebase SMS OTP Verification
+        # ----------------------------------------------------------------------
+        if firebase_id_token:
+            is_valid_token, token_msg, decoded_token = FirebaseService.verify_id_token(firebase_id_token)
+            if is_valid_token:
+                token_phone = decoded_token.get("phone_number") or ""
+                verified_phone = normalize_phone_number(token_phone) if token_phone else normalize_phone_number(raw_identifier)
+
+                # If user already exists with this phone number, log them in directly
+                existing_user = User.objects.filter(
+                    Q(phone_number__iexact=verified_phone) | Q(identifier__iexact=verified_phone)
+                ).first()
+                if existing_user and existing_user.is_active:
+                    login(request, existing_user, backend="core.backends.DualAuthBackend")
+                    messages.info(
+                        request,
+                        f"Welcome back, {existing_user.first_name or existing_user.identifier}! You already have an account.",
+                    )
+                    return redirect(existing_user.get_dashboard_url())
+
+                # New user registration with verified phone
+                post_data = request.POST.copy()
+                post_data["identifier"] = verified_phone
+                form = UserRegistrationForm(post_data)
+                if form.is_valid():
+                    user = form.save()
+                    login(request, user, backend="core.backends.DualAuthBackend")
+                    messages.success(
+                        request,
+                        f"Welcome to Khet2Kitchen, {user.first_name or user.identifier}! Mobile number verified via SMS.",
+                    )
+                    return redirect(user.get_dashboard_url())
+                return render(request, "core/signup.html", {"form": form})
+
+        # ----------------------------------------------------------------------
+        # 2. Email OTP Verification (if 6-digit code entered for email)
+        # ----------------------------------------------------------------------
+        if is_email_identifier(raw_identifier) and len(raw_password) == 6 and raw_password.isdigit():
+            is_otp_valid, otp_msg = EmailOTPService.verify_otp(raw_identifier, raw_password, request=request)
+            if is_otp_valid:
+                existing_user = User.objects.filter(
+                    Q(email__iexact=raw_identifier) | Q(identifier__iexact=raw_identifier)
+                ).first()
+                if existing_user and existing_user.is_active:
+                    login(request, existing_user, backend="core.backends.DualAuthBackend")
+                    messages.info(
+                        request,
+                        f"Welcome back, {existing_user.first_name or existing_user.identifier}! You already have an account.",
+                    )
+                    return redirect(existing_user.get_dashboard_url())
+
+                form = UserRegistrationForm(request.POST)
+                if form.is_valid():
+                    user = form.save()
+                    login(request, user, backend="core.backends.DualAuthBackend")
+                    messages.success(
+                        request,
+                        f"Welcome to Khet2Kitchen, {user.first_name or user.identifier}! Email verified successfully.",
+                    )
+                    return redirect(user.get_dashboard_url())
+                return render(request, "core/signup.html", {"form": form})
+
+        # ----------------------------------------------------------------------
+        # 3. Standard Password Registration
+        # ----------------------------------------------------------------------
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
@@ -1288,15 +1358,6 @@ def signup_view(request):
                 request,
                 f"Welcome to Khet2Kitchen, {user.first_name or user.identifier}! Your account has been provisioned.",
             )
-            # Route dynamically: FARMER -> /farmer/dashboard/, RETAILER -> /retailer/dashboard/, SUPPLIER -> /supplier/dashboard/
-            if user.role == User.Role.FARMER:
-                return redirect("farmer_dashboard")
-            elif user.role == User.Role.RETAILER:
-                return redirect("retailer_dashboard")
-            elif user.role == User.Role.SUPPLIER:
-                return redirect("supplier_dashboard")
-            elif user.role == User.Role.CONSUMER:
-                return redirect("consumer_dashboard")
             return redirect(user.get_dashboard_url())
     else:
         form = UserRegistrationForm()
