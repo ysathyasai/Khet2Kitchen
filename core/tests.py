@@ -1,6 +1,7 @@
 import base64
 from decimal import Decimal
 from django.contrib.auth import authenticate
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
@@ -2307,6 +2308,210 @@ class MobileOptimizationTests(TestCase):
         self.assertContains(res, "mobile-search")
         self.assertContains(res, "btn-nav-join")
         self.assertContains(res, "btn-nav-signin")
+
+
+class UnifiedAuthenticationTests(TestCase):
+    """
+    Unit and integration tests for unified authentication:
+    - Phone number sanitization and E.164 normalization (+91)
+    - Password login preservation even when an OTP has been generated
+    - Email OTP generation, dispatch, verification, and one-time consumption
+    - Firebase SMS ID token verification and automatic Farmer provisioning
+    - Single-card login page UI components (inline OTP button, invisible reCAPTCHA, Firebase SDK)
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+        self.farmer_phone = "+919876543210"
+        self.farmer_password = "farmerPassword123"
+        self.farmer = User.objects.create_user(
+            identifier=self.farmer_phone,
+            phone_number=self.farmer_phone,
+            password=self.farmer_password,
+            role=User.Role.FARMER,
+            first_name="Ramesh",
+            last_name="Kumar",
+            is_active=True,
+        )
+
+        self.retailer_email = "retailer@freshbazaar.in"
+        self.retailer_password = "retailerPassword123"
+        self.retailer = User.objects.create_user(
+            identifier=self.retailer_email,
+            email=self.retailer_email,
+            password=self.retailer_password,
+            role=User.Role.RETAILER,
+            first_name="Ananya",
+            last_name="Sharma",
+            is_active=True,
+        )
+
+    def test_phone_normalization_rules(self):
+        """Verifies phone normalization across various input formats into canonical +91 E.164."""
+        from core.otp_services import normalize_phone_number
+
+        # 10-digit standard Indian mobile
+        self.assertEqual(normalize_phone_number("9876543210"), "+919876543210")
+        # With spaces, hyphens, parentheses, and dots
+        self.assertEqual(normalize_phone_number(" 98765-43210 "), "+919876543210")
+        self.assertEqual(normalize_phone_number("(987) 654-3210"), "+919876543210")
+        self.assertEqual(normalize_phone_number("987.654.3210"), "+919876543210")
+        # 11-digit starting with leading zero
+        self.assertEqual(normalize_phone_number("09876543210"), "+919876543210")
+        self.assertEqual(normalize_phone_number(" 0 98765 43210 "), "+919876543210")
+        # 12-digit starting with 91
+        self.assertEqual(normalize_phone_number("919876543210"), "+919876543210")
+        # Already in E.164 format
+        self.assertEqual(normalize_phone_number("+919876543210"), "+919876543210")
+        self.assertEqual(normalize_phone_number("+91 98765 43210"), "+919876543210")
+        # Empty or null
+        self.assertEqual(normalize_phone_number(""), "")
+        self.assertEqual(normalize_phone_number(None), "")
+
+    def test_send_otp_endpoint_email_flow(self):
+        """Verifies POST /auth/send-otp/ generates a 6-digit numeric OTP and caches it for 5 minutes."""
+        res = self.client.post(
+            reverse("send_otp"),
+            data={"identifier": self.retailer_email},
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["channel"], "email")
+        self.assertIn("OTP sent to", data["message"])
+
+        # Check OTP is stored in cache with 6 numeric digits
+        cached = cache.get(f"k2k_email_otp_{self.retailer_email.lower()}")
+        self.assertIsNotNone(cached)
+        self.assertTrue(cached["code"].isdigit())
+        self.assertEqual(len(cached["code"]), 6)
+
+    def test_send_otp_endpoint_phone_flow(self):
+        """Verifies POST /auth/send-otp/ for a phone returns normalized E.164 phone instructing client SDK."""
+        res = self.client.post(
+            reverse("send_otp"),
+            data={"identifier": "9876543210"},
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["channel"], "sms")
+        self.assertEqual(data["phone"], "+919876543210")
+
+    def test_password_login_works_even_after_otp_generated(self):
+        """
+        CRITICAL: Verifies non-destructive coexistence.
+        Requesting an OTP must NEVER invalidate or overwrite the permanent password.
+        """
+        # 1. User requests OTP
+        self.client.post(reverse("send_otp"), data={"identifier": self.retailer_email})
+        self.assertIsNotNone(cache.get(f"k2k_email_otp_{self.retailer_email.lower()}"))
+
+        # 2. User logs in with their standard password instead
+        login_res = self.client.post(
+            reverse("login"),
+            data={
+                "username": self.retailer_email,
+                "password": self.retailer_password,
+            },
+        )
+        # Should redirect to retailer dashboard
+        self.assertRedirects(login_res, reverse("retailer_dashboard"))
+        # User is authenticated in session
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.retailer.id)
+
+    def test_email_otp_login_success_and_consumption(self):
+        """Verifies user can log in using their 6-digit Email OTP, and OTP is consumed."""
+        # 1. Request OTP
+        self.client.post(reverse("send_otp"), data={"identifier": self.retailer_email})
+        cached = cache.get(f"k2k_email_otp_{self.retailer_email.lower()}")
+        otp_code = cached["code"]
+
+        # 2. Log in using the OTP in the password field
+        login_res = self.client.post(
+            reverse("login"),
+            data={
+                "username": self.retailer_email,
+                "password": otp_code,
+            },
+        )
+        self.assertRedirects(login_res, reverse("retailer_dashboard"))
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.retailer.id)
+
+        # 3. OTP must be consumed (prevent replay)
+        self.assertIsNone(cache.get(f"k2k_email_otp_{self.retailer_email.lower()}"))
+
+    def test_invalid_email_otp_fails_login(self):
+        """Verifies invalid OTP fails gracefully without logging in."""
+        self.client.post(reverse("send_otp"), data={"identifier": self.retailer_email})
+        login_res = self.client.post(
+            reverse("login"),
+            data={
+                "username": self.retailer_email,
+                "password": "000000",  # wrong code
+            },
+        )
+        self.assertEqual(login_res.status_code, 200)
+        self.assertContains(login_res, "Invalid credentials")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    @patch("core.otp_services.FirebaseService.verify_id_token")
+    def test_firebase_sms_token_login_for_existing_farmer(self, mock_verify):
+        """Verifies successful login via verified Firebase SMS ID token for an existing Farmer."""
+        mock_verify.return_value = (
+            True,
+            "Token verified successfully.",
+            {"phone_number": "+919876543210", "uid": "firebase_mock_uid_123"},
+        )
+
+        res = self.client.post(
+            reverse("login"),
+            data={
+                "username": "+919876543210",
+                "password": "123456",
+                "firebase_id_token": "mock_valid_firebase_jwt",
+            },
+        )
+        self.assertRedirects(res, reverse("farmer_dashboard"))
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.farmer.id)
+
+    @patch("core.otp_services.FirebaseService.verify_id_token")
+    def test_firebase_sms_token_login_provisions_new_farmer(self, mock_verify):
+        """Verifies verified Firebase SMS ID token for a new phone number automatically provisions a Farmer account."""
+        new_phone = "+919988776655"
+        mock_verify.return_value = (
+            True,
+            "Token verified successfully.",
+            {"phone_number": new_phone, "uid": "firebase_new_uid_999"},
+        )
+
+        res = self.client.post(
+            reverse("login"),
+            data={
+                "username": new_phone,
+                "password": "654321",
+                "firebase_id_token": "mock_new_firebase_jwt",
+            },
+        )
+        self.assertRedirects(res, reverse("farmer_dashboard"))
+        new_user = User.objects.get(phone_number=new_phone)
+        self.assertEqual(new_user.role, User.Role.FARMER)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), new_user.id)
+
+    def test_login_page_renders_unified_elements(self):
+        """Verifies login.html contains the single-card unified form, OTP trigger button, reCAPTCHA, and Firebase SDK."""
+        res = self.client.get(reverse("login"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "btn-request-otp")
+        self.assertContains(res, "Get OTP via SMS / Email")
+        self.assertContains(res, "otp-status-msg")
+        self.assertContains(res, "recaptcha-container")
+        self.assertContains(res, "id_firebase_id_token")
+        self.assertContains(res, "firebase-app-compat.js")
+        self.assertContains(res, "firebase-auth-compat.js")
+        self.assertContains(res, "AIzaSyCq48UsiSWoL6BJTYsYXhbH-nLx3oLADqA")
+
 
 
 

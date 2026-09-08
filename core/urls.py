@@ -66,6 +66,11 @@ urlpatterns = [
 
     # Authentication Routes
     path(
+        "auth/send-otp/",
+        views.send_otp_view,
+        name="send_otp",
+    ),
+    path(
         "signup/",
         views.signup_view,
         name="signup",

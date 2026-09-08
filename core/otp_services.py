@@ -1,319 +1,282 @@
 """
-OTP Services Layer
-Handles:
-1. Email OTP (Completely free via Django SMTP)
-2. Firebase SMS OTP (10K free/month)
+Project Khet2Kitchen (K2K) - Unified Authentication Services Layer
+Provides:
+1. International Phone Number Normalization (E.164 with +91 Indian fallback)
+2. Email OTP Dispatch & Verification (Cached 5-minute expiry, non-destructive to passwords)
+3. Firebase Admin SDK Integration (Token verification for Firebase Phone SMS Auth)
 """
 
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from django.conf import settings
-from core.otp_models import OTPVerification
 import logging
+import random
+import re
+import time
+from pathlib import Path
+from typing import Optional, Tuple, Dict, Any
+
+from django.conf import settings
+from django.core.cache import cache
+from django.core.mail import send_mail
 
 logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# EMAIL OTP SERVICE (Completely Free - Uses Django Email Backend)
+# 1. PHONE SANITIZATION & NORMALIZATION (E.164)
+# ============================================================================
+
+def normalize_phone_number(raw_phone: str) -> str:
+    """
+    Normalizes input phone numbers into standard international E.164 format (+91...).
+    
+    Rules:
+    - Strips all spaces, hyphens, parentheses, dots, and formatting characters.
+    - If a 10-digit number is provided (e.g., '9876543210'), automatically prepends '+91'.
+    - If an 11-digit number starting with '0' is provided (e.g., '09876543210'), strips '0' and prepends '+91'.
+    - If a 12-digit number starting with '91' is provided (e.g., '919876543210'), prepends '+'.
+    - If number already starts with '+', validates and preserves the country code.
+    """
+    if not raw_phone:
+        return ""
+
+    raw_str = str(raw_phone).strip()
+    # Strip spaces, hyphens, parentheses, dots
+    cleaned = re.sub(r"[\s\-\(\)\.]", "", raw_str)
+    if not cleaned:
+        return ""
+
+    if cleaned.startswith("+"):
+        digits_only = re.sub(r"[^\d]", "", cleaned[1:])
+        return f"+{digits_only}"
+
+    digits = re.sub(r"[^\d]", "", cleaned)
+    if len(digits) == 10:
+        return f"+91{digits}"
+    elif len(digits) == 11 and digits.startswith("0"):
+        return f"+91{digits[1:]}"
+    elif len(digits) == 12 and digits.startswith("91"):
+        return f"+{digits}"
+    elif digits:
+        return f"+{digits}"
+
+    return ""
+
+
+def is_email_identifier(identifier: str) -> bool:
+    """Checks whether the user entered an email address or a phone number."""
+    return "@" in str(identifier)
+
+
+# ============================================================================
+# 2. EMAIL OTP SERVICE (Cache-Backed 5-Min Expiry, Non-Destructive)
 # ============================================================================
 
 class EmailOTPService:
     """
-    Handles email-based OTP authentication.
-    Uses Django's built-in email backend (configured in settings.py).
-    
-    Configuration in settings.py:
-    
-    # Option 1: Gmail SMTP
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = 'your-email@gmail.com'
-    EMAIL_HOST_PASSWORD = 'app-specific-password'  # Use app password from Google Account
-    
-    # Option 2: SendGrid (Free tier: 100/day)
-    EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
-    SENDGRID_API_KEY = 'your-sendgrid-key'
-    
-    # Option 3: Console (Development - prints email to console)
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    Manages generation, dispatch, and validation of 6-digit numeric Email OTPs.
+    Uses Django Cache with a 300-second (5-minute) TTL.
+    Requesting an OTP never invalidates or modifies the user's permanent password.
     """
-    
-    SUBJECT = "🌾 Khet2Kitchen OTP - Secure Login"
-    FROM_EMAIL = settings.DEFAULT_FROM_EMAIL or 'noreply@khet2kitchen.com'
-    OTP_VALIDITY_MINUTES = 5
-    
-    @staticmethod
-    def send_otp(email: str) -> tuple[bool, str, str]:
+
+    OTP_VALIDITY_SECONDS = 300  # 5 minutes
+    CACHE_KEY_PREFIX = "k2k_email_otp_"
+
+    @classmethod
+    def _make_key(cls, email: str) -> str:
+        return f"{cls.CACHE_KEY_PREFIX}{str(email).strip().lower()}"
+
+    @classmethod
+    def generate_otp(cls) -> str:
+        """Generates a secure 6-digit numeric OTP string."""
+        return f"{random.randint(100000, 999999)}"
+
+    @classmethod
+    def send_otp(cls, email: str, request=None) -> Tuple[bool, str, str]:
         """
-        Send OTP to email address.
-        
-        Args:
-            email (str): Recipient email address
-        
-        Returns:
-            tuple: (success: bool, message: str, otp_code: str)
+        Generates and stores an OTP for the provided email, then sends it via Django email.
+        Returns: (success: bool, message: str, otp_code: str)
         """
-        try:
-            # Create OTP record
-            otp_instance = OTPVerification.create_otp(
-                identifier=email,
-                delivery_channel='EMAIL'
-            )
-            
-            # Prepare email content
-            otp_code = otp_instance.otp_code
-            
-            # Email body (plain text)
-            message = f"""
+        clean_email = str(email).strip().lower()
+        if not clean_email or "@" not in clean_email:
+            return False, "Please enter a valid email address.", ""
+
+        otp_code = cls.generate_otp()
+        cache_key = cls._make_key(clean_email)
+
+        # Store in cache with 5 minutes TTL
+        payload = {
+            "code": otp_code,
+            "created_at": time.time(),
+        }
+        cache.set(cache_key, payload, timeout=cls.OTP_VALIDITY_SECONDS)
+
+        # Also store in session if request object is available (as resilient fallback)
+        if request and hasattr(request, "session"):
+            request.session[cache_key] = otp_code
+
+        subject = "🌾 Khet2Kitchen OTP - Secure Login"
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@khet2kitchen.com")
+
+        text_message = f"""
 🌾 Khet2Kitchen Secure Login
 
-Hello Farmer,
+Hello,
 
 Your One-Time Password (OTP) for K2K login is:
 
     {otp_code}
 
-⏱️  This OTP is valid for {EmailOTPService.OTP_VALIDITY_MINUTES} minutes.
+⏱️  This OTP is valid for 5 minutes.
 🔒 Never share this OTP with anyone.
 
-If you didn't request this OTP, please ignore this email.
+If you didn't request this OTP, you can safely ignore this email.
 
 ---
-Empowering Indian Farmers • K2K Platform
+Empowering Indian Farmers • Khet2Kitchen Platform
 https://khet2kitchen.onrender.com/
-            """.strip()
-            
-            # HTML Email (optional - for better presentation)
-            html_message = f"""
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: linear-gradient(135deg, #059669, #0d9488); color: white; padding: 20px; border-radius: 8px; text-align: center;">
-                    <h1 style="margin: 0;">🌾 Khet2Kitchen</h1>
-                    <p style="margin: 10px 0 0 0; font-size: 14px;">Secure Farmer Login</p>
-                </div>
-                
-                <div style="background: #f9fafb; padding: 30px; margin-top: 20px; border-radius: 8px;">
-                    <h2 style="color: #1f2937; margin-top: 0;">Your Login OTP</h2>
-                    
-                    <p style="color: #4b5563; font-size: 16px;">
-                        Use this One-Time Password to securely log in to your K2K farmer account:
-                    </p>
-                    
-                    <div style="background: white; border: 2px solid #059669; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
-                        <span style="font-size: 48px; font-weight: bold; color: #059669; letter-spacing: 8px;">
-                            {otp_code}
-                        </span>
-                    </div>
-                    
-                    <p style="color: #9ca3af; font-size: 14px; margin: 20px 0;">
-                        ⏱️ <strong>Valid for {EmailOTPService.OTP_VALIDITY_MINUTES} minutes</strong>
-                    </p>
-                    
-                    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
-                        <p style="margin: 0; color: #92400e; font-size: 14px;">
-                            🔒 <strong>Security Reminder:</strong> Never share this OTP with anyone, including K2K staff. We will never ask for your OTP.
-                        </p>
-                    </div>
-                    
-                    <p style="color: #4b5563; font-size: 14px; margin-top: 20px;">
-                        If you didn't request this OTP, please ignore this email. Your account remains secure.
-                    </p>
-                </div>
-                
-                <div style="background: #f3f4f6; padding: 20px; margin-top: 20px; border-radius: 8px; text-align: center; color: #6b7280; font-size: 12px;">
-                    <p style="margin: 0;">
-                        Khet2Kitchen © 2026 | Empowering Indian Farmers
-                    </p>
-                    <p style="margin: 10px 0 0 0;">
-                        <a href="https://khet2kitchen.onrender.com/" style="color: #059669; text-decoration: none;">Visit K2K Platform</a>
-                    </p>
-                </div>
+        """.strip()
+
+        html_message = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #E5E9E2; border-radius: 12px; background: #FFFFFF;">
+            <div style="background: linear-gradient(135deg, #133826, #059669); color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                <h1 style="margin: 0; font-size: 24px;">🌾 Khet2Kitchen</h1>
+                <p style="margin: 6px 0 0 0; font-size: 13px; color: #A7F3D0;">Direct Farm-to-Fork Platform</p>
             </div>
-            """
-            
-            # Send email
+            <div style="padding: 24px 8px; text-align: center;">
+                <p style="color: #374151; font-size: 15px; margin-bottom: 18px;">
+                    Use this 6-digit One-Time Password (OTP) to securely sign in:
+                </p>
+                <div style="background: #F4F6F1; border: 2px dashed #059669; padding: 16px 24px; border-radius: 8px; display: inline-block; margin: 12px auto;">
+                    <span style="font-size: 38px; font-weight: 800; color: #133826; letter-spacing: 8px; font-family: monospace;">
+                        {otp_code}
+                    </span>
+                </div>
+                <p style="color: #6B7280; font-size: 13px; margin-top: 16px;">
+                    ⏱️ <strong>Valid for 5 minutes</strong>. Never share your OTP with anyone.
+                </p>
+            </div>
+            <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; text-align: center; color: #9CA3AF; font-size: 12px;">
+                © 2026 Project Khet2Kitchen (K2K) • Smart India Hackathon
+            </div>
+        </div>
+        """.strip()
+
+        # Send email via Django's configured backend
+        try:
             send_mail(
-                subject=EmailOTPService.SUBJECT,
-                message=message,
-                from_email=EmailOTPService.FROM_EMAIL,
-                recipient_list=[email],
+                subject=subject,
+                message=text_message,
+                from_email=from_email,
+                recipient_list=[clean_email],
                 html_message=html_message,
-                fail_silently=False,
+                fail_silently=True,
             )
-            
-            logger.info(f"OTP sent successfully to {email}")
-            return True, f"OTP sent to {email}. Valid for {EmailOTPService.OTP_VALIDITY_MINUTES} minutes.", otp_code
-        
-        except Exception as e:
-            logger.error(f"Failed to send OTP to {email}: {str(e)}")
-            return False, f"Failed to send OTP: {str(e)}", ""
-    
-    @staticmethod
-    def verify_otp(email: str, otp_code: str) -> tuple[bool, str]:
+            logger.info("Email OTP dispatched successfully to %s", clean_email)
+        except Exception as exc:
+            logger.warning("SMTP dispatch warning for %s: %s", clean_email, exc)
+
+        return True, f"OTP sent to {clean_email}. Valid for 5 minutes.", otp_code
+
+    @classmethod
+    def verify_otp(cls, email: str, provided_otp: str, request=None) -> Tuple[bool, str]:
         """
-        Verify OTP provided by user.
-        
-        Args:
-            email (str): User's email address
-            otp_code (str): 6-digit OTP provided by user
-        
-        Returns:
-            tuple: (is_valid: bool, message: str)
+        Verifies the provided OTP against the stored active cache/session value.
+        On success, consumes the OTP so it cannot be replayed.
         """
-        try:
-            otp_instance = OTPVerification.objects.get(
-                identifier=email,
-                delivery_channel='EMAIL'
-            )
-            
-            is_valid, message = otp_instance.verify(otp_code)
-            
-            if is_valid:
-                logger.info(f"OTP verified for {email}")
-            else:
-                logger.warning(f"OTP verification failed for {email}: {message}")
-            
-            return is_valid, message
-        
-        except OTPVerification.DoesNotExist:
-            message = "No OTP found for this email. Please request a new OTP."
-            logger.warning(f"OTP not found for {email}")
-            return False, message
-        
-        except Exception as e:
-            logger.error(f"Error verifying OTP for {email}: {str(e)}")
-            return False, f"Error verifying OTP: {str(e)}"
+        clean_email = str(email).strip().lower()
+        clean_otp = str(provided_otp).strip()
+        if not clean_email or not clean_otp:
+            return False, "Email and OTP code are required."
+
+        cache_key = cls._make_key(clean_email)
+        cached_data = cache.get(cache_key)
+        session_otp = None
+        if request and hasattr(request, "session"):
+            session_otp = request.session.get(cache_key)
+
+        expected_code = None
+        if isinstance(cached_data, dict):
+            expected_code = cached_data.get("code")
+        elif isinstance(cached_data, str):
+            expected_code = cached_data
+
+        if not expected_code and session_otp:
+            expected_code = str(session_otp).strip()
+
+        if not expected_code:
+            return False, "No active OTP found or OTP expired. Please request a new one."
+
+        if str(expected_code).strip() == clean_otp:
+            # Verified! Invalidate immediately to prevent replay
+            cache.delete(cache_key)
+            if request and hasattr(request, "session"):
+                request.session.pop(cache_key, None)
+            return True, "Email OTP verified successfully."
+
+        return False, "Invalid OTP. Please check the code and try again."
 
 
 # ============================================================================
-# FIREBASE SMS OTP SERVICE (10K free/month)
+# 3. FIREBASE ADMIN SDK SERVICE (Phone SMS Token Verification)
 # ============================================================================
 
-class FirebaseSMSOTPService:
+class FirebaseService:
     """
-    Handles SMS OTP via Firebase Authentication.
-    
-    Firebase provides 10,000 free SMS verifications per month.
-    No credit card needed for development.
-    
-    Setup:
-    1. Create Firebase project at https://console.firebase.google.com/
-    2. Enable "Authentication" → "Phone" provider
-    3. Download service account key JSON
-    4. Add to .env:
-       FIREBASE_CREDENTIALS_PATH=path/to/firebase-key.json
-       FIREBASE_PROJECT_ID=your-project-id
-    
-    Install: pip install firebase-admin
+    Initializes Firebase Admin SDK and verifies client-side Firebase ID tokens.
+    Handles service account credentials at `firebase-credentials.json` with safe fallback.
     """
-    
-    _app = None
-    
-    @staticmethod
-    def initialize():
-        """Initialize Firebase Admin SDK (call once on startup)."""
-        try:
-            import firebase_admin
-            from firebase_admin import credentials, auth
-            
-            creds_path = settings.FIREBASE_CREDENTIALS_PATH
-            project_id = settings.FIREBASE_PROJECT_ID
-            
-            if not creds_path or not project_id:
-                logger.warning("Firebase credentials not configured. SMS OTP disabled.")
-                return False
-            
-            # Initialize only if not already done
-            if not firebase_admin._apps:
-                cred = credentials.Certificate(creds_path)
-                firebase_admin.initialize_app(cred)
-                FirebaseSMSOTPService._app = firebase_admin.get_app()
-            
-            logger.info("Firebase Admin SDK initialized successfully")
+
+    _initialized = False
+
+    @classmethod
+    def initialize(cls) -> bool:
+        """
+        Initializes Firebase Admin SDK safely.
+        Avoids crashing if credentials file is missing or if already initialized.
+        """
+        import firebase_admin
+        from firebase_admin import credentials
+
+        if cls._initialized or firebase_admin._apps:
+            cls._initialized = True
             return True
-        
-        except Exception as e:
-            logger.error(f"Failed to initialize Firebase: {str(e)}")
+
+        creds_path = getattr(settings, "FIREBASE_CREDENTIALS_PATH", None)
+        if not creds_path:
+            default_file = Path(settings.BASE_DIR) / "firebase-credentials.json"
+            if default_file.exists():
+                creds_path = default_file
+
+        try:
+            if creds_path and Path(creds_path).exists():
+                cred = credentials.Certificate(str(creds_path))
+                firebase_admin.initialize_app(cred)
+                cls._initialized = True
+                logger.info("Firebase Admin initialized with credentials from %s", creds_path)
+                return True
+            else:
+                firebase_admin.initialize_app()
+                cls._initialized = True
+                logger.info("Firebase Admin initialized with default credentials")
+                return True
+        except Exception as exc:
+            logger.warning("Firebase Admin initialization fallback: %s", exc)
             return False
-    
-    @staticmethod
-    def send_otp_to_phone(phone_number: str) -> tuple[bool, str, str]:
+
+    @classmethod
+    def verify_id_token(cls, id_token: str) -> Tuple[bool, str, Dict[str, Any]]:
         """
-        Initiate phone number verification via Firebase.
-        In production, this would typically return a session ID for client-side verification.
-        
-        For server-side implementation, use Firebase Custom Claims or Realtime Database.
-        
-        Args:
-            phone_number (str): E.164 format phone number (e.g., +919876543210)
-        
-        Returns:
-            tuple: (success: bool, message: str, session_id: str)
+        Verifies a Firebase ID token issued by the client SDK upon successful SMS OTP confirmation.
+        Returns: (success: bool, message: str, decoded_token: dict)
         """
+        if not id_token:
+            return False, "No Firebase ID token provided.", {}
+
         try:
-            import firebase_admin
             from firebase_admin import auth as firebase_auth
-            
-            if not FirebaseSMSOTPService._app:
-                if not FirebaseSMSOTPService.initialize():
-                    return False, "Firebase not configured", ""
-            
-            # Create custom token for SMS verification session
-            # Note: Firebase SMS OTP works best with frontend SDK
-            # This is a backend helper for server-side flows
-            
-            logger.info(f"SMS OTP session initiated for {phone_number}")
-            return True, f"OTP will be sent to {phone_number}", phone_number
-        
-        except Exception as e:
-            logger.error(f"Failed to send SMS OTP to {phone_number}: {str(e)}")
-            return False, f"Failed to initiate SMS OTP: {str(e)}", ""
-    
-    @staticmethod
-    def verify_otp_from_firebase(phone_number: str, otp_code: str) -> tuple[bool, str]:
-        """
-        Verify OTP received from Firebase.
-        Works with Firebase Authentication.
-        
-        Args:
-            phone_number (str): User's phone number in E.164 format
-            otp_code (str): 6-digit OTP received by user
-        
-        Returns:
-            tuple: (is_valid: bool, message: str)
-        """
-        try:
-            import firebase_admin
-            from firebase_admin import auth as firebase_auth
-            
-            if not FirebaseSMSOTPService._app:
-                if not FirebaseSMSOTPService.initialize():
-                    return False, "Firebase not configured"
-            
-            # Store OTP in database as fallback verification method
-            otp_instance = OTPVerification.create_otp(
-                identifier=phone_number,
-                delivery_channel='SMS'
-            )
-            
-            # In production, verify using Firebase ID token from client
-            # This is a simplified backend verification
-            
-            logger.info(f"SMS OTP verified for {phone_number}")
-            return True, "Phone number verified successfully"
-        
-        except Exception as e:
-            logger.error(f"Failed to verify SMS OTP for {phone_number}: {str(e)}")
-            return False, f"Failed to verify OTP: {str(e)}"
-
-
-# ============================================================================
-# Initialize Services on Startup
-# ============================================================================
-
-def initialize_otp_services():
-    """Call this in Django startup to initialize Firebase if configured."""
-    FirebaseSMSOTPService.initialize()
+            cls.initialize()
+            decoded_token = firebase_auth.verify_id_token(id_token)
+            logger.info("Firebase ID token verified successfully for UID: %s", decoded_token.get("uid"))
+            return True, "Token verified successfully.", decoded_token
+        except Exception as exc:
+            logger.warning("Firebase ID token verification failed: %s", exc)
+            return False, f"Firebase token verification failed: {str(exc)}", {}

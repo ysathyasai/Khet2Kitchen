@@ -5,14 +5,20 @@ import logging
 import uuid
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import TemplateDoesNotExist
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
+from core.otp_services import (
+    EmailOTPService,
+    FirebaseService,
+    normalize_phone_number,
+    is_email_identifier,
+)
 
 from django.db.models import Q
 from django.urls import reverse
@@ -1043,21 +1049,225 @@ def admin_dashboard_view(request):
 # Authentication & Onboarding Views
 # ==============================================================================
 
+@require_http_methods(["POST"])
+def send_otp_view(request):
+    """
+    POST /auth/send-otp/
+    Dispatches a 6-digit OTP for Email or returns formatted instructions for Firebase SMS.
+    
+    - If identifier contains '@': Generates a 6-digit numeric OTP, stores in cache
+      with a 5-minute expiry, and dispatches via Django send_mail.
+    - If identifier is a phone number: Returns JSON with normalized E.164 phone
+      instructing the frontend to trigger the Firebase client SDK.
+    """
+    identifier = ""
+    if request.content_type == "application/json" and request.body:
+        try:
+            body_data = json.loads(request.body.decode("utf-8"))
+            identifier = (
+                body_data.get("identifier")
+                or body_data.get("username")
+                or body_data.get("email")
+                or body_data.get("phone")
+                or ""
+            )
+        except Exception:
+            identifier = ""
+
+    if not identifier:
+        identifier = (
+            request.POST.get("identifier")
+            or request.POST.get("username")
+            or request.POST.get("email")
+            or request.POST.get("phone")
+            or ""
+        )
+
+    identifier = str(identifier).strip()
+    if not identifier:
+        return JsonResponse({
+            "status": "error",
+            "message": "Please enter a valid mobile number or email address."
+        }, status=400)
+
+    if is_email_identifier(identifier):
+        # Email OTP flow
+        success, message, otp_code = EmailOTPService.send_otp(identifier, request=request)
+        if success:
+            return JsonResponse({
+                "status": "success",
+                "channel": "email",
+                "identifier": identifier.lower(),
+                "message": message,
+            })
+        else:
+            return JsonResponse({
+                "status": "error",
+                "channel": "email",
+                "message": message,
+            }, status=500)
+    else:
+        # Phone SMS flow via Firebase client
+        normalized_phone = normalize_phone_number(identifier)
+        if not normalized_phone or len(normalized_phone) < 10:
+            return JsonResponse({
+                "status": "error",
+                "message": "Please enter a valid 10-digit mobile number."
+            }, status=400)
+
+        return JsonResponse({
+            "status": "success",
+            "channel": "sms",
+            "phone": normalized_phone,
+            "message": f"Dispatching Firebase SMS OTP to {normalized_phone}...",
+        })
+
+
 def login_view(request):
     """
-    Dedicated Login view for Project Khet2Kitchen (K2K).
-    Smart Redirect: If the user is already authenticated, routes them directly
-    to their role-based dashboard.
-    If anonymous, delegates to Django's standard LoginView to render login.html.
+    Unified Single-View Login for Project Khet2Kitchen (K2K).
+    Supports Password, Email OTP, and Firebase SMS OTP seamlessly through the exact same card.
+    
+    Precedence Order:
+    1. Password Check: user = authenticate(request, username=normalized_identifier, password=credential). If valid, login immediately.
+    2. Email OTP Check: If password fails and identifier is email, verify against active stored 6-digit Email OTP.
+    3. Firebase SMS Token Check: If a Firebase id_token is submitted in POST payload, verify via firebase_admin.auth.verify_id_token(), extract phone, find/provision user, and login.
     """
     if request.user.is_authenticated:
         return redirect(request.user.get_dashboard_url())
 
-    from django.contrib.auth.views import LoginView
-    return LoginView.as_view(
-        template_name="core/login.html",
-        redirect_authenticated_user=True,
-    )(request)
+    if request.method == "GET":
+        return render(request, "core/login.html")
+
+    is_ajax = (
+        request.headers.get("x-requested-with") == "XMLHttpRequest"
+        or request.content_type == "application/json"
+        or request.GET.get("format") == "json"
+    )
+
+    identifier = ""
+    credential = ""
+    firebase_id_token = ""
+
+    if request.content_type == "application/json" and request.body:
+        try:
+            body_data = json.loads(request.body.decode("utf-8"))
+            identifier = body_data.get("username") or body_data.get("identifier") or ""
+            credential = body_data.get("password") or body_data.get("otp") or ""
+            firebase_id_token = body_data.get("firebase_id_token") or ""
+        except Exception:
+            pass
+
+    if not identifier:
+        identifier = request.POST.get("username") or request.POST.get("identifier") or ""
+    if not credential:
+        credential = request.POST.get("password") or request.POST.get("otp") or ""
+    if not firebase_id_token:
+        firebase_id_token = request.POST.get("firebase_id_token") or ""
+
+    identifier = str(identifier).strip()
+    credential = str(credential).strip()
+    firebase_id_token = str(firebase_id_token).strip()
+
+    if not identifier and not firebase_id_token:
+        error_msg = "Please enter your mobile number or email address."
+        if is_ajax:
+            return JsonResponse({"status": "error", "message": error_msg}, status=400)
+        return render(request, "core/login.html", {"error": error_msg, "form_errors": True})
+
+    # Determine normalized identifier
+    if is_email_identifier(identifier):
+        normalized_identifier = identifier.lower()
+    else:
+        normalized_identifier = normalize_phone_number(identifier)
+
+    # --------------------------------------------------------------------------
+    # 1. Password Check (Never invalidated by requesting an OTP)
+    # --------------------------------------------------------------------------
+    if credential:
+        user = authenticate(request, username=normalized_identifier, password=credential)
+        if not user and normalized_identifier != identifier:
+            user = authenticate(request, username=identifier, password=credential)
+
+        if user and user.is_active:
+            login(request, user, backend="core.backends.DualAuthBackend")
+            logger.info("User %s successfully logged in via Password", user.identifier)
+            if is_ajax:
+                return JsonResponse({"status": "success", "redirect_url": user.get_dashboard_url()})
+            return redirect(user.get_dashboard_url())
+
+    # --------------------------------------------------------------------------
+    # 2. Email OTP Check (If password fails and identifier is an email)
+    # --------------------------------------------------------------------------
+    if credential and is_email_identifier(identifier):
+        is_otp_valid, otp_msg = EmailOTPService.verify_otp(identifier, credential, request=request)
+        if is_otp_valid:
+            user = User.objects.filter(
+                Q(email__iexact=identifier) | Q(identifier__iexact=identifier)
+            ).first()
+
+            if user and user.is_active:
+                login(request, user, backend="core.backends.DualAuthBackend")
+                logger.info("User %s successfully logged in via Email OTP", user.identifier)
+                if is_ajax:
+                    return JsonResponse({"status": "success", "redirect_url": user.get_dashboard_url()})
+                return redirect(user.get_dashboard_url())
+            else:
+                error_msg = f"Valid OTP, but no active account was found for {identifier}."
+                if is_ajax:
+                    return JsonResponse({"status": "error", "message": error_msg}, status=400)
+                return render(request, "core/login.html", {"error": error_msg, "form_errors": True})
+
+    # --------------------------------------------------------------------------
+    # 3. Firebase SMS Token Check (From client Firebase SDK confirmation)
+    # --------------------------------------------------------------------------
+    if firebase_id_token:
+        is_valid_token, token_msg, decoded_token = FirebaseService.verify_id_token(firebase_id_token)
+        if is_valid_token:
+            token_phone = decoded_token.get("phone_number") or ""
+            verified_phone = normalize_phone_number(token_phone) if token_phone else normalized_identifier
+
+            user = User.objects.filter(
+                Q(phone_number__iexact=verified_phone) | Q(identifier__iexact=verified_phone)
+            ).first()
+
+            if not user and verified_phone:
+                # Auto-provision new Farmer profile for verified phone number
+                user = User.objects.create_user(
+                    identifier=verified_phone,
+                    phone_number=verified_phone,
+                    role=User.Role.FARMER,
+                    first_name="Farmer",
+                    is_active=True,
+                )
+                logger.info("Auto-provisioned new Farmer account for phone: %s", verified_phone)
+
+            if user and user.is_active:
+                login(request, user, backend="core.backends.DualAuthBackend")
+                logger.info("User %s successfully logged in via Firebase SMS OTP", user.identifier)
+                if is_ajax:
+                    return JsonResponse({"status": "success", "redirect_url": user.get_dashboard_url()})
+                return redirect(user.get_dashboard_url())
+            else:
+                error_msg = f"Unable to authenticate user for verified phone number {verified_phone}."
+                if is_ajax:
+                    return JsonResponse({"status": "error", "message": error_msg}, status=400)
+                return render(request, "core/login.html", {"error": error_msg, "form_errors": True})
+        else:
+            error_msg = f"Firebase SMS verification error: {token_msg}"
+            if is_ajax:
+                return JsonResponse({"status": "error", "message": error_msg}, status=400)
+            return render(request, "core/login.html", {"error": error_msg, "form_errors": True})
+
+    # --------------------------------------------------------------------------
+    # 4. Authentication Failed
+    # --------------------------------------------------------------------------
+    error_msg = "Invalid credentials. Please enter a valid password or 6-digit OTP."
+    if is_ajax:
+        return JsonResponse({"status": "error", "message": error_msg}, status=400)
+
+    return render(request, "core/login.html", {"error": error_msg, "form_errors": True})
+
 
 
 def signup_view(request):

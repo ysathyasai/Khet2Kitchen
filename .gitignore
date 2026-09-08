@@ -24,6 +24,7 @@ wheels/
 *.egg
 Sample Data.csv
 *.csv
+firebase-credentials.json
 
 # Django
 *.log

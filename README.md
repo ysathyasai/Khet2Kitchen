@@ -14,7 +14,7 @@
 [![SIH 2026](https://img.shields.io/badge/SIH-2026%20Finalist-FF9933?style=flat-square&logo=target&logoColor=white)](https://www.sih.gov.in/)
 [![DoCA](https://img.shields.io/badge/DoCA-SIH26033-138808?style=flat-square)](https://consumeraffairs.nic.in/)
 [![Render](https://img.shields.io/badge/Render-Live%20Platform-46E3B7?style=flat-square&logo=render&logoColor=black)](https://khet2kitchen.onrender.com/)
-[![Tests Passing](https://img.shields.io/badge/Tests-112%2F112%20Passed-brightgreen?style=flat-square&logo=checkmarx&logoColor=white)](core/tests.py)
+[![Tests Passing](https://img.shields.io/badge/Tests-121%2F121%20Passed-brightgreen?style=flat-square&logo=checkmarx&logoColor=white)](core/tests.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 [🌐 Live Platform](https://khet2kitchen.onrender.com/) • [🎯 Problem Statement](#-smart-india-hackathon-problem-statement-sih26033) • [👥 Project Team](#-the-builders-project-team) • [💡 Solution Overview](#-solution-overview) • [✨ Core Features](#-core-features--innovations) • [🏛️ Architecture](#️-system-architecture) • [🛠️ Tech Stack](#️-complete-technology-stack) • [⚙️ Setup & Installation](#-installation--setup) • [📄 LICENSE](LICENSE)
@@ -372,10 +372,10 @@ Visit the local portal at: **`http://127.0.0.1:8000/`**
 
 ## 🧪 Automated Testing
 
-The project includes **112 comprehensive unit and integration tests** validating data isolation, voice synthesis caching, computer vision grading, dual-channel pricing calculations, and mobile UI responsiveness:
+The project includes **121 comprehensive unit and integration tests** validating data isolation, unified Password/Email/SMS authentication, voice synthesis caching, computer vision grading, dual-channel pricing calculations, and mobile UI responsiveness:
 
 ```bash
-# Run the complete test suite (112 tests)
+# Run the complete test suite (121 tests)
 python manage.py test
 
 # Run core marketplace tests specifically
