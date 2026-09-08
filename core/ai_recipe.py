@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from django.conf import settings
+from django.core.cache import cache
 from django.utils.translation import gettext_lazy as _
 
 from core.models import Crop, RecipeCombo, User
@@ -154,6 +155,12 @@ def query_gemini_recipe(dish_name: str, servings: int) -> Optional[Dict[str, Any
     if not gemini_key:
         return None
 
+    # Check if Gemini API quota is currently in cooldown from a recent 429
+    cooldown = cache.get("gemini_quota_exceeded_cooldown")
+    if cooldown:
+        logger.info("Gemini API quota currently in cooldown. Using heuristic recipe knowledge base.")
+        return None
+
     # Retrieve catalog crop names to ground the LLM
     available_crops = list(Crop.objects.filter(is_active=True).values_list("name", flat=True)[:10])
     catalog_str = ", ".join(available_crops) if available_crops else "Roma Field Tomato, Red Onion, Warangal Teja Chilli, Mango"
@@ -183,8 +190,7 @@ CRITICAL: Respond ONLY with a valid JSON object matching this exact schema:
 Do NOT include markdown fences, preambles, or conversational text."""
 
     candidate_models = [
-        getattr(settings, "GEMINI_MODEL_NAME", "gemini-2.5-flash"),
-        "gemini-2.5-flash",
+        getattr(settings, "GEMINI_MODEL_NAME", "gemini-3.6-flash"),
         "gemini-3.6-flash",
         "gemini-flash-latest",
     ]
@@ -210,6 +216,11 @@ Do NOT include markdown fences, preambles, or conversational text."""
                     if "ingredients" in data and len(data["ingredients"]) > 0:
                         return data
             except Exception as exc:
+                err_str = str(exc)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    logger.warning("Gemini quota exceeded in recipe generator (429 RESOURCE_EXHAUSTED). Activating 60s cooldown.")
+                    cache.set("gemini_quota_exceeded_cooldown", True, timeout=60)
+                    return None
                 logger.warning("google.genai model %s failed for recipe: %s", m_name, exc)
     except Exception as exc:
         logger.warning("google.genai SDK unavailable for recipe: %s", exc)
@@ -231,7 +242,12 @@ Do NOT include markdown fences, preambles, or conversational text."""
                     if "ingredients" in data and len(data["ingredients"]) > 0:
                         return data
             except Exception as exc:
-                logger.warning("google.generativeai model %s failed: %s", m_name, exc)
+                err_str = str(exc)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    logger.warning("Gemini quota exceeded in recipe generator (429 RESOURCE_EXHAUSTED). Activating 60s cooldown.")
+                    cache.set("gemini_quota_exceeded_cooldown", True, timeout=60)
+                    return None
+                logger.warning("google.generativeai model %s failed for recipe: %s", m_name, exc)
     except Exception as exc:
         logger.warning("google.generativeai failed: %s", exc)
 

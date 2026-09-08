@@ -18,7 +18,7 @@ services:
       - key: SARVAM_API_BASE_URL
         value: "https://api.sarvam.ai"
       - key: GEMINI_MODEL_NAME
-        value: "gemini-2.5-flash"
+        value: "gemini-3.6-flash"
       - key: EMAIL_BACKEND
         value: "django.core.mail.backends.smtp.EmailBackend"
       - key: EMAIL_HOST

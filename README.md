@@ -352,7 +352,7 @@ SARVAM_API_BASE_URL=https://api.sarvam.ai
 
 # Google Gemini API
 GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL_NAME=gemini-2.5-flash
+GEMINI_MODEL_NAME=gemini-3.6-flash
 ```
 
 ### **Step 5: Apply Migrations & Seed Local Demo Data**

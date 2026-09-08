@@ -19,6 +19,7 @@ import wave
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 
 from core.models import Crop, FarmerWallet, HarvestSchedule, User
@@ -405,6 +406,20 @@ def process_intent_with_gemini(
             "extracted_farmer_name": effective_name or "",
         }
 
+    # Check if Gemini API quota is currently in cooldown from a recent 429
+    cooldown = cache.get("gemini_quota_exceeded_cooldown")
+    if cooldown:
+        logger.info("Gemini API quota currently in cooldown. Using DB-grounded voice fallback.")
+        return {
+            "intent": heuristic_intent,
+            "action": heuristic_action if heuristic_action != "NONE" else None,
+            "action_target": heuristic_target if heuristic_action != "NONE" else "",
+            "response_text": heuristic_reply,
+            "language_code": detected_lang,
+            "context_data": db_context,
+            "extracted_farmer_name": effective_name or "",
+        }
+
     # Format multi-turn conversation history
     history_snippet = ""
     if conversation_history:
@@ -509,6 +524,19 @@ Output valid JSON only matching this schema:
                             "extracted_farmer_name": resp_name,
                         }
             except Exception as m_err:
+                err_str = str(m_err)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    logger.warning("Gemini quota exceeded in voice reasoning (429 RESOURCE_EXHAUSTED). Activating 60s cooldown.")
+                    cache.set("gemini_quota_exceeded_cooldown", True, timeout=60)
+                    return {
+                        "intent": heuristic_intent,
+                        "action": heuristic_action if heuristic_action != "NONE" else None,
+                        "action_target": heuristic_target if heuristic_action != "NONE" else "",
+                        "response_text": heuristic_reply,
+                        "language_code": detected_lang,
+                        "context_data": db_context,
+                        "extracted_farmer_name": effective_name or "",
+                    }
                 logger.warning("Google GenAI model %s failed: %s", model_name, m_err)
     except Exception as sdk_err:
         logger.warning("google-genai client initialization note: %s", sdk_err)
@@ -548,6 +576,19 @@ Output valid JSON only matching this schema:
                             "extracted_farmer_name": parsed.get("extracted_farmer_name") or effective_name or "",
                         }
             except Exception as leg_err:
+                err_str = str(leg_err)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    logger.warning("Gemini legacy quota exceeded in voice reasoning (429 RESOURCE_EXHAUSTED). Activating 60s cooldown.")
+                    cache.set("gemini_quota_exceeded_cooldown", True, timeout=60)
+                    return {
+                        "intent": heuristic_intent,
+                        "action": heuristic_action if heuristic_action != "NONE" else None,
+                        "action_target": heuristic_target if heuristic_action != "NONE" else "",
+                        "response_text": heuristic_reply,
+                        "language_code": detected_lang,
+                        "context_data": db_context,
+                        "extracted_farmer_name": effective_name or "",
+                    }
                 logger.warning("Legacy Gemini model %s note: %s", model_name, leg_err)
     except Exception as exc:
         logger.warning("Legacy Gemini invocation note: %s", exc)

@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -827,6 +828,12 @@ def generate_agronomic_advisory(weather_summary: Dict[str, Any], location_name: 
         logger.info("No GEMINI_API_KEY configured; returning grounded agronomic fallback advisory.")
         return fallback
 
+    # Check if Gemini API quota is currently in cooldown from a recent 429
+    cooldown = cache.get("gemini_quota_exceeded_cooldown")
+    if cooldown:
+        logger.info("Gemini API quota currently in cooldown. Using grounded agronomic fallback advisory.")
+        return fallback
+
     prompt = f"""You are an expert Chief Agronomist and Senior Crop Scientist advising Indian farmers on Project Khet2Kitchen (K2K).
 Analyze these LIVE weather and soil telemetry readings for {location_name}:
 - Ambient Temperature: {weather_summary.get('temperature_c')}°C (Max: {weather_summary.get('temp_max_c')}°C, Min: {weather_summary.get('temp_min_c')}°C)
@@ -849,7 +856,6 @@ Do NOT include markdown formatting outside the JSON, do not include preamble, do
     candidate_models = [
         getattr(settings, "GEMINI_MODEL_NAME", "gemini-3.6-flash"),
         "gemini-3.6-flash",
-        "gemini-2.5-flash",
         "gemini-flash-latest",
     ]
     models_to_try = list(dict.fromkeys(filter(None, candidate_models)))
@@ -876,6 +882,11 @@ Do NOT include markdown formatting outside the JSON, do not include preamble, do
                             "recommended_crops": str(parsed["recommended_crops"]).strip(),
                         }
             except Exception as model_err:
+                err_str = str(model_err)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    logger.warning("Gemini API quota exceeded (429 RESOURCE_EXHAUSTED). Activating 60s cooldown and using rule-based agronomic fallback.")
+                    cache.set("gemini_quota_exceeded_cooldown", True, timeout=60)
+                    return fallback
                 logger.warning("google.generativeai model %s failed: %s", m_name, model_err)
     except Exception as sdk_err:
         logger.warning("google.generativeai initialization failed: %s", sdk_err)
@@ -905,6 +916,11 @@ Do NOT include markdown formatting outside the JSON, do not include preamble, do
                             "recommended_crops": str(parsed["recommended_crops"]).strip(),
                         }
             except Exception as genai_err:
+                err_str = str(genai_err)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    logger.warning("google.genai API quota exceeded (429 RESOURCE_EXHAUSTED). Activating 60s cooldown and using rule-based agronomic fallback.")
+                    cache.set("gemini_quota_exceeded_cooldown", True, timeout=60)
+                    return fallback
                 logger.warning("google.genai model %s failed: %s", m_name, genai_err)
     except Exception:
         pass

@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -510,8 +511,15 @@ def api_weather_advisory(request):
         # Default fallback to central Ag-Hub (Hyderabad / Nashik)
         lat, lon, resolved_name = 17.3850, 78.4867, "Hyderabad Regional Ag-Hub, Telangana, India"
 
-    weather_data = fetch_real_weather(lat, lon)
-    advisory_data = generate_agronomic_advisory(weather_data, resolved_name)
+    cache_key = f"weather_intel_{round(lat, 2)}_{round(lon, 2)}"
+    cached_intel = cache.get(cache_key)
+    if cached_intel:
+        weather_data = cached_intel.get("weather", {})
+        advisory_data = cached_intel.get("advisory", {})
+    else:
+        weather_data = fetch_real_weather(lat, lon)
+        advisory_data = generate_agronomic_advisory(weather_data, resolved_name)
+        cache.set(cache_key, {"weather": weather_data, "advisory": advisory_data}, timeout=900)
 
     return JsonResponse({
         "success": True,
