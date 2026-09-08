@@ -108,9 +108,12 @@ def api_grade_batch(request):
     # 1. Run Computer Vision quality assessment
     try:
         vision_report = analyze_crop_image(image_file, crop)
+    except ValidationError as val_err:
+        err_msg = val_err.message if hasattr(val_err, "message") else str(val_err)
+        return JsonResponse({"success": False, "error": err_msg}, status=400)
     except Exception as exc:
         logger.error("Vision AI analysis failed: %s", exc)
-        return JsonResponse({"success": False, "error": f"Vision AI analysis failed: {exc}"}, status=500)
+        return JsonResponse({"success": False, "error": f"Vision AI analysis failed: {exc}"}, status=400)
 
     grade = vision_report["grade"]
     confidence_score = vision_report["confidence_score"]

@@ -193,6 +193,21 @@
         </div>
     </div>
 
+    <!-- Scan Error Alert Card (Hidden until an error occurs) -->
+    <div id="scanErrorCard" style="display: none; margin-top: 1.5rem; background: #FEF2F2; border: 2px solid #EF4444; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 8px 20px rgba(239, 68, 68, 0.12);">
+        <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+            <div style="font-size: 1.6rem; line-height: 1;">🚫</div>
+            <div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #991B1B; margin-bottom: 0.25rem;">
+                    Optical Quality Inspection Rejected
+                </div>
+                <div id="scanErrorMessage" style="font-size: 0.88rem; color: #B91C1C; line-height: 1.45; font-weight: 500;">
+                    Invalid image. Please upload a clear photo of fresh agricultural produce (e.g., tomatoes, onions, chillies).
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Dynamic AI Quality & Payout Results Card (Hidden until scan completes) -->
     <div id="scanResultCard" style="display: none; margin-top: 1.5rem; background: #FFFFFF; border: 2px solid #10B981; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
@@ -429,14 +444,33 @@
                 const data = await response.json();
                 stopScanAnimation();
 
+                const errCard = document.getElementById("scanErrorCard");
+                const errMsg = document.getElementById("scanErrorMessage");
+                const resCard = document.getElementById("scanResultCard");
+
                 if (data.success) {
+                    if (errCard) errCard.style.display = "none";
                     renderScanResult(data);
                 } else {
-                    alert("Optical Scan Failed: " + (data.error || "Unknown error"));
+                    if (resCard) resCard.style.display = "none";
+                    if (errCard && errMsg) {
+                        errMsg.innerText = data.error || "Invalid image. Please upload a clear photo of fresh agricultural produce (e.g., tomatoes, onions, chillies).";
+                        errCard.style.display = "block";
+                        errCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    } else {
+                        alert("Optical Scan Failed: " + (data.error || "Unknown error"));
+                    }
                 }
             } catch (err) {
                 stopScanAnimation();
-                alert("Network error contacting AI inspection station: " + err.message);
+                const errCard = document.getElementById("scanErrorCard");
+                const errMsg = document.getElementById("scanErrorMessage");
+                if (errCard && errMsg) {
+                    errMsg.innerText = "Network error contacting AI inspection station: " + err.message;
+                    errCard.style.display = "block";
+                } else {
+                    alert("Network error contacting AI inspection station: " + err.message);
+                }
             }
         }
 

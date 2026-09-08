@@ -468,9 +468,15 @@ class VisionEngineTests(TestCase):
         self.assertTrue(len(report["rationale"]) > 10)
 
     def test_analyze_crop_image_invalid_crop_raises_error(self):
-        mock_file = SimpleUploadedFile("sample.jpg", b"dummy", content_type="image/jpeg")
+        mock_file = SimpleUploadedFile("sample_crop.jpg", b"dummy_data", content_type="image/jpeg")
         with self.assertRaises(ObjectDoesNotExist):
             analyze_crop_image(mock_file, 99999)
+
+    def test_analyze_crop_image_rejects_non_produce_upload(self):
+        mock_file = SimpleUploadedFile("my_car_selfie.jpg", b"fake_selfie_bytes", content_type="image/jpeg")
+        with self.assertRaises(ValidationError) as ctx:
+            analyze_crop_image(mock_file, self.crop)
+        self.assertIn("Invalid image. Please upload a clear photo of fresh agricultural produce", str(ctx.exception))
 
 
 class APIGradingEndpointTests(TestCase):
@@ -524,6 +530,21 @@ class APIGradingEndpointTests(TestCase):
         self.assertIn("financial_breakdown", data)
         self.assertGreater(data["financial_breakdown"]["final_payout"], 0)
         self.assertGreater(data["financial_breakdown"]["disintermediation_gain"], 0)
+
+    def test_api_grade_batch_rejects_non_produce(self):
+        mock_file = SimpleUploadedFile("selfie_car.jpg", b"fake_non_produce", content_type="image/jpeg")
+        response = self.client.post(
+            reverse("api_grade_batch"),
+            data={
+                "image": mock_file,
+                "crop_id": self.crop.id,
+                "volume_kg": "100.00",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertFalse(data["success"])
+        self.assertIn("Invalid image. Please upload a clear photo of fresh agricultural produce", data["error"])
 
 
 class FarmerWalletModelTests(TestCase):
