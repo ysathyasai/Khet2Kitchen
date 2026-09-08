@@ -3,6 +3,7 @@ OTP Authentication Views
 Handles login flow with Email OTP
 """
 
+import logging
 from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth import authenticate, login, logout
@@ -15,6 +16,7 @@ from core.models import User
 from core.otp_services import EmailOTPService
 
 logger = logging.getLogger(__name__)
+
 
 
 # ============================================================================
@@ -40,7 +42,7 @@ class EmailOTPLoginView(View):
             return redirect('email_otp_login')
         
         # Send OTP via email
-        success, message, otp_code = EmailOTPService.send_otp(email)
+        success, message, otp_code, *rest = EmailOTPService.send_otp(email)
         
         if success:
             # Store email in session for verification step
@@ -61,88 +63,71 @@ class EmailOTPVerifyView(View):
     """
     
     def get(self, request):
-        """Display OTP verification form."""
         email = request.session.get('pending_email')
-        
         if not email:
-            messages.error(request, "No pending OTP. Please request a new one.")
+            messages.warning(request, "Please request an OTP first.")
             return redirect('email_otp_login')
         
         return render(request, 'core/email_otp_verify.html', {'email': email})
-    
+
     def post(self, request):
-        """Verify OTP and auto-login user."""
         email = request.session.get('pending_email')
-        otp_code = request.POST.get('otp_code', '').strip()
+        otp = request.POST.get('otp', '').strip()
         
         if not email:
-            messages.error(request, "Session expired. Please request OTP again.")
+            messages.error(request, "Session expired. Please request a new OTP.")
             return redirect('email_otp_login')
         
-        if not otp_code:
+        if not otp:
             messages.error(request, "Please enter the OTP.")
-            return redirect('email_otp_verify')
+            return render(request, 'core/email_otp_verify.html', {'email': email})
         
         # Verify OTP
-        is_valid, message = EmailOTPService.verify_otp(email, otp_code)
+        is_valid, message = EmailOTPService.verify_otp(email, otp, request=request)
         
         if not is_valid:
             messages.error(request, message)
-            return redirect('email_otp_verify')
+            return render(request, 'core/email_otp_verify.html', {'email': email})
         
-        # OTP is valid - get or create user
+        # OTP is valid, get or create user
         try:
-            # Get existing farmer by email or create new one
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    'identifier': email,
-                    'role': User.Role.FARMER,
-                    'is_active': True
-                }
-            )
-            
-            # Update identifier if it was created with phone before
-            if not user.identifier:
-                user.identifier = email
-                user.save()
-            
-            # Log in user
+            user = User.objects.get(email=email)
+            # Log the user in
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             
             # Clean up session
             del request.session['pending_email']
-            del request.session['otp_method']
+            if 'otp_method' in request.session:
+                del request.session['otp_method']
             
-            # Delete OTP record (one-time use)
-            OTPVerification.objects.filter(identifier=email, delivery_channel='EMAIL').delete()
+            messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
             
-            messages.success(request, f"Welcome {user.get_full_name()}!")
+            # Redirect to role-based dashboard
+            return redirect('dashboard_dispatch')
             
-            # Redirect to dashboard
-            return redirect(user.get_dashboard_url())
-        
-        except Exception as e:
-            logger.error(f"Error during email OTP login: {str(e)}")
-            messages.error(request, f"Login error: {str(e)}")
-            return redirect('email_otp_login')
+        except User.DoesNotExist:
+            # User doesn't exist, redirect to registration with pre-filled email
+            messages.info(request, "Email verified! Please complete your registration.")
+            request.session['verified_email'] = email
+            return redirect('signup')
 
 
 class EmailOTPResendView(View):
-    """Resend OTP to email if it expired."""
-    
+    """Resend OTP to the pending email."""
     def post(self, request):
         """Resend OTP to the same email."""
         email = request.session.get('pending_email')
         
         if not email:
-            return JsonResponse({'success': False, 'message': 'No pending email found'})
+            return JsonResponse({'success': False, 'message': 'No pending email found', 'email_sent': False})
         
-        success, message, otp_code = EmailOTPService.send_otp(email)
+        success, message, otp_code, *rest = EmailOTPService.send_otp(email)
+        email_sent = rest[0] if rest else False
         
         return JsonResponse({
             'success': success,
-            'message': message
+            'message': message,
+            'email_sent': email_sent,
         })
 
 

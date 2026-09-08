@@ -1108,19 +1108,26 @@ def send_otp_view(request):
         }, status=400)
 
     # Email OTP flow
-    success, message, otp_code = EmailOTPService.send_otp(identifier, request=request)
+    result = EmailOTPService.send_otp(identifier, request=request)
+    success = result[0]
+    message = result[1]
+    otp_code = result[2]
+    email_sent = result[3] if len(result) > 3 else False
+
     if success:
         return JsonResponse({
             "status": "success",
             "channel": "email",
             "identifier": identifier.lower(),
             "message": message,
+            "email_sent": email_sent,
         })
     else:
         return JsonResponse({
             "status": "error",
             "channel": "email",
             "message": message,
+            "email_sent": False,
         }, status=500)
 
 

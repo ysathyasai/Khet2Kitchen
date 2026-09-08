@@ -249,6 +249,14 @@
             color: #D97706 !important;
         }
 
+        .text-amber-600 {
+            color: #D97706 !important;
+        }
+
+        .text-emerald-600 {
+            color: #059669 !important;
+        }
+
         .text-xs {
             font-size: 0.78rem !important;
             line-height: 1.35 !important;
@@ -385,8 +393,18 @@
             if (!box) return;
             box.style.display = 'block';
             if (typeof msg === 'string' && msg.trim().startsWith('<')) {
-                box.style.background = '#FFFBEB';
-                box.style.border = '1px solid #FCD34D';
+                if (msg.includes('text-amber')) {
+                    box.style.background = '#FFFBEB';
+                    box.style.border = '1px solid #FCD34D';
+                    box.style.color = '#B45309';
+                } else if (msg.includes('text-emerald')) {
+                    box.style.background = '#ECFDF5';
+                    box.style.border = '1px solid #A7F3D0';
+                    box.style.color = '#065F46';
+                } else {
+                    box.style.background = '#FFFBEB';
+                    box.style.border = '1px solid #FCD34D';
+                }
                 box.innerHTML = msg;
                 return;
             }
@@ -434,7 +452,11 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.status === 'success') {
-                            showOtpStatus(data.message || 'OTP sent to your email! Valid for 5 minutes.', false);
+                            if (data.email_sent === false) {
+                                showOtpStatus('<span class="text-amber-600 font-medium">⚠️ Email network unreachable. OTP generated (Check Render server logs for your code).</span>');
+                            } else {
+                                showOtpStatus('<span class="text-emerald-600">✅ OTP sent to your email. Valid for 5 minutes.</span>');
+                            }
                             const passInput = document.getElementById('id_password');
                             if (passInput) {
                                 passInput.placeholder = 'Enter 6-digit Email OTP';

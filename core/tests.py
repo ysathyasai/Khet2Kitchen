@@ -1386,7 +1386,7 @@ class UserRegistrationTests(TestCase):
 
     def test_signup_with_valid_email_otp(self):
         email = "new.procure@freshbazaar.in"
-        success, msg, otp = EmailOTPService.send_otp(email)
+        success, msg, otp, *rest = EmailOTPService.send_otp(email)
         self.assertTrue(success)
 
         signup_data = {
@@ -2473,6 +2473,7 @@ class UnifiedAuthenticationTests(TestCase):
         data = res.json()
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["channel"], "email")
+        self.assertEqual(data["email_sent"], True)
         self.assertIn("OTP sent to", data["message"])
 
         # Check OTP is stored in cache with 6 numeric digits
@@ -2486,7 +2487,7 @@ class UnifiedAuthenticationTests(TestCase):
         """
         Verifies that when Render blocks outbound SMTP or times out,
         send_otp catches the exception, does not crash, logs a warning,
-        and still generates/caches the OTP returning success=True.
+        returns email_sent=False, and still generates/caches the OTP returning success=True.
         """
         res = self.client.post(
             reverse("send_otp"),
@@ -2496,6 +2497,8 @@ class UnifiedAuthenticationTests(TestCase):
         data = res.json()
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["channel"], "email")
+        self.assertEqual(data["email_sent"], False)
+        self.assertIn("Email gateway unavailable", data["message"])
 
         # Verify OTP was generated and cached
         cached = cache.get("k2k_email_otp_resilient.user@khet2kitchen.com")

@@ -69,6 +69,31 @@ def is_email_identifier(identifier: str) -> bool:
 # 2. EMAIL OTP SERVICE (Cache-Backed 5-Min Expiry, Non-Destructive)
 # ============================================================================
 
+class OTPDispatchResult(tuple):
+    """
+    Result tuple from EmailOTPService.send_otp:
+    (success: bool, message: str, otp_code: str, email_sent: bool)
+    """
+    def __new__(cls, success: bool, message: str, otp_code: str, email_sent: bool = False):
+        return super().__new__(cls, (success, message, otp_code, email_sent))
+
+    @property
+    def success(self) -> bool:
+        return self[0]
+
+    @property
+    def message(self) -> str:
+        return self[1]
+
+    @property
+    def otp_code(self) -> str:
+        return self[2]
+
+    @property
+    def email_sent(self) -> bool:
+        return self[3]
+
+
 class EmailOTPService:
     """
     Manages generation, dispatch, and validation of 6-digit numeric Email OTPs.
@@ -89,14 +114,14 @@ class EmailOTPService:
         return f"{random.randint(100000, 999999)}"
 
     @classmethod
-    def send_otp(cls, email: str, request=None) -> Tuple[bool, str, str]:
+    def send_otp(cls, email: str, request=None) -> OTPDispatchResult:
         """
         Generates and stores an OTP for the provided email, then sends it via Django email.
-        Returns: (success: bool, message: str, otp_code: str)
+        Returns: OTPDispatchResult(success: bool, message: str, otp_code: str, email_sent: bool)
         """
         clean_email = str(email).strip().lower()
         if not clean_email or "@" not in clean_email:
-            return False, "Please enter a valid email address.", ""
+            return OTPDispatchResult(False, "Please enter a valid email address.", "", False)
 
         otp_code = cls.generate_otp()
         cache_key = cls._make_key(clean_email)
@@ -159,6 +184,7 @@ https://khet2kitchen.onrender.com/
         """.strip()
 
         # Send email via Django's configured backend inside a fail-safe try-catch
+        email_sent = False
         try:
             send_mail(
                 subject=subject,
@@ -168,14 +194,19 @@ https://khet2kitchen.onrender.com/
                 html_message=html_message,
                 fail_silently=False,
             )
+            email_sent = True
             logger.info("Email OTP dispatched successfully to %s via %s", clean_email, getattr(settings, "EMAIL_HOST_USER", ""))
             print(f"[K2K OTP] Code for {clean_email}: {otp_code}")
+            message = f"OTP sent to {clean_email}. Valid for 5 minutes."
         except Exception as e:
+            email_sent = False
             logger.warning("SMTP dispatch failed for %s: %s", clean_email, e)
             print(f"SMTP Warning: {e}")
             print(f"[K2K OTP FALLBACK] Code for {clean_email}: {otp_code}")
+            message = "Email gateway unavailable. OTP generated and logged to server console."
 
-        return True, f"OTP sent to {clean_email}. Valid for 5 minutes.", otp_code
+        return OTPDispatchResult(True, message, otp_code, email_sent)
+
 
 
     @classmethod
