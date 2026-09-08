@@ -14,7 +14,7 @@
 [![SIH 2026](https://img.shields.io/badge/SIH-2026%20Finalist-FF9933?style=flat-square&logo=target&logoColor=white)](https://www.sih.gov.in/)
 [![DoCA](https://img.shields.io/badge/DoCA-SIH26033-138808?style=flat-square)](https://consumeraffairs.nic.in/)
 [![Render](https://img.shields.io/badge/Render-Live%20Platform-46E3B7?style=flat-square&logo=render&logoColor=black)](https://khet2kitchen.onrender.com/)
-[![Tests Passing](https://img.shields.io/badge/Tests-121%2F121%20Passed-brightgreen?style=flat-square&logo=checkmarx&logoColor=white)](core/tests.py)
+[![Tests Passing](https://img.shields.io/badge/Tests-124%2F124%20Passed-brightgreen?style=flat-square&logo=checkmarx&logoColor=white)](core/tests.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 [🌐 Live Platform](https://khet2kitchen.onrender.com/) • [🎯 Problem Statement](#-smart-india-hackathon-problem-statement-sih26033) • [👥 Project Team](#-the-builders-project-team) • [💡 Solution Overview](#-solution-overview) • [✨ Core Features](#-core-features--innovations) • [🏛️ Architecture](#️-system-architecture) • [🛠️ Tech Stack](#️-complete-technology-stack) • [⚙️ Setup & Installation](#-installation--setup) • [📄 LICENSE](LICENSE)
@@ -57,7 +57,7 @@ Proudly developed for **Smart India Hackathon (SIH 2026)** under Problem Stateme
 | **Shaik Mohammed Imaadh** | **AI/ML Engineer** • Speech & Vision Systems | Sarvam AI Voice Pipeline, Computer Vision Grading & Gemini Reasoning |
 | **Dupalica** | **Frontend Architect** • UI/UX & Design Systems | Mobile Optimization, Responsive Design, CSS Architecture & Dashboards |
 | **Afsha Siddiha** | **Supply Chain Specialist** • Logistics & Policy | Rural PACS Micro-Hub Asset-Light Model, Cold-Chain & ONDC Integration |
-| **Karuneshwari** | **Quality Assurance & Testing Engineer** | Automated Unit & Integration Testing (112 Suites), Security & Data Validation |
+| **Karuneshwari** | **Quality Assurance & Testing Engineer** | Automated Unit & Integration Testing (124 Suites), Security & Data Validation |
 
 ---
 
@@ -107,9 +107,11 @@ Proudly developed for **Smart India Hackathon (SIH 2026)** under Problem Stateme
 - **Deterministic 7-Day Audio Caching:** Uses MD5 content-hashed cache keys (`sarvam_tts_{md5}`) with a 604,800s TTL. Repetitive agronomic queries reuse cached audio, cutting external API latency and lowering API costs by **over 78%**.
 - **Client-Side Web Speech API Fallback:** Seamlessly switches to native browser synthesis if network degradation or API quota limits occur.
 
-### 👁️ **2. Computer Vision Produce Quality Grading & Immutable QR Batches**
+### 👁️ **2. Computer Vision Produce Quality Grading, Variety Auto-Detection & Immutable QR Batches**
 *Eliminating arbitrary mandi price docking through standardized, objective optical evaluation:*
-- **Instant AI Grade Classification:** Classifies harvested produce into **Grade A** (Premium export/retail), **Grade B** (Culinary/supermarket), **Grade C** (Processing/puree), or **Reject**.
+- **Instant AI Grade Classification:** Classifies harvested produce into **Grade A** (Premium export/retail), **Grade B** (Culinary/supermarket), **Grade C** (Processing/puree), or **Reject** with automated defect and blemish density detection.
+- **Strict Agricultural Produce Validation:** Pre-flight validation gate rejects non-produce images (selfies, vehicles, screenshots, documents) with descriptive user feedback, preventing hallucinations and ensuring authentic marketplace aggregation.
+- **Zero-Touch Produce Variety Auto-Detection:** Automatically identifies specific crop varieties (e.g. Tomatoes, Onions, Potatoes, Chillies, Capsicum) directly from uploaded pixels via Gemini Vision, dynamically auto-selecting the corresponding produce in the batch registration dropdown and auto-recalculating estimated weights and projected payouts.
 - **Transparent Disintermediation Premiums:** Grades are mapped mathematically to MSP floor baselines, ensuring farmers earn transparent bonuses for quality rather than subjective cuts.
 - **Cryptographic Batch Provenance QR Codes:** Generates immutable batch IDs (`K2K-BTH-...`) capturing harvest timestamp, grading metrics, micro-hub GPS coordinates, and farm origin cluster.
 
@@ -135,6 +137,12 @@ Proudly developed for **Smart India Hackathon (SIH 2026)** under Problem Stateme
 *Optimizing first-mile and middle-mile cold transit:*
 - **Hyper-Local Aggregation (<15 km):** Farmers drop produce at designated micro-hubs operating inside rural PACS warehouses.
 - **Leaflet GIS & Telemetry:** Interactive mapping displaying cold-chain transit routes, micro-hub capacity utilization, live Open-Meteo agronomic conditions, and EV carbon emissions saved.
+
+### 🔐 **7. Resilient Multi-Channel Authentication & Fail-Safe OTP Architecture**
+*Frictionless, resilient multi-role onboarding with cloud worker timeout shields:*
+- **Dual Login Methods:** Supports traditional credential authentication as well as passwordless 6-digit Time-based One-Time Password (TOTP) email verification.
+- **Non-Blocking Fail-Safe SMTP Dispatch:** Robust try-except wrapping with a 5-second socket timeout (`EMAIL_TIMEOUT = 5`) protects against Gunicorn `CRITICAL WORKER TIMEOUT` / `SIGKILL` in network-restricted cloud environments (e.g., Render free tier containers).
+- **Transparent Delivery Feedback:** Dual-state UI reporting provides authentic feedback—displaying an emerald verified badge upon live SMTP dispatch (`email_sent: True`) or an amber notification when fallback OTP logging to the server console is engaged (`email_sent: False`), maintaining full platform transparency.
 
 ---
 
@@ -224,13 +232,15 @@ flowchart TD
 | **Django** | Core web framework, ORM, multi-role auth & admin portal | 5.1+ |
 | **Python** | Primary programming language | 3.11 / 3.12 / 3.14 |
 | **Django REST Framework (DRF)** | Dynamic supply chain endpoints, serializers & pricing simulation | 3.15+ |
+| **Fail-Safe OTP Engine** | Non-blocking passwordless auth with 5s socket timeout protection against cloud worker hangs | Native Django / Python Cache |
 | **Gunicorn** | Production WSGI HTTP server | 22.0+ |
 | **WhiteNoise** | Efficient static file serving with Brotli/Gzip compression | 6.7+ |
 
-### **Artificial Intelligence & Voice Pipeline**
+### **Artificial Intelligence & Vision Pipeline**
 | Technology | Purpose | Provider |
 | :--- | :--- | :--- |
 | **Google Gemini 2.5 Flash** | Multimodal reasoning, Recipe-to-Combo engine & intent parsing | Google AI Studio (`google-genai`) |
+| **Gemini Vision Engine** | Produce variety auto-detection, strict crop validation & optical quality grading | Google AI Studio (`google-genai`) |
 | **Sarvam Saaras v3** | Automatic Speech Recognition (STT) across 10+ Indic languages | Sarvam AI |
 | **Sarvam Bulbul v3** | Neural Text-to-Speech (TTS) synthesis with natural human cadence | Sarvam AI |
 | **Web Speech API** | Zero-friction client-side speech synthesis fallback | W3C Standard (Browser Native) |
@@ -372,10 +382,10 @@ Visit the local portal at: **`http://127.0.0.1:8000/`**
 
 ## 🧪 Automated Testing
 
-The project includes **121 comprehensive unit and integration tests** validating data isolation, unified Password/Email/SMS authentication, voice synthesis caching, computer vision grading, dual-channel pricing calculations, and mobile UI responsiveness:
+The project includes **124 comprehensive unit and integration tests** validating data isolation, unified Password/Email/SMS authentication, voice synthesis caching, computer vision grading, crop variety auto-detection, dual-channel pricing calculations, and mobile UI responsiveness:
 
 ```bash
-# Run the complete test suite (121 tests)
+# Run the complete test suite (124 tests)
 python manage.py test
 
 # Run core marketplace tests specifically
@@ -398,12 +408,15 @@ Khet2Kitchen/
 │   ├── models.py                       # User, Crop, Batch, Kit, RetailerBulkOrder, ConsumerOrder, Wallet
 │   ├── views.py                        # Multi-role portals, B2B wholesale store, voice endpoints
 │   ├── urls.py                         # URL routing for web portal and API
-│   ├── services.py                     # Mandi benchmarking, weather telemetry, vision grading
+│   ├── services.py                     # Mandi benchmarking, weather telemetry, market rates
+│   ├── vision.py                       # AI produce validation, variety auto-detection & quality grading
 │   ├── voice_services.py               # Gemini conversational agent & intent parser
 │   ├── sarvam_voice_service.py         # Sarvam STT/TTS, payload sanitizer & MD5 cache engine
+│   ├── otp_services.py                 # Fail-safe non-blocking Email OTP dispatch & validation
+│   ├── otp_views.py                    # Passwordless login and registration endpoints
 │   ├── ai_recipe.py                    # Gemini Recipe-to-Combo engine
 │   ├── admin.py                        # Django Admin portal registration
-│   ├── tests.py                        # 108 comprehensive test suites
+│   ├── tests.py                        # 124 comprehensive test suites
 │   └── management/commands/
 │       └── seed_k2k_demo.py            # Local demo database seeder
 ├── supply_chain/                       # B2B & D2C Dual-Pricing Intelligence Engine
@@ -426,6 +439,9 @@ Khet2Kitchen/
 │       ├── landing.html                # Public landing page
 │       ├── base_dashboard.html         # Base dashboard layout with responsive tokens
 │       ├── farmer_dashboard.html       # Farmer portal with live Vernacular Voice AI
+│       ├── farmer_graded_produce.html  # Optical grading & AI produce inspection portal
+│       ├── login.html                  # Multi-role login with dual password/OTP authentication
+│       ├── signup.html                 # Unified multi-role registration portal
 │       ├── retailer_dashboard.html     # B2B Retailer Hub with wholesale catalog
 │       ├── retailer_combos.html        # Curated Wholesale Combos marketplace
 │       ├── consumer_shop.html          # D2C Farm Store & AI Recipe-to-Combo Engine
