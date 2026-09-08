@@ -112,45 +112,44 @@ class EmailOTPService:
         if request and hasattr(request, "session"):
             request.session[cache_key] = otp_code
 
-        subject = "🌾 Khet2Kitchen OTP - Secure Login"
-        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@khet2kitchen.com")
+        subject = f"Your Khet2Kitchen Verification Code: {otp_code}"
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "Khet2Kitchen <yejjusatyasai2007@gmail.com>")
 
         text_message = f"""
-🌾 Khet2Kitchen Secure Login
+Khet2Kitchen Account Verification
 
 Hello,
 
-Your One-Time Password (OTP) for K2K login is:
+Your verification code for Khet2Kitchen is: {otp_code}
 
-    {otp_code}
+This code is valid for 5 minutes.
+Never share this code with anyone.
 
-⏱️  This OTP is valid for 5 minutes.
-🔒 Never share this OTP with anyone.
-
-If you didn't request this OTP, you can safely ignore this email.
+If you didn't request this code, you can safely ignore this email.
 
 ---
-Empowering Indian Farmers • Khet2Kitchen Platform
+Project Khet2Kitchen
+Direct Farm-to-Fork Disintermediation Platform
 https://khet2kitchen.onrender.com/
         """.strip()
 
         html_message = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #E5E9E2; border-radius: 12px; background: #FFFFFF;">
-            <div style="background: linear-gradient(135deg, #133826, #059669); color: white; padding: 20px; border-radius: 8px; text-align: center;">
-                <h1 style="margin: 0; font-size: 24px;">🌾 Khet2Kitchen</h1>
-                <p style="margin: 6px 0 0 0; font-size: 13px; color: #A7F3D0;">Direct Farm-to-Fork Platform</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #E5E9E2; border-radius: 12px; background: #FFFFFF;">
+            <div style="background: #133826; color: #FFFFFF; padding: 20px; border-radius: 8px; text-align: center;">
+                <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">Khet2Kitchen</h1>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #A7F3D0;">Direct Farm-to-Fork Platform</p>
             </div>
             <div style="padding: 24px 8px; text-align: center;">
                 <p style="color: #374151; font-size: 15px; margin-bottom: 18px;">
-                    Use this 6-digit One-Time Password (OTP) to securely sign in:
+                    Use this 6-digit verification code to complete your login or registration:
                 </p>
                 <div style="background: #F4F6F1; border: 2px dashed #059669; padding: 16px 24px; border-radius: 8px; display: inline-block; margin: 12px auto;">
-                    <span style="font-size: 38px; font-weight: 800; color: #133826; letter-spacing: 8px; font-family: monospace;">
+                    <span style="font-size: 36px; font-weight: 800; color: #133826; letter-spacing: 6px; font-family: monospace;">
                         {otp_code}
                     </span>
                 </div>
                 <p style="color: #6B7280; font-size: 13px; margin-top: 16px;">
-                    ⏱️ <strong>Valid for 5 minutes</strong>. Never share your OTP with anyone.
+                    Valid for <strong>5 minutes</strong>. Do not share this code with anyone.
                 </p>
             </div>
             <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; text-align: center; color: #9CA3AF; font-size: 12px;">
@@ -170,6 +169,10 @@ https://khet2kitchen.onrender.com/
                 fail_silently=False,
             )
             logger.info("Email OTP dispatched successfully to %s via %s", clean_email, settings.EMAIL_HOST_USER)
+            if getattr(settings, "DEBUG", False):
+                print(f"\n========================================================")
+                print(f"[K2K DEV OTP] Code for {clean_email}: {otp_code}")
+                print(f"========================================================\n")
             return True, f"OTP sent to {clean_email}. Valid for 5 minutes.", otp_code
         except Exception as exc:
             logger.error("SMTP dispatch failed for %s: %s", clean_email, exc)

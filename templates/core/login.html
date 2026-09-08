@@ -434,8 +434,14 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.status === 'success') {
-                            showOtpStatus(data.message || 'OTP sent to your email! Valid for 5 minutes.', false);
                             const passInput = document.getElementById('id_password');
+                            let msg = data.message || 'OTP sent to your email! Valid for 5 minutes.';
+                            if (data.dev_otp) {
+                                msg += ` <span class="font-bold text-amber-300">(Dev Code: ${data.dev_otp})</span>`;
+                                if (passInput) passInput.value = data.dev_otp;
+                            }
+                            msg += '<br><span class="text-xs text-stone-300 font-normal">Tip: Check Inbox and Spam / Updates folder (sent from yejjusatyasai2007@gmail.com).</span>';
+                            showOtpStatus(msg, false);
                             if (passInput) {
                                 passInput.placeholder = 'Enter 6-digit Email OTP';
                                 passInput.focus();
