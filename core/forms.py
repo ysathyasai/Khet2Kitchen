@@ -83,47 +83,35 @@ class UserRegistrationForm(forms.ModelForm):
         if not identifier:
             raise ValidationError(_("Please enter a phone number or email address."))
 
-        role = self.cleaned_data.get("role")
-        if role == User.Role.FARMER:
+        role = self.cleaned_data.get("role") or self.data.get("role")
+
+        # Validate whether identifier is an email or mobile phone number
+        if "@" in identifier:
+            try:
+                validate_email(identifier)
+            except ValidationError:
+                raise ValidationError(_("Identifier must be a valid email address or phone number."))
+            if User.objects.filter(identifier=identifier).exists():
+                raise ValidationError(_("An account with this identifier already exists."))
+            if User.objects.filter(email=identifier.lower()).exists():
+                raise ValidationError(_("An account with this email address already exists."))
+        else:
             digits_only = re.sub(r"\D", "", identifier)
             if len(digits_only) < 10:
-                raise ValidationError(_("Farmer identifier must be a valid mobile phone number with at least 10 digits."))
+                if role == User.Role.FARMER:
+                    raise ValidationError(_("Farmer identifier must be a valid mobile phone number with at least 10 digits."))
+                raise ValidationError(_("Mobile phone number must have at least 10 digits."))
             normalized_phone = normalize_phone_number(identifier)
             if normalized_phone:
                 identifier = normalized_phone
-        elif role == User.Role.CONSUMER and "@" not in identifier:
-            digits_only = re.sub(r"\D", "", identifier)
-            if len(digits_only) < 10:
-                raise ValidationError(_("Consumer phone number must have at least 10 digits."))
-            normalized_phone = normalize_phone_number(identifier)
-            if normalized_phone:
-                identifier = normalized_phone
+            if User.objects.filter(identifier=identifier).exists():
+                raise ValidationError(_("An account with this identifier already exists."))
+            if User.objects.filter(phone_number=identifier).exists():
+                raise ValidationError(_("An account with this mobile phone number already exists."))
 
         # Unique identifier validation
         if User.objects.filter(identifier=identifier).exists():
             raise ValidationError(_("An account with this identifier already exists."))
-
-        if role == User.Role.FARMER:
-            if User.objects.filter(phone_number=identifier).exists():
-                raise ValidationError(_("An account with this mobile phone number already exists."))
-        elif role in (User.Role.RETAILER, User.Role.SUPPLIER):
-            try:
-                validate_email(identifier)
-            except ValidationError:
-                raise ValidationError(_("Identifier must be a valid email address for Retailers and Suppliers."))
-            if User.objects.filter(email=identifier.lower()).exists():
-                raise ValidationError(_("An account with this email address already exists."))
-        elif role == User.Role.CONSUMER:
-            if "@" in identifier:
-                try:
-                    validate_email(identifier)
-                except ValidationError:
-                    raise ValidationError(_("Identifier must be a valid email address or phone number."))
-                if User.objects.filter(email=identifier.lower()).exists():
-                    raise ValidationError(_("An account with this email address already exists."))
-            else:
-                if User.objects.filter(phone_number=identifier).exists():
-                    raise ValidationError(_("An account with this mobile phone number already exists."))
 
         return identifier
 
@@ -135,33 +123,22 @@ class UserRegistrationForm(forms.ModelForm):
         if role and identifier:
             if User.objects.filter(identifier=identifier).exists():
                 self.add_error("identifier", _("An account with this identifier already exists."))
-            elif role == User.Role.FARMER:
-                digits_only = re.sub(r"\D", "", identifier)
-                if len(digits_only) < 10:
-                    self.add_error("identifier", _("Farmer identifier must be a valid mobile phone number with at least 10 digits."))
-                elif User.objects.filter(phone_number=identifier).exists():
-                    self.add_error("identifier", _("An account with this mobile phone number already exists."))
-            elif role in (User.Role.RETAILER, User.Role.SUPPLIER):
+            elif "@" in identifier:
                 try:
                     validate_email(identifier)
                 except ValidationError:
-                    self.add_error("identifier", _("Identifier must be a valid email address for Retailers and Suppliers."))
+                    self.add_error("identifier", _("Identifier must be a valid email address or phone number."))
                 if User.objects.filter(email=identifier.lower()).exists():
                     self.add_error("identifier", _("An account with this email address already exists."))
-            elif role == User.Role.CONSUMER:
-                if "@" in identifier:
-                    try:
-                        validate_email(identifier)
-                    except ValidationError:
-                        self.add_error("identifier", _("Identifier must be a valid email address or phone number."))
-                    if User.objects.filter(email=identifier.lower()).exists():
-                        self.add_error("identifier", _("An account with this email address already exists."))
-                else:
-                    digits_only = re.sub(r"\D", "", identifier)
-                    if len(digits_only) < 10:
-                        self.add_error("identifier", _("Consumer phone number must have at least 10 digits."))
-                    elif User.objects.filter(phone_number=identifier).exists():
-                        self.add_error("identifier", _("An account with this mobile phone number already exists."))
+            else:
+                digits_only = re.sub(r"\D", "", identifier)
+                if len(digits_only) < 10:
+                    if role == User.Role.FARMER:
+                        self.add_error("identifier", _("Farmer identifier must be a valid mobile phone number with at least 10 digits."))
+                    else:
+                        self.add_error("identifier", _("Mobile phone number must have at least 10 digits."))
+                elif User.objects.filter(phone_number=identifier).exists():
+                    self.add_error("identifier", _("An account with this mobile phone number already exists."))
 
         return cleaned_data
 
@@ -173,19 +150,12 @@ class UserRegistrationForm(forms.ModelForm):
 
         if role and identifier:
             self.instance.identifier = identifier
-            if role == User.Role.FARMER:
-                self.instance.phone_number = identifier
-                self.instance.email = None
-            elif role in (User.Role.RETAILER, User.Role.SUPPLIER):
+            if "@" in identifier:
                 self.instance.email = identifier.lower()
                 self.instance.phone_number = None
-            elif role == User.Role.CONSUMER:
-                if "@" in identifier:
-                    self.instance.email = identifier.lower()
-                    self.instance.phone_number = None
-                else:
-                    self.instance.phone_number = identifier
-                    self.instance.email = None
+            else:
+                self.instance.phone_number = identifier
+                self.instance.email = None
 
         name = self.cleaned_data.get("name")
         if name:
@@ -204,26 +174,23 @@ class UserRegistrationForm(forms.ModelForm):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password"])
 
-        # CRITICAL FIX 1 (Name Splitting)
+        # Name Splitting
         first_name, _, last_name = self.cleaned_data["name"].strip().partition(" ")
         user.first_name = first_name
         user.last_name = last_name
 
-        # CRITICAL FIX 2 (Double Column Assignment)
+        # Double Column Assignment
         identifier = self.cleaned_data["identifier"].strip()
         role = self.cleaned_data["role"]
         user.identifier = identifier
         user.role = role
 
-        if role == User.Role.FARMER:
-            user.phone_number = identifier
-        elif role in (User.Role.RETAILER, User.Role.SUPPLIER):
+        if "@" in identifier:
             user.email = identifier.lower()
-        elif role == User.Role.CONSUMER:
-            if "@" in identifier:
-                user.email = identifier.lower()
-            else:
-                user.phone_number = identifier
+            user.phone_number = None
+        else:
+            user.phone_number = identifier
+            user.email = None
 
         if commit:
             with transaction.atomic():

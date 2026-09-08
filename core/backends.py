@@ -35,8 +35,8 @@ class DualAuthBackend(ModelBackend):
             # Check password if provided
             if password is not None and user.check_password(password):
                 return user
-            # Farmer OTP authentication extension point
-            if kwargs.get("otp_verified") is True and user.role == User.Role.FARMER:
+            # OTP authentication extension point
+            if kwargs.get("otp_verified") is True:
                 return user
 
         return None

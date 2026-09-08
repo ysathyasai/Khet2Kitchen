@@ -435,14 +435,14 @@
                 <!-- Unified Identifier Field (Phone Number or Email) -->
                 <div class="form-group">
                     <label for="id_identifier_input" class="form-label" id="identifierLabel">
-                        Mobile Phone Number
+                        Mobile Number or Email
                     </label>
                     <input type="text" name="identifier" id="id_identifier_input" required
                         value="{{ form.identifier.value|default:'' }}"
-                        placeholder="+919876543210 (10+ digits)"
+                        placeholder="+919876543210 or yourname@gmail.com"
                         class="form-input">
                     <span class="input-hint" id="identifierHint">
-                        Farmers use their mobile phone number for secure authentication and instant SMS/UPI alerts.
+                        Sign up using your mobile phone number (10+ digits) or email address.
                     </span>
                     {% if form.identifier.errors %}
                         <div class="field-error">
@@ -688,21 +688,21 @@
 
             // Dynamic placeholder and label adaptation
             if (role === 'CONSUMER') {
-                identLabel.textContent = 'Phone Number or Email';
+                identLabel.textContent = 'Mobile Number or Email';
                 identInput.placeholder = '+919876543210 or yourname@gmail.com';
                 identHint.textContent = 'Consumers can sign in with mobile number or email address for instant order tracking and delivery updates.';
             } else if (role === 'FARMER') {
-                identLabel.textContent = 'Mobile Phone Number';
-                identInput.placeholder = '+919876543210 (10+ digits)';
+                identLabel.textContent = 'Mobile Phone Number or Email';
+                identInput.placeholder = '+919876543210 or kisan@gmail.com';
                 identHint.textContent = 'Farmers use their mobile phone number for secure authentication and instant SMS/UPI alerts.';
             } else if (role === 'RETAILER') {
-                identLabel.textContent = 'Business Email Address';
-                identInput.placeholder = 'procure@freshbazaar.in';
-                identHint.textContent = 'Wholesale retailers authenticate via their verified business email address.';
+                identLabel.textContent = 'Mobile Number or Business Email';
+                identInput.placeholder = '+919876543210 or procure@freshbazaar.in';
+                identHint.textContent = 'Wholesale retailers authenticate via mobile phone number or verified business email address.';
             } else if (role === 'SUPPLIER') {
-                identLabel.textContent = 'Supplier Email Address';
-                identInput.placeholder = 'sales@bioagri.com';
-                identHint.textContent = 'Agri-input vendors authenticate via their commercial email address.';
+                identLabel.textContent = 'Mobile Number or Commercial Email';
+                identInput.placeholder = '+919876543210 or sales@bioagri.com';
+                identHint.textContent = 'Agri-input vendors authenticate via mobile phone number or commercial email address.';
             }
         }
 

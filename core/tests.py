@@ -99,10 +99,15 @@ class UserModelTests(TestCase):
         with self.assertRaises(ValidationError):
             farmer.clean()
 
-    def test_retailer_validation_requires_email(self):
+    def test_retailer_validation_allows_phone(self):
         retailer = User(role=User.Role.RETAILER, phone_number="+919999988888")
+        retailer.clean()
+        self.assertEqual(retailer.identifier, "+919999988888")
+
+    def test_user_validation_requires_at_least_one_credential(self):
+        user = User(role=User.Role.RETAILER)
         with self.assertRaises(ValidationError):
-            retailer.clean()
+            user.clean()
 
 
 class DualAuthBackendTests(TestCase):
@@ -1295,9 +1300,37 @@ class UserRegistrationTests(TestCase):
         self.assertFormError(
             response.context["form"],
             "identifier",
-            "Identifier must be a valid email address for Retailers and Suppliers.",
+            "Mobile phone number must have at least 10 digits.",
         )
         self.assertFalse(User.objects.filter(identifier="not-a-valid-email").exists())
+
+    def test_retailer_signup_with_phone_number_success(self):
+        signup_data = {
+            "name": "Ramesh Retailer",
+            "role": "RETAILER",
+            "identifier": "9182120390",
+            "password": "Password123!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertEqual(response.status_code, 302)
+        retailer = User.objects.filter(phone_number="+919182120390", role=User.Role.RETAILER).first()
+        self.assertIsNotNone(retailer)
+        self.assertEqual(retailer.first_name, "Ramesh")
+        self.assertEqual(retailer.last_name, "Retailer")
+
+    def test_supplier_signup_with_phone_number_success(self):
+        signup_data = {
+            "name": "Umesh Supplier",
+            "role": "SUPPLIER",
+            "identifier": "9182120369",
+            "password": "Password123!",
+        }
+        response = self.client.post(reverse("signup"), signup_data)
+        self.assertEqual(response.status_code, 302)
+        supplier = User.objects.filter(phone_number="+919182120369", role=User.Role.SUPPLIER).first()
+        self.assertIsNotNone(supplier)
+        self.assertEqual(supplier.first_name, "Umesh")
+        self.assertEqual(supplier.last_name, "Supplier")
 
     def test_duplicate_identifier_rejected(self):
         User.objects.create_user(

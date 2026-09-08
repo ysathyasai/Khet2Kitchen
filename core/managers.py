@@ -36,17 +36,9 @@ class UserManager(BaseUserManager):
 
         # Derive identifier if not explicitly provided
         if not identifier:
-            if role == User.Role.FARMER:
-                if not phone_number:
-                    raise ValueError(_("Farmers must have a mobile phone number."))
-                identifier = phone_number
-            else:
-                if not email:
-                    raise ValueError(_("Retailers, Suppliers, and Admins must have an email address."))
-                identifier = email
-
-        if not identifier:
-            raise ValueError(_("Users must have a unique identifier (mobile or email)."))
+            identifier = phone_number or email
+            if not identifier:
+                raise ValueError(_("Users must have a mobile phone number or email address."))
 
         extra_fields.setdefault("is_active", True)
 

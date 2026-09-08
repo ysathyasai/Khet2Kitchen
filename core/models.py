@@ -101,35 +101,22 @@ class User(AbstractBaseUser, PermissionsMixin):
     def clean(self):
         super().clean()
 
-        # Enforce role-specific required credentials
         if self.role == self.Role.FARMER:
             if not self.phone_number:
                 raise ValidationError({"phone_number": _("Mobile number is mandatory for farmers.")})
             if not self.identifier:
                 self.identifier = self.phone_number
-        elif self.role == self.Role.CONSUMER:
-            if not self.identifier:
-                if self.phone_number:
-                    self.identifier = self.phone_number
-                elif self.email:
-                    self.identifier = self.email
-                else:
-                    raise ValidationError({"identifier": _("Phone number or email is required for consumers.")})
         else:
-            if not self.email:
-                raise ValidationError({"email": _("Email address is mandatory for this role.")})
+            # All other roles (Retailer, Supplier, Consumer, Admin) can use phone_number or email
+            if not self.phone_number and not self.email and not self.identifier:
+                raise ValidationError({"identifier": _("Phone number or email is required.")})
             if not self.identifier:
-                self.identifier = self.email
+                self.identifier = self.phone_number or self.email
 
     def save(self, *args, **kwargs):
         # Auto-sync identifier before saving
         if not self.identifier:
-            if self.role == self.Role.FARMER and self.phone_number:
-                self.identifier = self.phone_number
-            elif self.role == self.Role.CONSUMER:
-                self.identifier = self.phone_number or self.email
-            elif self.email:
-                self.identifier = self.email
+            self.identifier = self.phone_number or self.email
 
         # Normalize email
         if self.email:
