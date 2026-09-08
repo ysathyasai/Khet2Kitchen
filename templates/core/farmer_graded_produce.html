@@ -133,10 +133,15 @@
     <!-- Controls Row -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
         <div>
-            <label for="cropSelect" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
-                Crop Variety:
-            </label>
-            <select id="cropSelect" style="width: 100%; padding: 0.65rem 0.9rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.9rem; outline: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <label for="cropSelect" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0;">
+                    Crop Variety:
+                </label>
+                <span id="autoDetectedCropBadge" style="display: none; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 700; background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; padding: 0.15rem 0.5rem; border-radius: 9999px;">
+                    🎯 Auto-Detected
+                </span>
+            </div>
+            <select id="cropSelect" style="width: 100%; padding: 0.65rem 0.9rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.9rem; outline: none; transition: all 0.3s ease;">
                 {% for crop in crops %}
                     <option value="{{ crop.id }}" data-price="{{ crop.base_price }}" data-name="{{ crop.name }}">
                         {{ crop.name }} (Base: ₹{{ crop.base_price }}/kg)
@@ -475,7 +480,25 @@
         }
 
         function renderScanResult(data) {
-            document.getElementById("resultCropName").innerText = data.crop_name + " (" + data.volume_kg + " kg Batch)";
+            // Auto-select detected crop in the dropdown if returned
+            if (data.crop_id && cropSelect) {
+                const targetOption = cropSelect.querySelector(`option[value="${data.crop_id}"]`);
+                if (targetOption) {
+                    cropSelect.value = data.crop_id;
+                    cropSelect.style.borderColor = "#10B981";
+                    cropSelect.style.boxShadow = "0 0 0 3px rgba(16, 185, 129, 0.2)";
+                    const autoBadge = document.getElementById("autoDetectedCropBadge");
+                    if (autoBadge) {
+                        autoBadge.style.display = "inline-flex";
+                        autoBadge.innerText = `🎯 Auto-Detected: ${data.crop_name}`;
+                    }
+                }
+            }
+
+            const detectedHtml = data.detected_crop 
+                ? `<span style="display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.5rem; font-size: 0.78rem; font-weight: 700; color: #065F46; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 0.15rem 0.6rem; border-radius: 9999px;">🎯 AI Identified: ${data.detected_crop}</span>` 
+                : "";
+            document.getElementById("resultCropName").innerHTML = `${data.crop_name} (${data.volume_kg} kg Batch) ${detectedHtml}`;
             
             const badge = document.getElementById("resultGradeBadge");
             badge.innerText = data.grade_display;

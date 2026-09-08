@@ -115,6 +115,16 @@ def api_grade_batch(request):
         logger.error("Vision AI analysis failed: %s", exc)
         return JsonResponse({"success": False, "error": f"Vision AI analysis failed: {exc}"}, status=400)
 
+    # Auto-adjust crop if AI Vision detected a specific crop variety from the image
+    detected_crop_id = vision_report.get("crop_id")
+    if detected_crop_id and detected_crop_id != crop.id:
+        try:
+            detected_crop_obj = Crop.objects.get(pk=detected_crop_id)
+            logger.info("AI Auto-Detected crop variety: %s (switched from %s)", detected_crop_obj.name, crop.name)
+            crop = detected_crop_obj
+        except Crop.DoesNotExist:
+            pass
+
     grade = vision_report["grade"]
     confidence_score = vision_report["confidence_score"]
 
@@ -180,6 +190,8 @@ def api_grade_batch(request):
         "batch_id": batch_obj.batch_id if batch_obj else f"K2K-BTH-SIMULATED",
         "crop_id": crop.id,
         "crop_name": crop.name,
+        "detected_crop": vision_report.get("detected_crop", crop.name),
+        "auto_detected": vision_report.get("auto_detected", False),
         "volume_kg": float(volume_kg),
         "grade": grade,
         "grade_display": vision_report["grade_display"],

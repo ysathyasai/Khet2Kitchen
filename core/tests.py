@@ -546,6 +546,36 @@ class APIGradingEndpointTests(TestCase):
         self.assertFalse(data["success"])
         self.assertIn("Invalid image. Please upload a clear photo of fresh agricultural produce", data["error"])
 
+    def test_api_grade_batch_auto_detects_crop_variety(self):
+        """
+        Verifies that when produce corresponding to a different crop variety
+        is uploaded (e.g., onion photo while tomato was initially selected),
+        the AI automatically identifies and switches to the detected crop.
+        """
+        onion_crop = Crop.objects.create(
+            name="Red Onion (Nashik Special)",
+            code="CROP-ONION-AUTO",
+            category=Crop.Category.VEGETABLE,
+            base_price=Decimal("32.00"),
+            shelf_life_days=30,
+        )
+        mock_file = SimpleUploadedFile("fresh_onion_harvest.jpg", b"synthetic_onion_pixels", content_type="image/jpeg")
+        response = self.client.post(
+            reverse("api_grade_batch"),
+            data={
+                "image": mock_file,
+                "crop_id": self.crop.id,  # initially selected Roma Tomato
+                "volume_kg": "100.00",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["crop_id"], onion_crop.id)
+        self.assertEqual(data["crop_name"], "Red Onion (Nashik Special)")
+        self.assertTrue(data.get("auto_detected"))
+        self.assertEqual(data["financial_breakdown"]["base_price_per_kg"], 32.0)
+
 
 class FarmerWalletModelTests(TestCase):
     """Tests FarmerWallet and WalletTransaction ledger operations."""

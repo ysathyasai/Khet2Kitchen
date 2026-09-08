@@ -31,9 +31,55 @@ NON_PRODUCE_KEYWORDS = (
 )
 
 
+def match_crop_from_detected_name(detected_name: str, fallback_crop: Optional[Crop] = None) -> Optional[Crop]:
+    """
+    Fuzzy matches the detected produce name (from Gemini Vision or image filename)
+    against the active Crop catalog in the database.
+    e.g. 'tomato' -> Roma Field Tomato, 'onion' -> Red Onion (Nashik Special), 'potato' -> Potato, etc.
+    """
+    if not detected_name:
+        return fallback_crop
+
+    clean_det = str(detected_name).strip().lower()
+    crops = list(Crop.objects.all())
+    if not crops:
+        return fallback_crop
+
+    # 1. Exact or direct substring match
+    for c in crops:
+        c_name_lower = c.name.lower()
+        if clean_det in c_name_lower or c_name_lower in clean_det:
+            return c
+
+    # 2. Known produce synonym and regional transliteration map
+    CROP_SYNONYMS = {
+        "tomato": ("tomato", "tamatar", "roma", "cherry"),
+        "onion": ("onion", "pyaz", "pyaaz", "kanda"),
+        "potato": ("potato", "aloo", "alu", "batata"),
+        "chilli": ("chilli", "chili", "mirchi", "pepper", "capsicum"),
+        "mango": ("mango", "aam", "alphonso", "kesar"),
+        "spinach": ("spinach", "palak"),
+        "cucumber": ("cucumber", "kheera", "kakdi"),
+        "coriander": ("coriander", "dhaniya", "mint", "pudina"),
+        "apple": ("apple", "seb"),
+        "banana": ("banana", "kela"),
+        "carrot": ("carrot", "gajar"),
+    }
+
+    for generic_key, syns in CROP_SYNONYMS.items():
+        if any(s in clean_det for s in syns):
+            for c in crops:
+                c_name_lower = c.name.lower()
+                if any(s in c_name_lower for s in syns):
+                    return c
+
+    return fallback_crop
+
+
 def _format_gemini_vision_output(parsed: dict, crop: Crop) -> Dict[str, Any]:
     """
     Normalizes Gemini Vision structured JSON into standard K2K inspection report schema.
+    Resolves the actual crop variety identified by AI vision against the DB catalog.
     """
     raw_grade = str(parsed.get("grade", "B")).strip().upper()
     if raw_grade in ("A", "GRADE A", "GRADE_A", "EXPORT"):
@@ -75,15 +121,23 @@ def _format_gemini_vision_output(parsed: dict, crop: Crop) -> Dict[str, Any]:
         "Firm (Optimal)" if grade == Batch.Grade.GRADE_A else ("Normal Ambient" if grade == Batch.Grade.GRADE_B else "Soft / Immediate Processing")
     )).strip()
 
+    # Identify and match the auto-detected crop
+    raw_detected = str(parsed.get("detected_crop") or crop.name).strip()
+    resolved_crop = match_crop_from_detected_name(raw_detected, fallback_crop=crop) or crop
+    auto_detected = (resolved_crop.id != crop.id) or bool(parsed.get("detected_crop"))
+
     rationale = str(
         parsed.get("rationale")
-        or f"Optical inspection confirmed {crop.name} harvest quality matching Grade {grade} specifications."
+        or f"Optical inspection confirmed {resolved_crop.name} harvest quality matching Grade {grade} specifications."
     ).strip()
 
     return {
-        "crop_id": crop.id,
-        "crop_name": crop.name,
-        "crop_code": crop.code,
+        "crop_id": resolved_crop.id,
+        "crop_name": resolved_crop.name,
+        "crop_code": resolved_crop.code,
+        "detected_crop": raw_detected,
+        "auto_detected": auto_detected,
+        "base_price": str(resolved_crop.base_price),
         "grade": grade,
         "grade_display": f"Grade {grade} ({'Export Premium' if grade == 'A' else ('Standard Retail' if grade == 'B' else 'Processing Economy')})",
         "confidence_score": confidence_score,
@@ -96,6 +150,7 @@ def _format_gemini_vision_output(parsed: dict, crop: Crop) -> Dict[str, Any]:
             "optical_scan_resolution": "4K Multispectral (Gemini Vision)",
         },
     }
+
 
 
 def _analyze_with_gemini_vision(
@@ -302,14 +357,19 @@ def _build_fallback_vision_report(crop: Crop, image_file: Any) -> Dict[str, Any]
     size_consistency = Decimal(str(round(96.0 - float(defect_percentage) * 1.2, 1)))
     surface_firmness = "Firm (Optimal)" if grade == Batch.Grade.GRADE_A else ("Normal Ambient" if grade == Batch.Grade.GRADE_B else "Soft / Immediate Processing")
 
+    fn_lower = getattr(image_file, "name", "").lower() if hasattr(image_file, "name") else ""
+    resolved_crop = match_crop_from_detected_name(fn_lower, fallback_crop=crop) if fn_lower else crop
+    resolved_crop = resolved_crop or crop
+    auto_detected = (resolved_crop.id != crop.id)
+
     grade_rationales = {
         Batch.Grade.GRADE_A: [
-            f"Superb uniform pigmentation across {crop.name}. Zero deep cuts, optimal skin sheen, and calibrated export diameter.",
+            f"Superb uniform pigmentation across {resolved_crop.name}. Zero deep cuts, optimal skin sheen, and calibrated export diameter.",
             f"Prime quality detected: High density, uniform circular geometry, negligible skin blemishes under 3%.",
             f"Premium grade harvest: Optimal color saturation and firm calyx structure. Qualified for Tier-1 urban retail.",
         ],
         Batch.Grade.GRADE_B: [
-            f"Standard commercial quality for {crop.name}. Minor surface discoloration and slight size variation, ideal for supermarket shelves.",
+            f"Standard commercial quality for {resolved_crop.name}. Minor surface discoloration and slight size variation, ideal for supermarket shelves.",
             f"Good harvest batch: Intact skin firmness, acceptable minor skin abrasions under 10%.",
             f"Healthy produce with slight asymmetry. Meets domestic direct-retail procurement standards.",
         ],
@@ -323,9 +383,12 @@ def _build_fallback_vision_report(crop: Crop, image_file: Any) -> Dict[str, Any]
     rationale = rationale_options[hash_val % len(rationale_options)]
 
     return {
-        "crop_id": crop.id,
-        "crop_name": crop.name,
-        "crop_code": crop.code,
+        "crop_id": resolved_crop.id,
+        "crop_name": resolved_crop.name,
+        "crop_code": resolved_crop.code,
+        "detected_crop": resolved_crop.name,
+        "auto_detected": auto_detected,
+        "base_price": str(resolved_crop.base_price),
         "grade": grade,
         "grade_display": f"Grade {grade} ({'Export Premium' if grade == 'A' else ('Standard Retail' if grade == 'B' else 'Processing Economy')})",
         "confidence_score": confidence_score,
