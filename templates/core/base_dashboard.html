@@ -1206,22 +1206,39 @@
                     </button>
                 </div>
 
-                <!-- Live Conversation Box -->
-                <div id="modalConversationBox" style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.75rem; padding: 1rem; min-height: 100px; display: none;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: #6B7280; text-transform: uppercase; margin-bottom: 0.4rem;">
-                        Latest Assistant Response
+                <!-- WhatsApp-Style Scrollable Chat Timeline -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #4B5563; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem;">
+                        <span>💬</span> Chat History
                     </div>
-                    <div id="modalTranscriptBox" style="font-size: 0.85rem; color: #4B5563; margin-bottom: 0.5rem; font-style: italic;"></div>
-                    <div id="modalResponseText" style="font-size: 1rem; font-weight: 600; color: #133826; line-height: 1.5;"></div>
-                    
-                    <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-                        <button type="button" onclick="replayModalAudio()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
-                            🔊 Replay Voice
-                        </button>
-                        <button type="button" onclick="resetModalChat()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
-                            🔄 Reset Chat
-                        </button>
+                    <button type="button" onclick="resetModalChat()" style="background: none; border: none; color: #DC2626; font-size: 0.75rem; font-weight: 600; cursor: pointer;">
+                        🔄 Reset Session
+                    </button>
+                </div>
+
+                <div id="modalChatHistoryContainer" style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.85rem; padding: 0.85rem; max-height: 240px; min-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 0.75rem;">
+                    <div class="chat-msg-assistant" style="align-self: flex-start; max-width: 90%; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 0.85rem 0.85rem 0.85rem 0.2rem; padding: 0.65rem 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #059669; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <span>🤖</span> Kisan Voice Assistant
+                        </div>
+                        <div style="font-size: 0.88rem; color: #1F2937; line-height: 1.45;">
+                            नमस्ते! Welcome to Khet2Kitchen. You can ask about your wallet balance, harvest schedules, MSP rates, or command: <em>"Check balance"</em> or <em>"Log harvest"</em>.
+                        </div>
                     </div>
+                </div>
+
+                <!-- Hidden legacy containers for backward compatibility -->
+                <div id="modalConversationBox" style="display: none;">
+                    <div id="modalTranscriptBox"></div>
+                    <div id="modalResponseText"></div>
+                </div>
+
+                <!-- Action Controls Row -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;">
+                    <button type="button" onclick="replayModalAudio()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                        🔊 Replay Voice
+                    </button>
+                    <div id="modalActionIndicator" style="font-size: 0.78rem; font-weight: 700; color: #B45309; display: none;"></div>
                 </div>
             </div>
         </div>
@@ -1325,11 +1342,70 @@
             sendModalVoicePayload(null, text);
         }
 
+        function escapeModalHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function escapeForJs(str) {
+            if (!str) return '';
+            return String(str).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/'/g, "\\'");
+        }
+
+        function appendUserChatMessage(text) {
+            const container = document.getElementById('modalChatHistoryContainer');
+            if (!container) return;
+            const div = document.createElement('div');
+            div.style.cssText = 'align-self: flex-end; max-width: 85%; background: linear-gradient(135deg, #059669, #047857); color: #FFFFFF; border-radius: 0.85rem 0.85rem 0.2rem 0.85rem; padding: 0.6rem 0.85rem; box-shadow: 0 2px 5px rgba(5,150,105,0.2); font-size: 0.88rem; line-height: 1.4; word-break: break-word;';
+            div.innerHTML = `<div>${escapeModalHtml(text)}</div><div style="font-size: 0.65rem; color: #A7F3D0; text-align: right; margin-top: 0.2rem;">You</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function appendAssistantChatMessage(text, b64, langCode, action, actionTarget) {
+            const container = document.getElementById('modalChatHistoryContainer');
+            if (!container) return;
+            const div = document.createElement('div');
+            div.style.cssText = 'align-self: flex-start; max-width: 90%; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 0.85rem 0.85rem 0.85rem 0.2rem; padding: 0.65rem 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 0.88rem; color: #111827; line-height: 1.45; word-break: break-word;';
+
+            let actionBadge = '';
+            if (action && actionTarget) {
+                let label = "Opening page...";
+                if (action === 'FETCH_WALLET') label = "💳 Opening Wallet...";
+                else if (action === 'REDIRECT_TO_HARVEST') label = "🌾 Opening Harvest Logging...";
+                else if (action === 'REDIRECT_TO_PRICING') label = "⚖️ Opening MSP Pricing...";
+                else if (action === 'REDIRECT_TO_WEATHER') label = "🌦️ Opening Weather Advisory...";
+                else if (action === 'REDIRECT_TO_ORDERS') label = "📦 Opening Orders & Batches...";
+                else label = `⚡ Opening ${action}...`;
+
+                actionBadge = `
+                    <div style="margin-top: 0.5rem; padding: 0.35rem 0.65rem; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 700; color: #92400E; display: flex; align-items: center; justify-content: space-between;">
+                        <span>${label}</span>
+                        <a href="${actionTarget}" style="color: #B45309; text-decoration: underline; margin-left: 0.5rem;">Redirecting... →</a>
+                    </div>
+                `;
+            }
+
+            div.innerHTML = `
+                <div style="font-size: 0.72rem; font-weight: 700; color: #059669; margin-bottom: 0.25rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 0.35rem;"><span>🤖</span> Assistant</span>
+                </div>
+                <div>${escapeModalHtml(text)}</div>
+                ${actionBadge}
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
         async function sendModalVoicePayload(audioBlob, textQuery) {
             const statusText = document.getElementById('modalVoiceStatus');
             const convBox = document.getElementById('modalConversationBox');
             const transcriptBox = document.getElementById('modalTranscriptBox');
             const responseBox = document.getElementById('modalResponseText');
+
+            if (textQuery) {
+                appendUserChatMessage(textQuery);
+            }
 
             if (statusText) statusText.innerText = "⚡ Analyzing query & database context...";
 
@@ -1353,6 +1429,12 @@
                     modalLastAudioBase64 = data.audio_base64;
                     modalLastLanguage = data.detected_language || data.language || 'hi-IN';
 
+                    if (audioBlob && data.transcribed_text) {
+                        appendUserChatMessage(data.transcribed_text);
+                    }
+
+                    appendAssistantChatMessage(data.response_text, data.audio_base64, modalLastLanguage, data.action, data.action_target);
+
                     if (convBox) convBox.style.display = 'block';
                     if (transcriptBox) transcriptBox.innerText = `You asked: "${data.transcribed_text || textQuery || ''}"`;
                     if (responseBox) responseBox.innerText = data.response_text;
@@ -1363,6 +1445,21 @@
                         playModalBase64Audio(data.audio_base64);
                     } else if (data.response_text) {
                         speakModalDeviceSpeech(data.response_text, modalLastLanguage);
+                    }
+
+                    // Smart Action Execution
+                    if (data.action && data.action_target && data.action !== 'NONE') {
+                        const actIndicator = document.getElementById('modalActionIndicator');
+                        if (actIndicator) {
+                            actIndicator.style.display = 'block';
+                            actIndicator.innerText = `⚡ Action: Opening ${data.action_target}...`;
+                        }
+                        if (statusText) {
+                            statusText.innerText = `⚡ Action Triggered: Redirecting to ${data.action_target}...`;
+                        }
+                        setTimeout(() => {
+                            window.location.href = data.action_target;
+                        }, 1800);
                     }
                 } else {
                     if (statusText) statusText.innerText = data.error || "Could not process query. Please try again.";
@@ -1407,10 +1504,25 @@
                     headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
                     body: fd
                 });
+                const chatContainer = document.getElementById('modalChatHistoryContainer');
+                if (chatContainer) {
+                    chatContainer.innerHTML = `
+                        <div class="chat-msg-assistant" style="align-self: flex-start; max-width: 90%; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 0.85rem 0.85rem 0.85rem 0.2rem; padding: 0.65rem 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div style="font-size: 0.72rem; font-weight: 700; color: #059669; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+                                <span>🤖</span> Kisan Voice Assistant
+                            </div>
+                            <div style="font-size: 0.88rem; color: #1F2937; line-height: 1.45;">
+                                Chat session reset. Speak or type to start a fresh conversation.
+                            </div>
+                        </div>
+                    `;
+                }
                 const convBox = document.getElementById('modalConversationBox');
                 if (convBox) convBox.style.display = 'none';
                 const statusText = document.getElementById('modalVoiceStatus');
                 if (statusText) statusText.innerText = "Chat session reset. Speak or type to start fresh.";
+                const actIndicator = document.getElementById('modalActionIndicator');
+                if (actIndicator) actIndicator.style.display = 'none';
             } catch (e) {
                 console.error("Reset chat failed:", e);
             }

@@ -405,6 +405,8 @@ def api_voice_assist(request):
 
         response_text = gemini_result["response_text"]
         detected_intent = gemini_result["intent"]
+        detected_action = gemini_result.get("action")
+        action_target = gemini_result.get("action_target") or ""
         lang = gemini_result.get("language_code", language_code)
 
         # 4. Update session conversation context
@@ -417,9 +419,11 @@ def api_voice_assist(request):
             "user": transcribed_text,
             "assistant": response_text,
             "intent": detected_intent,
+            "action": detected_action,
+            "action_target": action_target,
             "language": lang,
         })
-        request.session["k2k_voice_chat_history"] = chat_history[-10:]
+        request.session["k2k_voice_chat_history"] = chat_history[-15:]
         request.session.modified = True
 
         # 5. TTS: Synthesize speech via Sarvam Bulbul v3 (speaker="shubh")
@@ -437,6 +441,8 @@ def api_voice_assist(request):
             "language": lang,
             "language_code": lang,
             "intent": detected_intent,
+            "action": detected_action,
+            "action_target": action_target,
             "voice_reply_text": response_text,
             "response_text": response_text,
             "audio_base64": audio_base64 or "",
@@ -1594,8 +1600,8 @@ def consumer_shop_view(request):
             Q(code__icontains=search_query)
         )
 
-    # Query Active Direct Farm Produce
-    crops_qs = Crop.objects.filter(is_active=True).select_related("farmer")
+    # Query Active Direct Farm Produce / Loose Groceries
+    crops_qs = Crop.objects.filter(is_active=True).select_related("farmer").order_by("-code", "name")
     if search_query:
         crops_qs = crops_qs.filter(
             Q(name__icontains=search_query) |
@@ -1621,6 +1627,7 @@ def consumer_shop_view(request):
     context = {
         "kits": kits_qs,
         "crops": crops_qs,
+        "loose_produce": crops_qs,
         "recent_combos": combos_qs,
         "preset_dishes": preset_dishes,
         "active_category": category,
@@ -1628,6 +1635,7 @@ def consumer_shop_view(request):
         "title": "K2K Direct Farm Store • 100% Traceable Direct to Consumer",
     }
     return render(request, "core/consumer_shop.html", context)
+
 
 
 def ai_combo_builder_view(request):

@@ -2382,7 +2382,7 @@ class MobileOptimizationTests(TestCase):
         self.assertContains(res, "hero-network-pill")
         self.assertContains(res, "hero-chip")
         self.assertContains(res, "btn-hero-translucent")
-        self.assertContains(res, "100% Guaranteed MSP Floor")
+        self.assertContains(res, "Best Price Guarantee")
         self.assertContains(res, "View MSP Floor")
 
     def test_consumer_shop_mobile_search_and_auth_fit(self):

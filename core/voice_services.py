@@ -244,30 +244,55 @@ def _heuristic_intent_and_reply(
         "नमस्ते", "हेलो", "प्रणाम", "नमस्कार", "आई एम"
     ]
 
+    action = "NONE"
+    action_target = ""
+
     # Matching logic
     if any(k in text_lower for k in wallet_keywords):
         intent = "wallet_balance"
+        action = "FETCH_WALLET"
+        action_target = "/farmer/wallet/"
         if is_english:
             reply = f"Hello {farmer_name}, your K2K digital wallet balance is ₹{balance:,.2f}. You can transfer it directly to your bank account anytime."
         else:
             reply = f"नमस्ते {farmer_name} जी, आपके K2K डिजिटल वॉलेट में कुल ₹{balance:,.2f} हैं। आप जब चाहें इसे अपने बैंक खाते में ट्रांसफर कर सकते हैं।"
 
-    elif any(k in text_lower for k in harvest_keywords):
+    elif any(k in text_lower for k in harvest_keywords) or any(k in text_lower for k in ["log harvest", "लॉग", "हार्वेस्ट", "scan", "स्कैन"]):
         intent = "harvest_schedule"
+        action = "REDIRECT_TO_HARVEST"
+        action_target = "/farmer/graded-produce/"
         if schedules:
             nxt = schedules[0]
             crop_name = nxt.get("crop", "फसल")
             vol = nxt.get("target_volume_kg", 0)
             dt = nxt.get("recommended_date", "soon")
             if is_english:
-                reply = f"Hello {farmer_name}, your next scheduled harvest is on {dt} for {crop_name} ({vol:,.0f} kg)."
+                reply = f"Hello {farmer_name}, your next scheduled harvest is on {dt} for {crop_name} ({vol:,.0f} kg). Opening harvest manager now."
             else:
-                reply = f"नमस्ते {farmer_name} जी, आपकी अगली फसल कटाई {dt} को {crop_name} ({vol:,.0f} किलो) के लिए तय है।"
+                reply = f"नमस्ते {farmer_name} जी, आपकी अगली फसल कटाई {dt} को {crop_name} ({vol:,.0f} किलो) के लिए तय है। हार्वेस्ट मैनेजर खोला जा रहा है।"
         else:
             if is_english:
-                reply = f"Hello {farmer_name}, you currently have no pending harvest schedules. As urban retail demand arises, new AI schedules will be generated."
+                reply = f"Hello {farmer_name}, opening the harvest logging and AI grading portal for you now."
             else:
-                reply = f"नमस्ते {farmer_name} जी, अभी आपकी कोई कटाई शेड्यूल नहीं है। शहरी खुदरा मांग आते ही नया AI शेड्यूल तैयार हो जाएगा।"
+                reply = f"नमस्ते {farmer_name} जी, आपके लिए हार्वेस्ट और AI ग्रेडिंग पोर्टल खोला जा रहा है।"
+
+    elif any(k in text_lower for k in ["weather", "rain", "forecast", "मौसम", "बारिश"]):
+        intent = "weather_forecast"
+        action = "REDIRECT_TO_WEATHER"
+        action_target = "/farmer/weather/"
+        if is_english:
+            reply = f"Hello {farmer_name}, opening your live satellite weather and soil advisory dashboard."
+        else:
+            reply = f"नमस्ते {farmer_name} जी, आपके लिए मौसम और मिट्टी नमी का लाइव डैशबोर्ड खोला जा रहा है।"
+
+    elif any(k in text_lower for k in ["msp", "pricing", "एमएसपी", "दर", "दाम सूची", "rate table"]):
+        intent = "CHECK_PRICE"
+        action = "REDIRECT_TO_PRICING"
+        action_target = "/farmer/pricing/"
+        if is_english:
+            reply = f"Hello {farmer_name}, opening the guaranteed MSP floor and direct pricing schedule."
+        else:
+            reply = f"नमस्ते {farmer_name} जी, आपके लिए एमएसपी और मंडी खरीद भाव तालिका खोली जा रही है।"
 
     elif any(k in text_lower for k in price_keywords) or any(c in text_lower for c in ["टमाटर", "tomato", "टोमेटो"]):
         intent = "CHECK_PRICE"
@@ -281,6 +306,8 @@ def _heuristic_intent_and_reply(
 
     elif any(k in text_lower for k in greeting_keywords) or extracted_name:
         intent = "greeting"
+        action = "NONE"
+        action_target = ""
         if is_english:
             reply = f"Hello {farmer_name}! Welcome to Khet2Kitchen. How can I assist you today with your crops, harvest schedules, or wallet balance?"
         else:
@@ -288,6 +315,8 @@ def _heuristic_intent_and_reply(
 
     else:
         intent = "general_advice"
+        action = "NONE"
+        action_target = ""
         if is_english:
             crop_names = ", ".join(c["crop"] for c in crops[:2]) if crops else "fresh produce"
             reply = f"Hello {farmer_name}, welcome to Khet2Kitchen. We currently have high retail demand for {crop_names}. Deliver to your local micro-hub for instant digital payouts."
@@ -295,7 +324,44 @@ def _heuristic_intent_and_reply(
             crop_names = ", ".join(c["crop"] for c in crops[:2]) if crops else "ताज़ी सब्जियों"
             reply = f"नमस्ते {farmer_name} जी, K2K में आपका स्वागत है। वर्तमान में {crop_names} की उच्च मांग है। माइक्रो-हब पर फसल लाएं और तुरंत डिजिटल भुगतान पाएं।"
 
-    return intent, reply
+    return intent, reply, action, action_target
+
+
+def _normalize_intent(raw_intent: str, fallback_intent: str) -> str:
+    raw = (raw_intent or "").strip().lower()
+    if not raw:
+        return fallback_intent
+    if any(k in raw for k in ["wallet", "balance", "money", "payout"]):
+        return "wallet_balance"
+    if any(k in raw for k in ["harvest", "schedule", "cut", "crop"]):
+        return "harvest_schedule"
+    if any(k in raw for k in ["price", "pricing", "mandi", "msp", "rate", "cost"]):
+        return "CHECK_PRICE"
+    if any(k in raw for k in ["weather", "rain", "forecast", "climate"]):
+        return "weather_forecast"
+    if any(k in raw for k in ["greet", "hello", "hi", "namaste"]):
+        return "greeting"
+    if any(k in raw for k in ["advice", "farm", "general", "inquiry", "help", "tip"]):
+        return "general_advice"
+    return raw_intent or fallback_intent
+
+
+def _normalize_action(raw_action: str, raw_target: str, intent: str) -> Tuple[str, str]:
+    act = (raw_action or "").strip().upper()
+    tgt = (raw_target or "").strip()
+    if act == "FETCH_WALLET" or ("WALLET" in act):
+        return "FETCH_WALLET", tgt or "/farmer/wallet/"
+    if "HARVEST" in act:
+        return "REDIRECT_TO_HARVEST", tgt or "/farmer/graded-produce/"
+    if "PRICING" in act or "PRICE" in act:
+        return "REDIRECT_TO_PRICING", tgt or "/farmer/pricing/"
+    if "WEATHER" in act:
+        return "REDIRECT_TO_WEATHER", tgt or "/farmer/weather/"
+    if "ORDER" in act:
+        return "REDIRECT_TO_ORDERS", tgt or "/farmer/orders/"
+    if act in ["FETCH_WALLET", "REDIRECT_TO_HARVEST", "REDIRECT_TO_PRICING", "REDIRECT_TO_WEATHER", "REDIRECT_TO_ORDERS"]:
+        return act, tgt
+    return "NONE", ""
 
 
 def process_intent_with_gemini(
@@ -306,9 +372,9 @@ def process_intent_with_gemini(
     preferred_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Synthesizes farmer intent and grounded response using Google Gemini (<30 words),
+    Synthesizes farmer intent, grounded response, and executable app action using Google Gemini (<30 words),
     with automatic failover to deterministic DB grounding when Gemini API limits/quotas are hit.
-    Accurately detects user's spoken language (English vs Indic) and remembers preferred farmer name.
+    Recognizes actions like FETCH_WALLET, REDIRECT_TO_HARVEST, REDIRECT_TO_PRICING, REDIRECT_TO_WEATHER.
     """
     gemini_key = (getattr(settings, "GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")).strip()
 
@@ -319,7 +385,7 @@ def process_intent_with_gemini(
     db_context = _get_farmer_db_context(farmer_user, preferred_name=effective_name)
 
     # 1. Fallback heuristic ready in advance (handles both English and Indic)
-    heuristic_intent, heuristic_reply = _heuristic_intent_and_reply(
+    heuristic_intent, heuristic_reply, heuristic_action, heuristic_target = _heuristic_intent_and_reply(
         transcribed_text=transcribed_text,
         db_context=db_context,
         language_code=language_code,
@@ -331,6 +397,8 @@ def process_intent_with_gemini(
     if not gemini_key or not transcribed_text.strip():
         return {
             "intent": heuristic_intent,
+            "action": heuristic_action if heuristic_action != "NONE" else None,
+            "action_target": heuristic_target if heuristic_action != "NONE" else "",
             "response_text": heuristic_reply,
             "language_code": detected_lang,
             "context_data": db_context,
@@ -354,7 +422,7 @@ def process_intent_with_gemini(
     # 2. Call Gemini for dynamic multi-lingual understanding
     prompt = f"""You are the official Vernacular Kisan Voice Assistant for Khet2Kitchen (K2K).
 A farmer asked: "{transcribed_text}"
-Requested Language: "{language_code}".
+Detected Spoken Language: "{detected_lang}" (UI Preference: "{language_code}").
 Live Database Context:
 {json.dumps(db_context, ensure_ascii=False, indent=2)}
 
@@ -363,7 +431,8 @@ Known Preferred Name: "{effective_name or db_context.get('farmer_name', '')}"
 
 CRITICAL RULES:
 1. DETECT THE USER'S SPOKEN LANGUAGE from their text (English, Hindi, Marathi, Kannada, Telugu, Tamil, etc.).
-   Note: If user spoke English (or phonetic Devanagari of English words), you MUST reply in natural conversational ENGLISH!
+   The user's spoken language is "{detected_lang}".
+   Note: If user spoke English (or phonetic Devanagari of English words), you MUST reply in natural conversational ENGLISH and set "detected_language" to "en-IN"!
    Never reply in Hindi if the user spoke in English!
 2. USER NAME & MEMORY:
    - If user introduces themselves (e.g. "I am Santosh Patil", "मेरा नाम संतोष है") or if Known Preferred Name is set, address them by that name!
@@ -371,17 +440,27 @@ CRITICAL RULES:
    - Greet respectfully based on language:
      * English: "Hello Santosh! ..."
      * Hindi: "नमस्ते संतोष जी, ..."
-3. Intent classification: "greeting" | "wallet_balance" | "harvest_schedule" | "CHECK_PRICE" | "sell_produce" | "general_advice".
+3. INTENTS & ACTIONABLE COMMANDS:
+   - "intent" MUST be exactly one of: "wallet_balance", "harvest_schedule", "CHECK_PRICE", "weather_forecast", "greeting", "general_advice".
+   - If the farmer commands or requests an app action, output the matching action and action_target:
+     * "FETCH_WALLET" (action_target: "/farmer/wallet/"): asking to check balance, view wallet, or transfer money.
+     * "REDIRECT_TO_HARVEST" (action_target: "/farmer/graded-produce/"): asking to log a harvest, scan produce, or check harvest grading.
+     * "REDIRECT_TO_PRICING" (action_target: "/farmer/pricing/"): asking to view MSP rate table or pricing.
+     * "REDIRECT_TO_WEATHER" (action_target: "/farmer/weather/"): asking about weather, rain, or agronomic advisory.
+     * "REDIRECT_TO_ORDERS" (action_target: "/farmer/orders/"): asking to view batches, track shipments, or orders.
+     * "NONE" (action_target: ""): general questions, advice, or greetings.
 4. If farmer asks about wallet, state their exact wallet balance from context.
 5. If farmer asks about harvest schedule or selling, explicitly state the exact crop name (e.g., Tomato / टमाटर) and scheduled date/volume from context.
 6. STRICT REQUIREMENT: Keep response UNDER 25 words for lightning-fast voice synthesis.
 
 Output valid JSON only matching this schema:
 {{
-  "intent": "greeting",
+  "intent": "wallet_balance",
+  "action": "FETCH_WALLET",
+  "action_target": "/farmer/wallet/",
   "detected_language": "{detected_lang}",
   "extracted_farmer_name": "{effective_name or ''}",
-  "response_text": "Hello Santosh! Welcome to Khet2Kitchen. How can I help you today with your crops or wallet?"
+  "response_text": "Hello Santosh! Your wallet balance is ₹15,000. Opening your wallet now."
 }}"""
 
     candidate_models = [
@@ -407,14 +486,23 @@ Output valid JSON only matching this schema:
                 )
                 if resp and resp.text:
                     parsed = json.loads(resp.text)
-                    intent = parsed.get("intent") or heuristic_intent
+                    raw_intent = parsed.get("intent") or heuristic_intent
+                    intent = _normalize_intent(raw_intent, heuristic_intent)
+                    raw_action = parsed.get("action") or heuristic_action
+                    raw_target = parsed.get("action_target") or heuristic_target
+                    action, action_target = _normalize_action(raw_action, raw_target, intent)
                     reply_text = (parsed.get("response_text") or parsed.get("voice_reply_text") or "").strip()
-                    resp_lang = parsed.get("detected_language") or detected_lang
+                    if detected_lang.startswith("en"):
+                        resp_lang = "en-IN"
+                    else:
+                        resp_lang = parsed.get("detected_language") or detected_lang
                     resp_name = parsed.get("extracted_farmer_name") or effective_name or ""
                     if reply_text:
-                        logger.info("Gemini resolved intent: %s [%s] | text: %s", intent, resp_lang, reply_text)
+                        logger.info("Gemini resolved intent: %s [%s] action: %s | text: %s", intent, resp_lang, action, reply_text)
                         return {
                             "intent": intent,
+                            "action": action if action != "NONE" else None,
+                            "action_target": action_target if action != "NONE" else "",
                             "response_text": reply_text,
                             "language_code": resp_lang,
                             "context_data": db_context,
@@ -442,14 +530,20 @@ Output valid JSON only matching this schema:
                 )
                 if resp and hasattr(resp, "text") and resp.text:
                     parsed = json.loads(resp.text)
-                    intent = parsed.get("intent") or heuristic_intent
+                    raw_intent = parsed.get("intent") or heuristic_intent
+                    intent = _normalize_intent(raw_intent, heuristic_intent)
+                    raw_action = parsed.get("action") or heuristic_action
+                    raw_target = parsed.get("action_target") or heuristic_target
+                    action, action_target = _normalize_action(raw_action, raw_target, intent)
                     reply_text = (parsed.get("response_text") or parsed.get("voice_reply_text") or "").strip()
                     if reply_text:
-                        logger.info("Gemini legacy resolved intent: %s", intent)
+                        logger.info("Gemini legacy resolved intent: %s | action: %s", intent, action)
                         return {
                             "intent": intent,
+                            "action": action if action != "NONE" else None,
+                            "action_target": action_target if action != "NONE" else "",
                             "response_text": reply_text,
-                            "language_code": parsed.get("detected_language") or detected_lang,
+                            "language_code": "en-IN" if detected_lang.startswith("en") else (parsed.get("detected_language") or detected_lang),
                             "context_data": db_context,
                             "extracted_farmer_name": parsed.get("extracted_farmer_name") or effective_name or "",
                         }
@@ -462,6 +556,8 @@ Output valid JSON only matching this schema:
     logger.info("Using DB-grounded resilient fallback for voice reply.")
     return {
         "intent": heuristic_intent,
+        "action": heuristic_action if heuristic_action != "NONE" else None,
+        "action_target": heuristic_target if heuristic_action != "NONE" else "",
         "response_text": heuristic_reply,
         "language_code": detected_lang,
         "context_data": db_context,

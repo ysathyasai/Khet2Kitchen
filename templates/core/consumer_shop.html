@@ -1311,11 +1311,11 @@
                 <a href="?category=all" class="filter-tab {% if active_category == 'all' or not active_category %}active{% endif %}">
                     All Offerings
                 </a>
+                <a href="?category=produce" class="filter-tab {% if active_category == 'produce' or active_category == 'loose' or active_category == 'loose_produce' %}active{% endif %}">
+                    Fresh Loose Produce 🥦
+                </a>
                 <a href="?category=kits" class="filter-tab {% if active_category == 'kits' %}active{% endif %}">
                     Pre-Packaged Kits 📦
-                </a>
-                <a href="?category=produce" class="filter-tab {% if active_category == 'produce' %}active{% endif %}">
-                    Direct Farm Produce 🌾
                 </a>
                 <a href="?category=combos" class="filter-tab {% if active_category == 'combos' %}active{% endif %}">
                     Recent AI Combos 🍲
@@ -1329,7 +1329,68 @@
             {% endif %}
         </div>
 
-        <!-- Section 1: Pre-Packaged Kits -->
+        <!-- Section 1: Fresh Loose Produce (Small Everyday Quantities) -->
+        {% if active_category == 'all' or active_category == 'produce' or active_category == 'loose' or active_category == 'loose_produce' %}
+        <div class="section-header-row">
+            <h2 class="section-title">
+                <span>🥦</span> Fresh Loose Produce (Everyday Small Quantities)
+            </h2>
+            <span class="section-badge-count">{{ crops|length }} Fresh Items Live</span>
+        </div>
+
+        <div class="products-grid">
+            {% for crop in crops %}
+            <div class="produce-card">
+                <div class="produce-visual">
+                    {% if "Tomato" in crop.name %}🍅
+                    {% elif "Onion" in crop.name %}🧅
+                    {% elif "Chilli" in crop.name or "Chillies" in crop.name %}🌶️
+                    {% elif "Potato" in crop.name %}🥔
+                    {% elif "Mango" in crop.name %}🥭
+                    {% elif "Spinach" in crop.name or "Palak" in crop.name %}🥬
+                    {% elif "Cucumber" in crop.name %}🥒
+                    {% elif "Coriander" in crop.name or "Herb" in crop.name or "Mint" in crop.name %}🌿
+                    {% elif "Carrot" in crop.name %}🥕
+                    {% elif "Capsicum" in crop.name %}🫑
+                    {% elif "Ginger" in crop.name or "Garlic" in crop.name %}🧄
+                    {% else %}🥦{% endif %}
+                    <span class="freshness-pill">🌱 Harvested Today</span>
+                </div>
+                <div class="produce-body">
+                    <h3 class="produce-title">{{ crop.name }}</h3>
+                    <div class="produce-farmer">
+                        <span>🧑‍🌾</span>
+                        <span>{{ crop.farmer.get_full_name|default:"Verified Partner Farmer" }} ({{ crop.farmer.state|default:"Telangana" }})</span>
+                    </div>
+
+                    <div class="produce-price-row">
+                        <div>
+                            <span class="produce-price">₹{{ crop.base_price }}</span>
+                            <span class="unit-label">{% if "500g" in crop.name or "250g" in crop.name or "200g" in crop.name or "1kg" in crop.name %}/ pack{% else %}/ kg{% endif %}</span>
+                        </div>
+                        <span style="font-size: 0.76rem; color: #34D399; font-weight: 700; background: rgba(52, 211, 153, 0.16); padding: 0.2rem 0.55rem; border-radius: 9999px; border: 1px solid rgba(52, 211, 153, 0.3);">
+                            {% if "500g" in crop.name %}500g Everyday
+                            {% elif "250g" in crop.name %}250g Kitchen Pack
+                            {% elif "1kg" in crop.name %}1kg Family Bag
+                            {% elif "200g" in crop.name %}200g Fresh Bunch
+                            {% else %}Grade A Farmgate{% endif %}
+                        </span>
+                    </div>
+
+                    <button type="button" class="btn-card-checkout" onclick="openProduceCheckoutModal('{{ crop.id }}', '{{ crop.name|escapejs }}', '{{ crop.base_price }}', '{{ crop.farmer.get_full_name|default:'Verified Farmer'|escapejs }}')">
+                        <span>⚡</span> Buy Direct From Farmer
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; padding: 2.5rem; text-align: center; background: var(--bg-card); border-radius: 1rem; border: 1px dashed var(--border-glass);">
+                <p style="color: var(--text-sub);">No loose produce currently listed.</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Section 2: Pre-Packaged Kits -->
         {% if active_category == 'all' or active_category == 'kits' %}
         <div class="section-header-row">
             <h2 class="section-title">
@@ -1392,55 +1453,6 @@
         </div>
         {% endif %}
 
-        <!-- Section 2: Direct Farm Produce -->
-        {% if active_category == 'all' or active_category == 'produce' %}
-        <div class="section-header-row">
-            <h2 class="section-title">
-                <span>🌾</span> Fresh Harvest Crops
-            </h2>
-            <span class="section-badge-count">{{ crops|length }} Crops Live</span>
-        </div>
-
-        <div class="products-grid">
-            {% for crop in crops %}
-            <div class="produce-card">
-                <div class="produce-visual">
-                    {% if "Tomato" in crop.name %}🍅
-                    {% elif "Onion" in crop.name %}🧅
-                    {% elif "Chilli" in crop.name %}🌶️
-                    {% elif "Potato" in crop.name %}🥔
-                    {% elif "Mango" in crop.name %}🥭
-                    {% elif "Spinach" in crop.name or "Palak" in crop.name %}🥬
-                    {% else %}🥕{% endif %}
-                    <span class="freshness-pill">🌱 Harvested Today</span>
-                </div>
-                <div class="produce-body">
-                    <h3 class="produce-title">{{ crop.name }}</h3>
-                    <div class="produce-farmer">
-                        <span>🧑‍🌾</span>
-                        <span>{{ crop.farmer.get_full_name|default:"Verified Partner Farmer" }} ({{ crop.farmer.state|default:"Telangana" }})</span>
-                    </div>
-
-                    <div class="produce-price-row">
-                        <div>
-                            <span class="produce-price">₹{{ crop.base_price }}</span>
-                            <span class="unit-label">/ kg</span>
-                        </div>
-                        <span style="font-size: 0.78rem; color: #34D399; font-weight: 600;">Grade A Premium</span>
-                    </div>
-
-                    <button type="button" class="btn-card-checkout" onclick="openProduceCheckoutModal('{{ crop.id }}', '{{ crop.name|escapejs }}', '{{ crop.base_price }}', '{{ crop.farmer.get_full_name|default:'Verified Farmer'|escapejs }}')">
-                        <span>⚡</span> Buy Direct From Farmer
-                    </button>
-                </div>
-            </div>
-            {% empty %}
-            <div style="grid-column: 1 / -1; padding: 2.5rem; text-align: center; background: var(--bg-card); border-radius: 1rem; border: 1px dashed var(--border-glass);">
-                <p style="color: var(--text-sub);">No direct crops currently listed.</p>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
 
         <!-- Section 3: Popular Recipe Combos -->
         {% if active_category == 'all' or active_category == 'combos' %}
@@ -1680,8 +1692,11 @@
             activeUnitPrice = parseFloat(basePrice);
             activeDiscountPct = 0;
 
+            const isPack = cropName.includes('500g') || cropName.includes('250g') || cropName.includes('200g') || cropName.includes('1kg') || cropName.includes('Bag') || cropName.includes('Bunch');
+            const unitText = isPack ? 'packs' : 'kg';
+
             document.getElementById('qtyFieldGroup').style.display = 'block';
-            document.getElementById('modalUnitLabel').innerText = 'kg';
+            document.getElementById('modalUnitLabel').innerText = unitText;
             document.getElementById('modalQuantity').value = 1;
 
             document.getElementById('modalItemSummaryName').innerText = `Fresh ${cropName} (${farmerName})`;

@@ -325,6 +325,80 @@ class Command(BaseCommand):
         )
         self.stdout.write(self.style.SUCCESS("[OK] Seeded Master Catalog Produce: Onion, Tomato, Mango, Chilli, Potato, Cucumber, Carrot, Capsicum, Palak, Coriander, Mint, Ginger, Garlic"))
 
+        # 6b. Everyday Consumer-Grade Loose Produce (Small-Quantity Retail Groceries)
+        loose_items_data = [
+            {
+                "code": "CROP-LOOSE-TMT-500G",
+                "name": "Fresh Farm Tomatoes (500g)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("18.00"),
+                "shelf_life_days": 8,
+                "farmer": farmer1,
+            },
+            {
+                "code": "CROP-LOOSE-CHL-250G",
+                "name": "Piquant Green Chillies (250g)",
+                "category": Crop.Category.SPICE,
+                "base_price": Decimal("14.00"),
+                "shelf_life_days": 12,
+                "farmer": farmer1,
+            },
+            {
+                "code": "CROP-LOOSE-ONN-1KG",
+                "name": "Nashik Red Onions (1kg Net Bag)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("32.00"),
+                "shelf_life_days": 30,
+                "farmer": farmer1,
+            },
+            {
+                "code": "CROP-LOOSE-POT-1KG",
+                "name": "Jyoti Farm Potatoes (1kg Bag)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("26.00"),
+                "shelf_life_days": 35,
+                "farmer": farmer1,
+            },
+            {
+                "code": "CROP-LOOSE-PLK-250G",
+                "name": "Tender Palak / Spinach (250g Bunch)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("15.00"),
+                "shelf_life_days": 5,
+                "farmer": farmer1,
+            },
+            {
+                "code": "CROP-LOOSE-CUC-500G",
+                "name": "Crisp Salad Cucumbers (500g)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("20.00"),
+                "shelf_life_days": 10,
+                "farmer": farmer1,
+            },
+            {
+                "code": "CROP-LOOSE-HRB-200G",
+                "name": "Fresh Coriander & Mint Herbs (200g)",
+                "category": Crop.Category.VEGETABLE,
+                "base_price": Decimal("12.00"),
+                "shelf_life_days": 5,
+                "farmer": farmer1,
+            },
+        ]
+        for l_data in loose_items_data:
+            Crop.objects.update_or_create(
+                code=l_data["code"],
+                defaults={
+                    "name": l_data["name"],
+                    "category": l_data["category"],
+                    "base_price": l_data["base_price"],
+                    "shelf_life_days": l_data["shelf_life_days"],
+                    "farmer": l_data["farmer"],
+                    "is_active": True,
+                    "status": "Harvested",
+                },
+            )
+        self.stdout.write(self.style.SUCCESS(f"[OK] Seeded {len(loose_items_data)} Consumer-Grade Loose Produce Items (500g Tomatoes, 250g Green Chillies, 1kg Onions, etc.)"))
+
         # 7. Demo Farmer's My Crops (Strictly Isolated to Demo Farmer 1)
         farmer_crops_data = [
             {
