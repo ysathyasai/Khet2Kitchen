@@ -3,7 +3,6 @@ Project Khet2Kitchen (K2K) - Unified Authentication Services Layer
 Provides:
 1. International Phone Number Normalization (E.164 with +91 Indian fallback)
 2. Email OTP Dispatch & Verification (Cached 5-minute expiry, non-destructive to passwords)
-3. Firebase Admin SDK Integration (Token verification for Firebase Phone SMS Auth)
 """
 
 import logging
@@ -222,69 +221,3 @@ https://khet2kitchen.onrender.com/
 
         return False, "Invalid OTP. Please check the code and try again."
 
-
-# ============================================================================
-# 3. FIREBASE ADMIN SDK SERVICE (Phone SMS Token Verification)
-# ============================================================================
-
-class FirebaseService:
-    """
-    Initializes Firebase Admin SDK and verifies client-side Firebase ID tokens.
-    Handles service account credentials at `firebase-credentials.json` with safe fallback.
-    """
-
-    _initialized = False
-
-    @classmethod
-    def initialize(cls) -> bool:
-        """
-        Initializes Firebase Admin SDK safely.
-        Avoids crashing if credentials file is missing or if already initialized.
-        """
-        import firebase_admin
-        from firebase_admin import credentials
-
-        if cls._initialized or firebase_admin._apps:
-            cls._initialized = True
-            return True
-
-        creds_path = getattr(settings, "FIREBASE_CREDENTIALS_PATH", None)
-        if not creds_path:
-            default_file = Path(settings.BASE_DIR) / "firebase-credentials.json"
-            if default_file.exists():
-                creds_path = default_file
-
-        try:
-            if creds_path and Path(creds_path).exists():
-                cred = credentials.Certificate(str(creds_path))
-                firebase_admin.initialize_app(cred)
-                cls._initialized = True
-                logger.info("Firebase Admin initialized with credentials from %s", creds_path)
-                return True
-            else:
-                firebase_admin.initialize_app()
-                cls._initialized = True
-                logger.info("Firebase Admin initialized with default credentials")
-                return True
-        except Exception as exc:
-            logger.warning("Firebase Admin initialization fallback: %s", exc)
-            return False
-
-    @classmethod
-    def verify_id_token(cls, id_token: str) -> Tuple[bool, str, Dict[str, Any]]:
-        """
-        Verifies a Firebase ID token issued by the client SDK upon successful SMS OTP confirmation.
-        Returns: (success: bool, message: str, decoded_token: dict)
-        """
-        if not id_token:
-            return False, "No Firebase ID token provided.", {}
-
-        try:
-            from firebase_admin import auth as firebase_auth
-            cls.initialize()
-            decoded_token = firebase_auth.verify_id_token(id_token)
-            logger.info("Firebase ID token verified successfully for UID: %s", decoded_token.get("uid"))
-            return True, "Token verified successfully.", decoded_token
-        except Exception as exc:
-            logger.warning("Firebase ID token verification failed: %s", exc)
-            return False, f"Firebase token verification failed: {str(exc)}", {}

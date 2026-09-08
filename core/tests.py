@@ -48,7 +48,6 @@ from core.voice_services import (
 )
 from core.otp_services import (
     EmailOTPService,
-    FirebaseService,
     normalize_phone_number,
 )
 
@@ -1360,8 +1359,9 @@ class UserRegistrationTests(TestCase):
         self.assertContains(response, "Join Khet2Kitchen")
         self.assertContains(response, "Complete Registration")
         self.assertContains(response, "btn-request-otp")
-        self.assertContains(response, "recaptcha-container")
-        self.assertContains(response, "id_firebase_id_token")
+        self.assertNotContains(response, "recaptcha-container")
+        self.assertNotContains(response, "id_firebase_id_token")
+        self.assertNotContains(response, "firebase-app-compat.js")
 
     def test_signup_with_valid_email_otp(self):
         email = "new.procure@freshbazaar.in"
@@ -1381,50 +1381,6 @@ class UserRegistrationTests(TestCase):
         self.assertEqual(user.email, email)
         self.assertEqual(user.role, User.Role.RETAILER)
         self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
-
-    @patch("core.otp_services.FirebaseService.verify_id_token")
-    def test_signup_with_verified_firebase_sms_token(self, mock_verify):
-        phone = "+919876543111"
-        mock_verify.return_value = (True, "Token verified", {"phone_number": phone})
-
-        signup_data = {
-            "name": "Suresh Patil",
-            "role": "FARMER",
-            "identifier": "9876543111",
-            "password": "TemporaryPass123!",
-            "firebase_id_token": "mock_firebase_sms_jwt",
-        }
-        response = self.client.post(reverse("signup"), signup_data)
-        self.assertRedirects(response, reverse("farmer_dashboard"))
-
-        user = User.objects.get(identifier=phone)
-        self.assertEqual(user.phone_number, phone)
-        self.assertEqual(user.first_name, "Suresh")
-        self.assertEqual(user.last_name, "Patil")
-        self.assertTrue(hasattr(user, "wallet"))
-        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
-
-    @patch("core.otp_services.FirebaseService.verify_id_token")
-    def test_signup_existing_user_via_firebase_token_logs_in(self, mock_verify):
-        phone = "+919876543222"
-        existing = User.objects.create_user(
-            phone_number=phone,
-            role=User.Role.FARMER,
-            first_name="Already",
-            last_name="Registered",
-        )
-        mock_verify.return_value = (True, "Token verified", {"phone_number": phone})
-
-        signup_data = {
-            "name": "Already Registered",
-            "role": "FARMER",
-            "identifier": phone,
-            "password": "Password123!",
-            "firebase_id_token": "mock_firebase_sms_jwt",
-        }
-        response = self.client.post(reverse("signup"), signup_data)
-        self.assertRedirects(response, reverse("farmer_dashboard"))
-        self.assertEqual(int(self.client.session["_auth_user_id"]), existing.pk)
 
     def test_farmer_signup_10_digit_phone_normalized(self):
         signup_data = {
@@ -2434,8 +2390,7 @@ class UnifiedAuthenticationTests(TestCase):
     - Phone number sanitization and E.164 normalization (+91)
     - Password login preservation even when an OTP has been generated
     - Email OTP generation, dispatch, verification, and one-time consumption
-    - Firebase SMS ID token verification and automatic Farmer provisioning
-    - Single-card login page UI components (inline OTP button, invisible reCAPTCHA, Firebase SDK)
+    - Single-card login page UI components (inline Email OTP button, clean password flow)
     """
 
     def setUp(self):
@@ -2574,61 +2529,18 @@ class UnifiedAuthenticationTests(TestCase):
         self.assertContains(login_res, "Invalid credentials")
         self.assertNotIn("_auth_user_id", self.client.session)
 
-    @patch("core.otp_services.FirebaseService.verify_id_token")
-    def test_firebase_sms_token_login_for_existing_farmer(self, mock_verify):
-        """Verifies successful login via verified Firebase SMS ID token for an existing Farmer."""
-        mock_verify.return_value = (
-            True,
-            "Token verified successfully.",
-            {"phone_number": "+919876543210", "uid": "firebase_mock_uid_123"},
-        )
-
-        res = self.client.post(
-            reverse("login"),
-            data={
-                "username": "+919876543210",
-                "password": "123456",
-                "firebase_id_token": "mock_valid_firebase_jwt",
-            },
-        )
-        self.assertRedirects(res, reverse("farmer_dashboard"))
-        self.assertEqual(int(self.client.session["_auth_user_id"]), self.farmer.id)
-
-    @patch("core.otp_services.FirebaseService.verify_id_token")
-    def test_firebase_sms_token_login_provisions_new_farmer(self, mock_verify):
-        """Verifies verified Firebase SMS ID token for a new phone number automatically provisions a Farmer account."""
-        new_phone = "+919988776655"
-        mock_verify.return_value = (
-            True,
-            "Token verified successfully.",
-            {"phone_number": new_phone, "uid": "firebase_new_uid_999"},
-        )
-
-        res = self.client.post(
-            reverse("login"),
-            data={
-                "username": new_phone,
-                "password": "654321",
-                "firebase_id_token": "mock_new_firebase_jwt",
-            },
-        )
-        self.assertRedirects(res, reverse("farmer_dashboard"))
-        new_user = User.objects.get(phone_number=new_phone)
-        self.assertEqual(new_user.role, User.Role.FARMER)
-        self.assertEqual(int(self.client.session["_auth_user_id"]), new_user.id)
-
     def test_login_page_renders_unified_elements(self):
-        """Verifies login.html contains the single-card unified form, OTP trigger button, reCAPTCHA, and Firebase SDK."""
+        """Verifies login.html contains the single-card unified form and Email OTP button without Firebase SDK or reCAPTCHA."""
         res = self.client.get(reverse("login"))
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "btn-request-otp")
         self.assertContains(res, "Get OTP")
         self.assertContains(res, "otp-status-msg")
-        self.assertContains(res, "recaptcha-container")
-        self.assertContains(res, "id_firebase_id_token")
-        self.assertContains(res, "firebase-app-compat.js")
-        self.assertContains(res, "firebase-auth-compat.js")
-        self.assertContains(res, "AIzaSyCq48UsiSWoL6BJTYsYXhbH-nLx3oLADqA")
+        self.assertNotContains(res, "recaptcha-container")
+        self.assertNotContains(res, "id_firebase_id_token")
+        self.assertNotContains(res, "firebase-app-compat.js")
+        self.assertNotContains(res, "firebase-auth-compat.js")
+        self.assertNotContains(res, "AIzaSyCq48UsiSWoL6BJTYsYXhbH-nLx3oLADqA")
 
 
 

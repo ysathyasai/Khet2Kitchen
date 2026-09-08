@@ -176,17 +176,13 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard_dispatch'
 LOGOUT_REDIRECT_URL = 'home'
 
-# Firebase Admin SDK Configuration
-FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_CREDENTIALS_PATH', str(BASE_DIR / 'firebase-credentials.json'))
-FIREBASE_PROJECT_ID = os.getenv('FIREBASE_PROJECT_ID', 'khet2kitchen-867aa')
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'yejjusatyasai2007@gmail.com'
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = 'Khet2Kitchen <yejjusatyasai2007@gmail.com>'
 
-# Email Backend Configuration (Gmail SMTP for real OTP delivery)
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1')
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'ysathyasai.dev@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f'Khet2Kitchen <{EMAIL_HOST_USER}>')
 
 

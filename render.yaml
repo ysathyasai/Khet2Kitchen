@@ -28,10 +28,10 @@ services:
       - key: EMAIL_USE_TLS
         value: "True"
       - key: EMAIL_HOST_USER
-        value: "ysathyasai.dev@gmail.com"
+        value: "yejjusatyasai2007@gmail.com"
       - key: EMAIL_HOST_PASSWORD
         sync: false
       - key: DEFAULT_FROM_EMAIL
-        value: "Khet2Kitchen <ysathyasai.dev@gmail.com>"
+        value: "Khet2Kitchen <yejjusatyasai2007@gmail.com>"
 
 

@@ -1,6 +1,6 @@
 """
 OTP Authentication Views
-Handles login flow with Email OTP and Firebase SMS OTP
+Handles login flow with Email OTP
 """
 
 from django.shortcuts import render, redirect
@@ -12,9 +12,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.http import JsonResponse
 from core.models import User
-from core.otp_models import OTPVerification
-from core.otp_services import EmailOTPService, FirebaseSMSOTPService
-import logging
+from core.otp_services import EmailOTPService
 
 logger = logging.getLogger(__name__)
 
@@ -146,143 +144,6 @@ class EmailOTPResendView(View):
             'success': success,
             'message': message
         })
-
-
-# ============================================================================
-# FIREBASE SMS OTP VIEWS
-# ============================================================================
-
-class FirebaseSMSOTPLoginView(View):
-    """
-    Firebase Phone OTP Login
-    Step 1: User enters phone number
-    """
-    
-    def get(self, request):
-        """Display phone login form."""
-        return render(request, 'core/firebase_otp_login.html')
-    
-    def post(self, request):
-        """Send SMS OTP to phone number."""
-        phone = request.POST.get('phone', '').strip()
-        
-        if not phone:
-            messages.error(request, "Please enter a valid phone number.")
-            return redirect('firebase_otp_login')
-        
-        # Normalize phone to E.164 format (+91...)
-        if not phone.startswith('+'):
-            phone = '+91' + phone[-10:]  # Assumes Indian number
-        
-        # Initiate Firebase SMS OTP
-        success, message, session_id = FirebaseSMSOTPService.send_otp_to_phone(phone)
-        
-        if success:
-            request.session['pending_phone'] = phone
-            request.session['otp_method'] = 'sms'
-            
-            messages.success(request, message)
-            return redirect('firebase_otp_verify')
-        else:
-            messages.error(request, message)
-            return redirect('firebase_otp_login')
-
-
-class FirebaseSMSOTPVerifyView(View):
-    """
-    Firebase Phone OTP Verification
-    Step 2: User verifies SMS OTP
-    """
-    
-    def get(self, request):
-        """Display SMS OTP verification form."""
-        phone = request.session.get('pending_phone')
-        
-        if not phone:
-            messages.error(request, "No pending SMS OTP. Please request a new one.")
-            return redirect('firebase_otp_login')
-        
-        return render(request, 'core/firebase_otp_verify.html', {'phone': phone})
-    
-    def post(self, request):
-        """Verify SMS OTP and auto-login user."""
-        phone = request.session.get('pending_phone')
-        otp_code = request.POST.get('otp_code', '').strip()
-        
-        if not phone:
-            messages.error(request, "Session expired. Please request OTP again.")
-            return redirect('firebase_otp_login')
-        
-        if not otp_code:
-            messages.error(request, "Please enter the OTP.")
-            return redirect('firebase_otp_verify')
-        
-        # Verify OTP
-        is_valid, message = FirebaseSMSOTPService.verify_otp_from_firebase(phone, otp_code)
-        
-        if not is_valid:
-            messages.error(request, message)
-            return redirect('firebase_otp_verify')
-        
-        # OTP is valid - get or create farmer user
-        try:
-            user, created = User.objects.get_or_create(
-                phone_number=phone,
-                defaults={
-                    'identifier': phone,
-                    'role': User.Role.FARMER,
-                    'is_active': True
-                }
-            )
-            
-            # Update identifier if needed
-            if not user.identifier:
-                user.identifier = phone
-                user.save()
-            
-            # Log in user
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            
-            # Clean up session
-            del request.session['pending_phone']
-            del request.session['otp_method']
-            
-            # Delete OTP record
-            OTPVerification.objects.filter(identifier=phone, delivery_channel='SMS').delete()
-            
-            messages.success(request, f"Welcome {user.get_full_name()}!")
-            return redirect(user.get_dashboard_url())
-        
-        except Exception as e:
-            logger.error(f"Error during Firebase SMS OTP login: {str(e)}")
-            messages.error(request, f"Login error: {str(e)}")
-            return redirect('firebase_otp_login')
-
-
-# ============================================================================
-# OTP METHOD SELECTION VIEW
-# ============================================================================
-
-class OTPMethodChoiceView(View):
-    """
-    Let user choose between Email OTP or SMS OTP (Firebase)
-    """
-    
-    def get(self, request):
-        """Display method selection page."""
-        return render(request, 'core/otp_method_choice.html')
-    
-    def post(self, request):
-        """Route to selected OTP method."""
-        method = request.POST.get('otp_method', '').strip()
-        
-        if method == 'email':
-            return redirect('email_otp_login')
-        elif method == 'sms':
-            return redirect('firebase_otp_login')
-        else:
-            messages.error(request, "Please select a valid login method.")
-            return redirect('otp_method_choice')
 
 
 # ============================================================================

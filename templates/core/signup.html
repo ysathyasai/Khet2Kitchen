@@ -495,10 +495,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Invisible reCAPTCHA container for Firebase Phone SMS -->
-                <div id="recaptcha-container"></div>
-                <input type="hidden" name="firebase_id_token" id="id_firebase_id_token" value="">
-
                 <!-- Warm Gold Submit Button -->
                 <button type="submit" id="btn-signup-submit" class="btn-submit-gold">
                     <span id="btn-submit-text">Complete Registration</span>
@@ -525,44 +521,7 @@
         &copy; 2026 Project Khet2Kitchen (K2K) • Direct Agri-Supply Disintermediation
     </footer>
 
-    <!-- Firebase v9 Compat SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
     <script>
-        // Active Firebase Web Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCq48UsiSWoL6BJTYsYXhbH-nLx3oLADqA",
-            authDomain: "khet2kitchen-867aa.firebaseapp.com",
-            projectId: "khet2kitchen-867aa",
-            storageBucket: "khet2kitchen-867aa.firebasestorage.app",
-            messagingSenderId: "820084591931",
-            appId: "1:820084591931:web:0524114ceeefb039317b1e"
-        };
-
-        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-
-        let confirmationResult = null;
-
-        function normalizePhoneNumber(raw) {
-            if (!raw) return "";
-            let cleaned = raw.replace(/[\s\-\(\)\.]/g, "").trim();
-            if (cleaned.startsWith("+")) {
-                return cleaned;
-            }
-            let digits = cleaned.replace(/\D/g, "");
-            if (digits.length === 10) {
-                return "+91" + digits;
-            } else if (digits.length === 11 && digits.startsWith("0")) {
-                return "+91" + digits.substring(1);
-            } else if (digits.length === 12 && digits.startsWith("91")) {
-                return "+" + digits;
-            }
-            return "+" + digits;
-        }
-
         function showOtpStatus(msg, isError = false) {
             const box = document.getElementById('otp-status-msg');
             if (!box) return;
@@ -591,7 +550,7 @@
             const userInput = document.getElementById('id_identifier_input');
             const rawVal = userInput ? userInput.value.trim() : '';
             if (!rawVal) {
-                showOtpStatus('Please enter your mobile number or email above first.', true);
+                showOtpStatus('Please enter your email address above to receive an OTP.', true);
                 if (userInput) userInput.focus();
                 return;
             }
@@ -635,8 +594,8 @@
                         showOtpStatus(errorMsg, true);
                     }
                 } else {
-                    // Mobile number entered: SMS OTP is not supported
-                    showOtpStatus('<span class="text-amber-500 text-xs font-medium">⚠️ SMS OTP is currently not supported for mobile numbers. Please use an Email address to receive an OTP, or enter a Password below to register directly.</span>', true);
+                    // Mobile number entered
+                    showOtpStatus('<span class="text-amber-500 text-xs font-medium">⚠️ OTP is sent via Email only. Enter your email to register via OTP, or set a password below to register directly.</span>', true);
                 }
             } catch (err) {
                 console.error('OTP Request Error:', err);
@@ -645,35 +604,6 @@
                 // Button text reset and never stuck
                 btn.disabled = false;
                 btn.innerText = 'Get OTP via Email';
-            }
-        });
-
-        // Form Submit Handler for SMS OTP Confirmation
-        document.getElementById('signupForm').addEventListener('submit', async function (e) {
-            const credInput = document.getElementById('id_password');
-            const credVal = credInput ? credInput.value.trim() : '';
-            const submitBtn = document.getElementById('btn-signup-submit');
-            const submitText = document.getElementById('btn-submit-text');
-
-            // If user requested SMS OTP and entered a 6-digit numeric code
-            if (confirmationResult && /^\d{6}$/.test(credVal)) {
-                e.preventDefault();
-                submitBtn.disabled = true;
-                if (submitText) submitText.innerText = 'Verifying SMS OTP...';
-                showOtpStatus('Verifying SMS OTP with Firebase...', false);
-
-                try {
-                    const userCredential = await confirmationResult.confirm(credVal);
-                    const idToken = await userCredential.user.getIdToken();
-                    document.getElementById('id_firebase_id_token').value = idToken;
-                    showOtpStatus('SMS verified! Completing registration...', false);
-                    document.getElementById('signupForm').submit();
-                } catch (err) {
-                    console.error('Firebase confirm error:', err);
-                    showOtpStatus('Invalid SMS OTP code. Please re-enter the code or choose a password.', true);
-                    submitBtn.disabled = false;
-                    if (submitText) submitText.innerText = 'Complete Registration';
-                }
             }
         });
 
@@ -697,11 +627,11 @@
             if (role === 'CONSUMER') {
                 identLabel.textContent = 'Mobile Number or Email';
                 identInput.placeholder = '+919876543210 or yourname@gmail.com';
-                identHint.textContent = 'Consumers can sign in with mobile number or email address for instant order tracking and delivery updates.';
+                identHint.textContent = 'Consumers can sign up with mobile number or email address.';
             } else if (role === 'FARMER') {
                 identLabel.textContent = 'Mobile Phone Number or Email';
                 identInput.placeholder = '+919876543210 or kisan@gmail.com';
-                identHint.textContent = 'Farmers use their mobile phone number for secure authentication and instant SMS/UPI alerts.';
+                identHint.textContent = 'Farmers can register with mobile number (with password) or email address (with OTP or password).';
             } else if (role === 'RETAILER') {
                 identLabel.textContent = 'Mobile Number or Business Email';
                 identInput.placeholder = '+919876543210 or procure@freshbazaar.in';

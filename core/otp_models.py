@@ -1,6 +1,6 @@
 """
-OTP Verification Models for Email-based and Firebase SMS-based authentication.
-Supports both Email OTP (completely free via Django SMTP) and Firebase SMS OTP (10K free/month).
+OTP Verification Models for Email-based authentication.
+Supports Email OTP via Django SMTP.
 """
 
 from django.db import models
@@ -19,7 +19,6 @@ class OTPVerification(models.Model):
     
     DELIVERY_CHANNEL = [
         ('EMAIL', _('Email')),
-        ('SMS', _('SMS via Firebase')),
     ]
     
     # Identifier: Email or Phone Number
@@ -145,46 +144,3 @@ class OTPVerification(models.Model):
         )
         
         return otp_instance
-
-
-class FirebaseUser(models.Model):
-    """
-    Maps Django User to Firebase Authentication UID.
-    Used for Firebase SMS OTP authentication tracking.
-    """
-    
-    user = models.OneToOneField(
-        'core.User',
-        on_delete=models.CASCADE,
-        related_name='firebase_account',
-        verbose_name=_("Django User")
-    )
-    
-    firebase_uid = models.CharField(
-        max_length=255,
-        unique=True,
-        verbose_name=_("Firebase UID"),
-        help_text=_("Unique identifier from Firebase Authentication")
-    )
-    
-    phone_number = models.CharField(
-        max_length=17,
-        blank=True,
-        verbose_name=_("Verified Phone Number"),
-        help_text=_("Phone number verified via Firebase SMS OTP")
-    )
-    
-    is_phone_verified = models.BooleanField(
-        default=False,
-        verbose_name=_("Phone Number Verified")
-    )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        verbose_name = _("Firebase User")
-        verbose_name_plural = _("Firebase Users")
-    
-    def __str__(self):
-        return f"Firebase Account for {self.user.get_full_name()}"
