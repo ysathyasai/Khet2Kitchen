@@ -19,4 +19,19 @@ services:
         value: "https://api.sarvam.ai"
       - key: GEMINI_MODEL_NAME
         value: "gemini-2.5-flash"
+      - key: EMAIL_BACKEND
+        value: "django.core.mail.backends.smtp.EmailBackend"
+      - key: EMAIL_HOST
+        value: "smtp.gmail.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        value: "ysathyasai.dev@gmail.com"
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: "Khet2Kitchen <ysathyasai.dev@gmail.com>"
+
 

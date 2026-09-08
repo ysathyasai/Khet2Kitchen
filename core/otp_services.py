@@ -168,13 +168,21 @@ https://khet2kitchen.onrender.com/
                 from_email=from_email,
                 recipient_list=[clean_email],
                 html_message=html_message,
-                fail_silently=True,
+                fail_silently=False,
             )
-            logger.info("Email OTP dispatched successfully to %s", clean_email)
+            logger.info("Email OTP dispatched successfully to %s via %s", clean_email, settings.EMAIL_HOST_USER)
+            return True, f"OTP sent to {clean_email}. Valid for 5 minutes.", otp_code
         except Exception as exc:
-            logger.warning("SMTP dispatch warning for %s: %s", clean_email, exc)
-
-        return True, f"OTP sent to {clean_email}. Valid for 5 minutes.", otp_code
+            logger.error("SMTP dispatch failed for %s: %s", clean_email, exc)
+            if getattr(settings, "DEBUG", False):
+                print(f"\n========================================================")
+                print(f"[K2K LOCAL FALLBACK] OTP for {clean_email}: {otp_code}")
+                print(f"(SMTP warning: {exc})")
+                print(f"To deliver actual emails to inboxes, add your Google App Password to .env:")
+                print(f"EMAIL_HOST_PASSWORD=xxxx xxxx xxxx xxxx")
+                print(f"========================================================\n")
+                return True, f"OTP generated! (Dev mode: OTP is {otp_code} | Check terminal or set EMAIL_HOST_PASSWORD)", otp_code
+            return False, f"Failed to send email OTP: {exc}", ""
 
     @classmethod
     def verify_otp(cls, email: str, provided_otp: str, request=None) -> Tuple[bool, str]:

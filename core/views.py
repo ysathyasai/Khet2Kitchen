@@ -1113,20 +1113,14 @@ def send_otp_view(request):
                 "message": message,
             }, status=500)
     else:
-        # Phone SMS flow via Firebase client
+        # Phone numbers: SMS OTP is currently not supported
         normalized_phone = normalize_phone_number(identifier)
-        if not normalized_phone or len(normalized_phone) < 10:
-            return JsonResponse({
-                "status": "error",
-                "message": "Please enter a valid 10-digit mobile number."
-            }, status=400)
-
         return JsonResponse({
-            "status": "success",
+            "status": "error",
             "channel": "sms",
             "phone": normalized_phone,
-            "message": f"Dispatching Firebase SMS OTP to {normalized_phone}...",
-        })
+            "message": "SMS OTP is currently not supported for mobile numbers. Please use your email address to receive an OTP, or log in / sign up using your password.",
+        }, status=400)
 
 
 def login_view(request):

@@ -2506,16 +2506,16 @@ class UnifiedAuthenticationTests(TestCase):
         self.assertEqual(len(cached["code"]), 6)
 
     def test_send_otp_endpoint_phone_flow(self):
-        """Verifies POST /auth/send-otp/ for a phone returns normalized E.164 phone instructing client SDK."""
+        """Verifies POST /auth/send-otp/ for a phone returns error indicating SMS OTP is currently not supported."""
         res = self.client.post(
             reverse("send_otp"),
             data={"identifier": "9876543210"},
         )
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, 400)
         data = res.json()
-        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["status"], "error")
         self.assertEqual(data["channel"], "sms")
-        self.assertEqual(data["phone"], "+919876543210")
+        self.assertIn("not supported", data["message"].lower())
 
     def test_password_login_works_even_after_otp_generated(self):
         """
@@ -2622,7 +2622,7 @@ class UnifiedAuthenticationTests(TestCase):
         res = self.client.get(reverse("login"))
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "btn-request-otp")
-        self.assertContains(res, "Get OTP via SMS / Email")
+        self.assertContains(res, "Get OTP")
         self.assertContains(res, "otp-status-msg")
         self.assertContains(res, "recaptcha-container")
         self.assertContains(res, "id_firebase_id_token")

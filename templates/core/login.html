@@ -324,7 +324,7 @@
                             Password / OTP
                         </label>
                         <button type="button" id="btn-request-otp" class="text-xs font-semibold text-amber-500 hover:text-amber-400" style="background: none; border: none; font-size: 0.8rem; font-weight: 700; color: #D97706; cursor: pointer; text-decoration: underline; padding: 0;">
-                            Get OTP via SMS / Email
+                            Get OTP via Email
                         </button>
                     </div>
                     <div id="otp-status-msg" style="display: none; font-size: 0.82rem; margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-weight: 600;"></div>
@@ -475,7 +475,7 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.status === 'success') {
-                            showOtpStatus('OTP sent to email/console', false);
+                            showOtpStatus(data.message || 'OTP sent to your email! Valid for 5 minutes.', false);
                             const passInput = document.getElementById('id_password');
                             if (passInput) {
                                 passInput.placeholder = 'Enter 6-digit Email OTP';
@@ -493,44 +493,16 @@
                         showOtpStatus(errorMsg, true);
                     }
                 } else {
-                    // SMS Flow: Invoke Firebase with catch block
-                    const normalizedPhone = normalizePhoneNumber(rawVal);
-                    if (!normalizedPhone || normalizedPhone.length < 10) {
-                        showOtpStatus('Please enter a valid 10-digit mobile number.', true);
-                        return;
-                    }
-                    userInput.value = normalizedPhone;
-
-                    try {
-                        if (!window.recaptchaVerifier) {
-                            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                                size: 'invisible'
-                            });
-                        }
-                        confirmationResult = await firebase.auth().signInWithPhoneNumber(normalizedPhone, window.recaptchaVerifier);
-                        showOtpStatus(`Code sent to ${normalizedPhone}. Enter the OTP or your password below.`, false);
-                        const passInput = document.getElementById('id_password');
-                        if (passInput) {
-                            passInput.placeholder = 'Enter 6-digit SMS OTP';
-                            passInput.focus();
-                        }
-                    } catch (fbErr) {
-                        console.error('Firebase SMS OTP Error:', fbErr);
-                        try {
-                            if (window.recaptchaVerifier && typeof grecaptcha !== 'undefined') {
-                                grecaptcha.reset();
-                            }
-                        } catch (_) {}
-                        showOtpStatus('<span class="text-amber-500 text-xs font-medium">⚠️ SMS is currently disabled in Firebase. Please use an Email address, or enter a Password below to register/login directly.</span>', true);
-                    }
+                    // Mobile number entered: SMS OTP is not supported
+                    showOtpStatus('<span class="text-amber-500 text-xs font-medium">⚠️ SMS OTP is currently not supported for mobile numbers. Please use an Email address to receive an OTP, or enter your Password below to sign in directly.</span>', true);
                 }
             } catch (err) {
                 console.error('OTP Request Error:', err);
                 showOtpStatus('Network error requesting OTP. Please retry or enter your password directly.', true);
             } finally {
-                // Button text reset to "Get OTP" and never stuck
+                // Button text reset and never stuck
                 btn.disabled = false;
-                btn.innerText = 'Get OTP';
+                btn.innerText = 'Get OTP via Email';
             }
         });
 
