@@ -180,10 +180,7 @@ https://khet2kitchen.onrender.com/
                 print(f"\n========================================================")
                 print(f"[K2K LOCAL FALLBACK] OTP for {clean_email}: {otp_code}")
                 print(f"(SMTP warning: {exc})")
-                print(f"To deliver actual emails to inboxes, add your Google App Password to .env:")
-                print(f"EMAIL_HOST_PASSWORD=xxxx xxxx xxxx xxxx")
                 print(f"========================================================\n")
-                return True, f"OTP generated! (Dev mode: OTP is {otp_code} | Check terminal or set EMAIL_HOST_PASSWORD)", otp_code
             return False, f"Failed to send email OTP: {exc}", ""
 
     @classmethod

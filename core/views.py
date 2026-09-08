@@ -1107,15 +1107,12 @@ def send_otp_view(request):
     # Email OTP flow
     success, message, otp_code = EmailOTPService.send_otp(identifier, request=request)
     if success:
-        resp_data = {
+        return JsonResponse({
             "status": "success",
             "channel": "email",
             "identifier": identifier.lower(),
             "message": message,
-        }
-        if getattr(settings, "DEBUG", False):
-            resp_data["dev_otp"] = otp_code
-        return JsonResponse(resp_data)
+        })
     else:
         return JsonResponse({
             "status": "error",
