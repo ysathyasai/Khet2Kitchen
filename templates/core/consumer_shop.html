@@ -1505,22 +1505,22 @@
 
                 <div class="modal-field">
                     <label>Customer Full Name</label>
-                    <input type="text" name="customer_name" value="Ananya Sharma" required>
+                    <input type="text" name="customer_name" value="{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.first_name }}{% endif %}" placeholder="Enter your full name" autocomplete="name" required>
                 </div>
 
                 <div class="modal-field">
                     <label>Phone (UPI Enabled)</label>
-                    <input type="text" name="customer_phone" value="+91 98765 43210" required>
+                    <input type="text" name="customer_phone" value="{% if request.user.is_authenticated %}{{ request.user.phone_number|default:'' }}{% endif %}" placeholder="e.g. +91 98765 43210" autocomplete="tel" required>
                 </div>
 
                 <div class="modal-field">
                     <label>Doorstep Delivery Address</label>
-                    <textarea name="delivery_address" rows="2" required>Flat 402, Green Meadows, Jubilee Hills, Hyderabad</textarea>
+                    <textarea name="delivery_address" rows="2" placeholder="Flat / House No., Street, Landmark, Area, City" autocomplete="street-address" required>{% if request.user.is_authenticated %}{{ request.user.address|default:'' }}{% endif %}</textarea>
                 </div>
 
                 <div class="modal-field">
                     <label>PIN Code</label>
-                    <input type="text" name="pincode" value="500033" required>
+                    <input type="text" name="pincode" value="{% if request.user.is_authenticated %}{{ request.user.pincode|default:'' }}{% endif %}" placeholder="e.g. 500033" autocomplete="postal-code" required>
                 </div>
 
                 <!-- Live Price Summary Receipt -->
