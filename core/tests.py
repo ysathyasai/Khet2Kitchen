@@ -2481,6 +2481,29 @@ class UnifiedAuthenticationTests(TestCase):
         self.assertTrue(cached["code"].isdigit())
         self.assertEqual(len(cached["code"]), 6)
 
+    @patch("core.otp_services.send_mail", side_effect=TimeoutError("Connection to smtp.gmail.com:587 timed out"))
+    def test_send_otp_smtp_timeout_resilience(self, mock_send_mail):
+        """
+        Verifies that when Render blocks outbound SMTP or times out,
+        send_otp catches the exception, does not crash, logs a warning,
+        and still generates/caches the OTP returning success=True.
+        """
+        res = self.client.post(
+            reverse("send_otp"),
+            data={"identifier": "resilient.user@khet2kitchen.com"},
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["channel"], "email")
+
+        # Verify OTP was generated and cached
+        cached = cache.get("k2k_email_otp_resilient.user@khet2kitchen.com")
+        self.assertIsNotNone(cached)
+        self.assertEqual(len(cached["code"]), 6)
+        self.assertTrue(cached["code"].isdigit())
+
+
     def test_send_otp_endpoint_phone_flow(self):
         """Verifies POST /auth/send-otp/ for a phone returns error indicating SMS OTP is currently not supported."""
         res = self.client.post(

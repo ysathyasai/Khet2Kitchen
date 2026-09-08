@@ -176,13 +176,14 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard_dispatch'
 LOGOUT_REDIRECT_URL = 'home'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'yejjusatyasai2007@gmail.com'
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'yejjusatyasai2007@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = 'Khet2Kitchen <yejjusatyasai2007@gmail.com>'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Khet2Kitchen <yejjusatyasai2007@gmail.com>')
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 5))  # 5s fail-safe socket timeout to prevent worker hangs on Render
 
 
 
