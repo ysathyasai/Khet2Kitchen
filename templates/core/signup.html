@@ -250,6 +250,9 @@
         }
 
         .role-option-card {
+            display: block;
+            position: relative;
+            user-select: none;
             border: 1.5px solid #E5E7EB;
             border-radius: 0.65rem;
             padding: 0.75rem 0.5rem;
@@ -257,6 +260,30 @@
             cursor: pointer;
             transition: all 0.2s ease;
             background: #FAFAFA;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-amber-500 {
+            color: #D97706 !important;
+        }
+
+        .text-xs {
+            font-size: 0.78rem !important;
+            line-height: 1.25 !important;
+        }
+
+        .font-medium {
+            font-weight: 500 !important;
+        }
+
+        .role-option-card input[type="radio"] {
+            display: none !important;
+            position: absolute !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
 
         .role-option-card:hover {
@@ -390,39 +417,35 @@
 
                 <!-- Role Selection -->
                 <div class="form-group">
-                    <label for="id_role_select" class="form-label">Select Your Role</label>
+                    <label class="form-label">Select Your Role</label>
                     
-                    <!-- Quick Visual Cards for Role Selection -->
+                    <!-- Quick Visual Cards for Role Selection (Radio Inputs inside Styled Labels) -->
                     <div class="role-cards-grid">
-                        <div class="role-option-card active" onclick="selectRole('CONSUMER')" id="card_CONSUMER">
+                        <label class="role-option-card active" onclick="selectRole('CONSUMER')" id="card_CONSUMER">
+                            <input type="radio" name="role" value="CONSUMER" class="hidden" {% if form.role.value == 'CONSUMER' or not form.role.value %}checked{% endif %}>
                             <span class="role-icon">🛒</span>
                             <span class="role-title">Consumer</span>
                             <span class="role-desc">Fresh Produce & Combos</span>
-                        </div>
-                        <div class="role-option-card" onclick="selectRole('FARMER')" id="card_FARMER">
+                        </label>
+                        <label class="role-option-card" onclick="selectRole('FARMER')" id="card_FARMER">
+                            <input type="radio" name="role" value="FARMER" class="hidden" {% if form.role.value == 'FARMER' %}checked{% endif %}>
                             <span class="role-icon">👨‍🌾</span>
                             <span class="role-title">Farmer</span>
                             <span class="role-desc">Direct MSP & Instant Payout</span>
-                        </div>
-                        <div class="role-option-card" onclick="selectRole('RETAILER')" id="card_RETAILER">
+                        </label>
+                        <label class="role-option-card" onclick="selectRole('RETAILER')" id="card_RETAILER">
+                            <input type="radio" name="role" value="RETAILER" class="hidden" {% if form.role.value == 'RETAILER' %}checked{% endif %}>
                             <span class="role-icon">🏬</span>
                             <span class="role-title">Retailer</span>
                             <span class="role-desc">B2B Verified Produce</span>
-                        </div>
-                        <div class="role-option-card" onclick="selectRole('SUPPLIER')" id="card_SUPPLIER">
+                        </label>
+                        <label class="role-option-card" onclick="selectRole('SUPPLIER')" id="card_SUPPLIER">
+                            <input type="radio" name="role" value="SUPPLIER" class="hidden" {% if form.role.value == 'SUPPLIER' %}checked{% endif %}>
                             <span class="role-icon">🚜</span>
                             <span class="role-title">Supplier</span>
                             <span class="role-desc">Inputs, Seeds & Fertilizer</span>
-                        </div>
+                        </label>
                     </div>
-
-                    <!-- Hidden or select input that binds to Django Form -->
-                    <select name="role" id="id_role_select" class="form-input" style="display: none;">
-                        <option value="CONSUMER" {% if form.role.value == 'CONSUMER' or not form.role.value %}selected{% endif %}>Consumer</option>
-                        <option value="FARMER" {% if form.role.value == 'FARMER' %}selected{% endif %}>Farmer</option>
-                        <option value="RETAILER" {% if form.role.value == 'RETAILER' %}selected{% endif %}>Retailer</option>
-                        <option value="SUPPLIER" {% if form.role.value == 'SUPPLIER' %}selected{% endif %}>Supplier</option>
-                    </select>
 
                     {% if form.role.errors %}
                         <div class="field-error">
@@ -457,7 +480,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
                         <label for="id_password" class="form-label" style="margin-bottom: 0;">Password / OTP</label>
                         <button type="button" id="btn-request-otp" class="text-xs font-semibold text-amber-500 hover:text-amber-400" style="background: none; border: none; font-size: 0.8rem; font-weight: 700; color: #D97706; cursor: pointer; text-decoration: underline; padding: 0;">
-                            Get OTP via SMS / Email
+                            Get OTP
                         </button>
                     </div>
                     <div id="otp-status-msg" style="display: none; font-size: 0.82rem; margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-weight: 600;"></div>
@@ -544,6 +567,12 @@
             const box = document.getElementById('otp-status-msg');
             if (!box) return;
             box.style.display = 'block';
+            if (typeof msg === 'string' && msg.trim().startsWith('<')) {
+                box.style.background = '#FFFBEB';
+                box.style.border = '1px solid #FCD34D';
+                box.innerHTML = msg;
+                return;
+            }
             if (isError) {
                 box.style.background = '#FEF2F2';
                 box.style.border = '1px solid #FCA5A5';
@@ -568,14 +597,13 @@
             }
 
             const btn = this;
-            const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Requesting OTP...';
 
-            if (rawVal.includes('@')) {
-                // Email OTP Flow
-                try {
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                if (rawVal.includes('@')) {
+                    // Email Flow: Call backend /auth/send-otp/
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
                     const res = await fetch('{% url "send_otp" %}', {
                         method: 'POST',
                         headers: {
@@ -585,60 +613,66 @@
                         },
                         body: new URLSearchParams({ identifier: rawVal })
                     });
-                    const data = await res.json();
-                    if (data.status === 'success') {
-                        showOtpStatus(`Code sent to ${rawVal}. Enter the 6-digit OTP below.`);
-                        document.getElementById('id_password').placeholder = 'Enter 6-digit Email OTP';
-                        document.getElementById('id_password').focus();
-                    } else {
-                        showOtpStatus(data.message || 'Failed to send Email OTP.', true);
-                    }
-                } catch (err) {
-                    showOtpStatus('Network error requesting Email OTP. Please retry.', true);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                }
-            } else {
-                // Phone SMS OTP via Firebase Client SDK
-                const normalizedPhone = normalizePhoneNumber(rawVal);
-                if (!normalizedPhone || normalizedPhone.length < 10) {
-                    showOtpStatus('Please enter a valid 10-digit mobile number.', true);
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                    return;
-                }
-                userInput.value = normalizedPhone;
 
-                try {
-                    if (!window.recaptchaVerifier) {
-                        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                            size: 'invisible'
-                        });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            showOtpStatus('OTP sent to email/console', false);
+                            const passInput = document.getElementById('id_password');
+                            if (passInput) {
+                                passInput.placeholder = 'Enter 6-digit Email OTP';
+                                passInput.focus();
+                            }
+                        } else {
+                            showOtpStatus(data.message || 'Failed to send Email OTP.', true);
+                        }
+                    } else {
+                        let errorMsg = 'Failed to send Email OTP.';
+                        try {
+                            const errData = await res.json();
+                            if (errData.message) errorMsg = errData.message;
+                        } catch (_) {}
+                        showOtpStatus(errorMsg, true);
                     }
-                    showOtpStatus(`Dispatching SMS OTP to ${normalizedPhone} via Firebase...`);
-                    confirmationResult = await firebase.auth().signInWithPhoneNumber(normalizedPhone, window.recaptchaVerifier);
-                    showOtpStatus(`Code sent to ${normalizedPhone}. Enter the 6-digit SMS OTP below.`);
-                    document.getElementById('id_password').placeholder = 'Enter 6-digit SMS OTP';
-                    document.getElementById('id_password').focus();
-                } catch (err) {
-                    console.error('Firebase SMS OTP Error:', err);
-                    if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.render().then(widgetId => {
-                            if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
-                        }).catch(() => {});
+                } else {
+                    // SMS Flow: Invoke Firebase with catch block
+                    const normalizedPhone = normalizePhoneNumber(rawVal);
+                    if (!normalizedPhone || normalizedPhone.length < 10) {
+                        showOtpStatus('Please enter a valid 10-digit mobile number.', true);
+                        return;
                     }
-                    let userFriendlyMsg = err.message || 'Failed to send SMS OTP. Please check the number or choose a password.';
-                    if (err.code === 'auth/operation-not-allowed' || (err.message && (err.message.includes('operation-not-allowed') || err.message.includes('region')))) {
-                        userFriendlyMsg = 'SMS OTP is pending region activation in Firebase Console. You can set a password directly below to register right now, or use an email address.';
-                    } else if (err.code === 'auth/too-many-requests') {
-                        userFriendlyMsg = 'Too many SMS requests. Please wait a few minutes, use an email address, or enter a password directly.';
+                    userInput.value = normalizedPhone;
+
+                    try {
+                        if (!window.recaptchaVerifier) {
+                            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                                size: 'invisible'
+                            });
+                        }
+                        confirmationResult = await firebase.auth().signInWithPhoneNumber(normalizedPhone, window.recaptchaVerifier);
+                        showOtpStatus(`Code sent to ${normalizedPhone}. Enter the 6-digit SMS OTP below.`, false);
+                        const passInput = document.getElementById('id_password');
+                        if (passInput) {
+                            passInput.placeholder = 'Enter 6-digit SMS OTP';
+                            passInput.focus();
+                        }
+                    } catch (fbErr) {
+                        console.error('Firebase SMS OTP Error:', fbErr);
+                        try {
+                            if (window.recaptchaVerifier && typeof grecaptcha !== 'undefined') {
+                                grecaptcha.reset();
+                            }
+                        } catch (_) {}
+                        showOtpStatus('<span class="text-amber-500 text-xs font-medium">⚠️ SMS is currently disabled in Firebase. Please use an Email address, or enter a Password below to register/login directly.</span>', true);
                     }
-                    showOtpStatus(userFriendlyMsg, true);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
                 }
+            } catch (err) {
+                console.error('OTP Request Error:', err);
+                showOtpStatus('Network error requesting OTP. Please retry.', true);
+            } finally {
+                // Button text reset to "Get OTP" and never stuck
+                btn.disabled = false;
+                btn.innerText = 'Get OTP';
             }
         });
 
@@ -672,13 +706,14 @@
         });
 
         function selectRole(role) {
-            const roleSelect = document.getElementById('id_role_select');
             const identLabel = document.getElementById('identifierLabel');
             const identInput = document.getElementById('id_identifier_input');
             const identHint = document.getElementById('identifierHint');
 
-            if (roleSelect) {
-                roleSelect.value = role;
+            // Select radio button
+            const targetRadio = document.querySelector(`input[name="role"][value="${role}"]`);
+            if (targetRadio) {
+                targetRadio.checked = true;
             }
 
             // Highlight selected visual card
@@ -708,8 +743,8 @@
 
         // Initialize state on page load
         document.addEventListener('DOMContentLoaded', () => {
-            const roleSelect = document.getElementById('id_role_select');
-            const initialRole = roleSelect ? roleSelect.value : 'CONSUMER';
+            const checkedRadio = document.querySelector('input[name="role"]:checked');
+            const initialRole = checkedRadio ? checkedRadio.value : 'CONSUMER';
             selectRole(initialRole);
         });
     </script>

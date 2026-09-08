@@ -245,6 +245,19 @@
             font-weight: 500;
         }
 
+        .text-amber-500 {
+            color: #D97706 !important;
+        }
+
+        .text-xs {
+            font-size: 0.78rem !important;
+            line-height: 1.35 !important;
+        }
+
+        .font-medium {
+            font-weight: 500 !important;
+        }
+
         @media (max-width: 640px) {
             .login-navbar {
                 padding: 0.75rem 1rem;
@@ -311,7 +324,7 @@
                             Password / OTP
                         </label>
                         <button type="button" id="btn-request-otp" class="text-xs font-semibold text-amber-500 hover:text-amber-400" style="background: none; border: none; font-size: 0.8rem; font-weight: 700; color: #D97706; cursor: pointer; text-decoration: underline; padding: 0;">
-                            Get OTP via SMS / Email
+                            Get OTP
                         </button>
                     </div>
                     <div id="otp-status-msg" style="display: none; font-size: 0.82rem; margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-weight: 600;"></div>
@@ -412,6 +425,12 @@
             const box = document.getElementById('otp-status-msg');
             if (!box) return;
             box.style.display = 'block';
+            if (typeof msg === 'string' && msg.trim().startsWith('<')) {
+                box.style.background = '#FFFBEB';
+                box.style.border = '1px solid #FCD34D';
+                box.innerHTML = msg;
+                return;
+            }
             if (isError) {
                 box.style.background = '#FEF2F2';
                 box.style.border = '1px solid #FCA5A5';
@@ -436,14 +455,13 @@
             }
 
             const btn = this;
-            const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Requesting OTP...';
 
-            if (rawVal.includes('@')) {
-                // Email OTP Flow
-                try {
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                if (rawVal.includes('@')) {
+                    // Email Flow: Call backend /auth/send-otp/
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
                     const res = await fetch('{% url "send_otp" %}', {
                         method: 'POST',
                         headers: {
@@ -453,60 +471,66 @@
                         },
                         body: new URLSearchParams({ identifier: rawVal })
                     });
-                    const data = await res.json();
-                    if (data.status === 'success') {
-                        showOtpStatus(`Code sent to ${rawVal}. Enter the 6-digit OTP or your password below.`);
-                        document.getElementById('id_password').placeholder = 'Enter 6-digit Email OTP';
-                        document.getElementById('id_password').focus();
-                    } else {
-                        showOtpStatus(data.message || 'Failed to send Email OTP.', true);
-                    }
-                } catch (err) {
-                    showOtpStatus('Network error requesting Email OTP. Please retry.', true);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                }
-            } else {
-                // Phone SMS OTP via Firebase Client SDK
-                const normalizedPhone = normalizePhoneNumber(rawVal);
-                if (!normalizedPhone || normalizedPhone.length < 10) {
-                    showOtpStatus('Please enter a valid 10-digit mobile number.', true);
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                    return;
-                }
-                userInput.value = normalizedPhone;
 
-                try {
-                    if (!window.recaptchaVerifier) {
-                        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                            size: 'invisible'
-                        });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            showOtpStatus('OTP sent to email/console', false);
+                            const passInput = document.getElementById('id_password');
+                            if (passInput) {
+                                passInput.placeholder = 'Enter 6-digit Email OTP';
+                                passInput.focus();
+                            }
+                        } else {
+                            showOtpStatus(data.message || 'Failed to send Email OTP.', true);
+                        }
+                    } else {
+                        let errorMsg = 'Failed to send Email OTP.';
+                        try {
+                            const errData = await res.json();
+                            if (errData.message) errorMsg = errData.message;
+                        } catch (_) {}
+                        showOtpStatus(errorMsg, true);
                     }
-                    showOtpStatus(`Dispatching SMS OTP to ${normalizedPhone} via Firebase...`);
-                    confirmationResult = await firebase.auth().signInWithPhoneNumber(normalizedPhone, window.recaptchaVerifier);
-                    showOtpStatus(`Code sent to ${normalizedPhone}. Enter the OTP or your password below.`);
-                    document.getElementById('id_password').placeholder = 'Enter 6-digit SMS OTP';
-                    document.getElementById('id_password').focus();
-                } catch (err) {
-                    console.error('Firebase SMS OTP Error:', err);
-                    if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.render().then(widgetId => {
-                            if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
-                        }).catch(() => {});
+                } else {
+                    // SMS Flow: Invoke Firebase with catch block
+                    const normalizedPhone = normalizePhoneNumber(rawVal);
+                    if (!normalizedPhone || normalizedPhone.length < 10) {
+                        showOtpStatus('Please enter a valid 10-digit mobile number.', true);
+                        return;
                     }
-                    let userFriendlyMsg = err.message || 'Failed to send SMS OTP. Please check the number or use your password.';
-                    if (err.code === 'auth/operation-not-allowed' || (err.message && (err.message.includes('operation-not-allowed') || err.message.includes('region')))) {
-                        userFriendlyMsg = 'SMS OTP is pending region activation in Firebase Console. You can enter your password directly below to sign in, or use an email address.';
-                    } else if (err.code === 'auth/too-many-requests') {
-                        userFriendlyMsg = 'Too many SMS requests. Please wait a few minutes, use an email address, or enter your password directly.';
+                    userInput.value = normalizedPhone;
+
+                    try {
+                        if (!window.recaptchaVerifier) {
+                            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                                size: 'invisible'
+                            });
+                        }
+                        confirmationResult = await firebase.auth().signInWithPhoneNumber(normalizedPhone, window.recaptchaVerifier);
+                        showOtpStatus(`Code sent to ${normalizedPhone}. Enter the OTP or your password below.`, false);
+                        const passInput = document.getElementById('id_password');
+                        if (passInput) {
+                            passInput.placeholder = 'Enter 6-digit SMS OTP';
+                            passInput.focus();
+                        }
+                    } catch (fbErr) {
+                        console.error('Firebase SMS OTP Error:', fbErr);
+                        try {
+                            if (window.recaptchaVerifier && typeof grecaptcha !== 'undefined') {
+                                grecaptcha.reset();
+                            }
+                        } catch (_) {}
+                        showOtpStatus('<span class="text-amber-500 text-xs font-medium">⚠️ SMS is currently disabled in Firebase. Please use an Email address, or enter a Password below to register/login directly.</span>', true);
                     }
-                    showOtpStatus(userFriendlyMsg, true);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
                 }
+            } catch (err) {
+                console.error('OTP Request Error:', err);
+                showOtpStatus('Network error requesting OTP. Please retry or enter your password directly.', true);
+            } finally {
+                // Button text reset to "Get OTP" and never stuck
+                btn.disabled = false;
+                btn.innerText = 'Get OTP';
             }
         });
 
