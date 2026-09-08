@@ -769,9 +769,6 @@
             <a href="{% url 'consumer_shop' %}" class="btn-nav-action btn-nav-gold">
                 <span>🛒</span> Farm Store
             </a>
-            <a href="{% url 'consumer_shop' %}#ai-engine" class="btn-nav-action">
-                <span>🤖</span> AI Combos
-            </a>
             <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0;">
                 {% csrf_token %}
                 <button type="submit" class="btn-nav-action" style="cursor: pointer; border: 1px solid var(--border-glass);">
@@ -1045,7 +1042,7 @@
                 <div class="empty-icon">🛒</div>
                 <h3 class="empty-title">No Farm Purchases Yet</h3>
                 <p class="empty-sub">
-                    You haven't placed any orders yet. Visit our direct farm store to buy fresh crops, pre-bundled kits, or try our AI Recipe-to-Combo engine.
+                    You haven't placed any orders yet. Visit our direct farm store to buy fresh crops and pre-bundled kits directly from farmers.
                 </p>
                 <a href="{% url 'consumer_shop' %}" class="btn-submit-feedback" style="display: inline-flex; text-decoration: none;">
                     <span>🌾</span> Browse Direct Farm Store

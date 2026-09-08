@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title|default:"K2K Direct Farm Store • 100% Traceable Direct to Consumer" }}</title>
-    <meta name="description" content="Buy farm-fresh produce and vegetable kits directly from verified Indian farmers with AI recipe-to-combo smart calculations and instant farmer wallet settlements.">
+    <meta name="description" content="Buy farm-fresh produce and vegetable kits directly from verified Indian farmers with instant farmer wallet settlements.">
     <link rel="icon" type="image/svg+xml" href="{% static 'images/k2k-logo.svg' %}">
 
     <!-- Fonts: Outfit & Inter -->
@@ -1155,9 +1155,6 @@
             </form>
 
             <div class="nav-actions">
-                <a href="#ai-engine" class="btn-nav-action btn-nav-gold nav-ai-btn">
-                    <span>🤖</span> AI Recipe Combo
-                </a>
                 {% if request.user.is_authenticated %}
                     <a href="{% url 'consumer_dashboard' %}" class="btn-nav-action btn-nav-user" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); color: #6EE7B7;">
                         <span>📦</span> <span class="nav-btn-text">{{ request.user.first_name|default:"My Orders" }}</span>
@@ -1195,113 +1192,9 @@
             Fresh From <span class="hero-gold">Khet</span> Directly To Your <span class="hero-gold">Kitchen</span>
         </h1>
         <p class="hero-sub">
-            Skip the mandi markups. Buy fresh produce harvested this morning, pre-packaged vegetable kits with bundle savings, or let our AI calculate the exact ingredients for your daily meals.
+            Skip the mandi markups. Buy fresh produce harvested this morning or pre-packaged vegetable kits with bundle savings, directly from verified local farmers.
         </p>
     </section>
-
-    <!-- AI Recipe-to-Combo Search Engine Section -->
-    <div class="ai-engine-container" id="ai-engine">
-        <div class="ai-engine-card">
-            <div class="ai-header">
-                <div class="ai-title-wrap">
-                    <div class="ai-icon-pulse">🍲</div>
-                    <div>
-                        <h2 class="ai-title">AI "Recipe-to-Combo" Engine</h2>
-                        <p class="ai-tagline">Enter what you want to cook. Google Gemini calculates exact vegetable weights & bundles them at 15% OFF.</p>
-                    </div>
-                </div>
-                <div class="ai-discount-pill">
-                    <span>⚡</span> 15% Combo Bundle Discount
-                </div>
-            </div>
-
-            <!-- Input Bar -->
-            <form id="aiComboForm" onsubmit="event.preventDefault(); triggerAICombo();">
-                <div class="ai-input-grid">
-                    <div class="input-group-styled">
-                        <label class="input-label-styled">What do you want to cook today?</label>
-                        <input type="text" id="dishInput" placeholder="e.g. Sambar, Veg Biryani, Palak Paneer, Pav Bhaji..." value="Sambar" class="ai-text-field" required>
-                    </div>
-                    <div class="input-group-styled">
-                        <label class="input-label-styled">Serving Count</label>
-                        <select id="servingsSelect" class="servingsSelect servings-select">
-                            <option value="2">2 Members</option>
-                            <option value="4" selected>4 Members</option>
-                            <option value="6">6 Members</option>
-                            <option value="8">8 Members</option>
-                            <option value="10">10 Members</option>
-                        </select>
-                    </div>
-                    <button type="submit" id="btnGenerateCombo" class="btn-ai-generate">
-                        <span>✨</span> Generate Combo
-                    </button>
-                </div>
-            </form>
-
-            <!-- Quick Preset Chips -->
-            <div class="preset-chips-wrap">
-                <span class="preset-label">Popular dishes:</span>
-                {% for preset in preset_dishes %}
-                <button type="button" class="preset-chip" onclick="selectPresetDish('{{ preset.name }}')">
-                    <span>{{ preset.icon }}</span> {{ preset.name }}
-                </button>
-                {% endfor %}
-            </div>
-
-            <!-- Dynamic AI Result Box -->
-            <div id="aiResultContainer">
-                <div class="combo-result-box">
-                    <div class="combo-result-header">
-                        <div>
-                            <h3 class="combo-dish-title" id="comboDishTitle">
-                                🍲 Authentic South Indian Sambar
-                            </h3>
-                            <div class="combo-meta-pills">
-                                <span class="meta-pill" id="comboServingsPill">👥 4 Servings</span>
-                                <span class="meta-pill" id="comboWeightPill">⚖️ 1.2 kg Fresh Produce</span>
-                                <span class="meta-pill" id="comboTimePill">⏱️ 25 Mins Prep</span>
-                            </div>
-                            <p id="comboNotesText" style="font-size: 0.85rem; color: #A7F3D0; margin-top: 0.5rem; font-family: 'Inter', sans-serif;">
-                                Rich lentil and vegetable stew with a fragrant tamarind-coriander temper.
-                            </p>
-                        </div>
-                        <div class="combo-price-panel">
-                            <div>
-                                <span class="price-orig-striked" id="comboOrigPrice">₹120.00</span>
-                                <span class="savings-chip-green" id="comboSavingsBadge">SAVE ₹18 (15% OFF)</span>
-                            </div>
-                            <div class="price-combo-bold" id="comboFinalPrice">₹102.00</div>
-                        </div>
-                    </div>
-
-                    <!-- Ingredients breakdown table -->
-                    <table class="ingredients-table">
-                        <thead>
-                            <tr>
-                                <th>Ingredient</th>
-                                <th>Quantity</th>
-                                <th>Culinary Role</th>
-                                <th>Farmer Producer</th>
-                                <th style="text-align: right;">Price</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comboIngredientsBody">
-                            <!-- Populated dynamically via JS -->
-                        </tbody>
-                    </table>
-
-                    <div class="farmer-credit-note">
-                        <span>💳</span>
-                        <span><strong>Direct Farmer Payout:</strong> 90% of this combo payment (₹<span id="comboFarmerPayout">91.80</span>) will be credited directly to the farmer's UPI digital wallet in real time.</span>
-                    </div>
-
-                    <button type="button" class="btn-buy-combo-direct" onclick="openComboCheckoutModal()">
-                        <span>🛍️</span> Buy AI Combo Directly From Farmer (₹<span id="comboPayBtnPrice">102.00</span>)
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Store Catalog & Product Grids -->
     <main class="store-content-wrap">
@@ -1316,9 +1209,6 @@
                 </a>
                 <a href="?category=kits" class="filter-tab {% if active_category == 'kits' %}active{% endif %}">
                     Pre-Packaged Kits 📦
-                </a>
-                <a href="?category=combos" class="filter-tab {% if active_category == 'combos' %}active{% endif %}">
-                    Recent AI Combos 🍲
                 </a>
             </div>
             {% if search_query %}
@@ -1453,46 +1343,6 @@
         </div>
         {% endif %}
 
-
-        <!-- Section 3: Popular Recipe Combos -->
-        {% if active_category == 'all' or active_category == 'combos' %}
-        {% if recent_combos %}
-        <div class="section-header-row">
-            <h2 class="section-title">
-                <span>🍲</span> Popular AI Recipe Combos
-            </h2>
-            <span class="section-badge-count">{{ recent_combos|length }} Combos</span>
-        </div>
-
-        <div class="products-grid">
-            {% for combo in recent_combos %}
-            <div class="kit-card">
-                <div class="kit-banner-badge">{{ combo.servings }} Servings</div>
-                <div class="kit-visual">🍲</div>
-                <div class="kit-body">
-                    <h3 class="kit-title">{{ combo.dish_name }} Combo</h3>
-                    <p class="kit-desc">{{ combo.culinary_notes|truncatechars:90 }}</p>
-
-                    <div class="kit-price-row">
-                        <div>
-                            <span class="kit-orig-strike">₹{{ combo.original_price }}</span>
-                            <span class="savings-chip-green">SAVE 15%</span>
-                            <div class="kit-price-big">₹{{ combo.combo_price }}</div>
-                        </div>
-                        <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted);">
-                            {{ combo.total_weight_kg }} kg produce
-                        </div>
-                    </div>
-
-                    <a href="{% url 'ai_combo_builder' %}?dish={{ combo.dish_name|urlencode }}&servings={{ combo.servings }}" class="btn-card-checkout" style="text-decoration: none;">
-                        <span>🔍</span> View Recipe Breakdown
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endif %}
     </main>
 
     <!-- 1-Click Direct Farmer Checkout Modal -->
@@ -1571,94 +1421,8 @@
 
     <!-- JavaScript for Interactive AI Recipe Engine & Checkout Modal -->
     <script>
-        let currentComboData = null;
         let activeUnitPrice = 0;
         let activeDiscountPct = 0;
-
-        function selectPresetDish(dishName) {
-            document.getElementById('dishInput').value = dishName;
-            triggerAICombo();
-        }
-
-        async function triggerAICombo() {
-            const dish = document.getElementById('dishInput').value.trim();
-            const servings = document.getElementById('servingsSelect').value;
-            const btn = document.getElementById('btnGenerateCombo');
-            const resultBox = document.getElementById('aiResultContainer');
-
-            if (!dish) return;
-
-            btn.disabled = true;
-            btn.innerHTML = '<span>⏳</span> Calculating...';
-
-            try {
-                const url = `{% url 'ai_combo_builder' %}?dish_name=${encodeURIComponent(dish)}&servings=${servings}&format=json`;
-                const resp = await fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const data = await resp.json();
-
-                if (data.status === 'success' && data.combo) {
-                    currentComboData = data.combo;
-                    renderComboResult(data.combo);
-                    resultBox.style.display = 'block';
-                    resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-            } catch (err) {
-                console.error("Error generating combo:", err);
-                alert("Could not reach AI recipe service. Please try again.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>✨</span> Generate Combo';
-            }
-        }
-
-        function renderComboResult(combo) {
-            document.getElementById('comboDishTitle').innerHTML = `🍲 ${combo.dish_name}`;
-            document.getElementById('comboServingsPill').innerText = `👥 ${combo.servings} Servings`;
-            document.getElementById('comboWeightPill').innerText = `⚖️ ${combo.total_weight_kg} kg Produce`;
-            document.getElementById('comboTimePill').innerText = `⏱️ ${combo.prep_time_minutes} Mins Prep`;
-            document.getElementById('comboNotesText').innerText = combo.culinary_notes;
-
-            document.getElementById('comboOrigPrice').innerText = `₹${combo.original_price.toFixed(2)}`;
-            document.getElementById('comboFinalPrice').innerText = `₹${combo.combo_price.toFixed(2)}`;
-            document.getElementById('comboPayBtnPrice').innerText = combo.combo_price.toFixed(2);
-            document.getElementById('comboSavingsBadge').innerText = `SAVE ₹${combo.total_savings.toFixed(2)} (${combo.discount_percentage}% OFF)`;
-            document.getElementById('comboFarmerPayout').innerText = combo.farmer_payout.toFixed(2);
-
-            const tbody = document.getElementById('comboIngredientsBody');
-            tbody.innerHTML = '';
-
-            combo.items.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><strong>${item.crop_name}</strong></td>
-                    <td>${item.quantity_grams}g</td>
-                    <td style="color: var(--text-muted);">${item.role}</td>
-                    <td style="color: var(--primary-mint); font-size: 0.8rem;">🧑‍🌾 ${item.farmer_name}</td>
-                    <td style="text-align: right; font-weight: 700;">₹${item.standalone_price.toFixed(2)}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function openComboCheckoutModal() {
-            if (!currentComboData) return;
-            document.getElementById('modalItemType').value = 'COMBO';
-            document.getElementById('modalItemId').value = currentComboData.combo_db_id || currentComboData.combo_id;
-            document.getElementById('modalDishName').value = currentComboData.dish_name;
-            document.getElementById('modalServings').value = currentComboData.servings;
-
-            document.getElementById('qtyFieldGroup').style.display = 'none';
-            document.getElementById('modalItemSummaryName').innerText = `${currentComboData.dish_name} (${currentComboData.servings} Servings)`;
-            document.getElementById('modalOriginalPrice').innerText = `₹${currentComboData.original_price.toFixed(2)}`;
-            document.getElementById('modalDiscountRow').style.display = 'flex';
-            document.getElementById('modalDiscountAmount').innerText = `-₹${currentComboData.total_savings.toFixed(2)}`;
-            document.getElementById('modalFinalPrice').innerText = `₹${currentComboData.combo_price.toFixed(2)}`;
-            document.getElementById('modalFarmerPayoutPreview').innerText = currentComboData.farmer_payout.toFixed(2);
-
-            document.getElementById('checkoutModal').style.display = 'flex';
-        }
 
         function openKitCheckoutModal(kitId, kitName, bundlePrice, origPrice, savings) {
             document.getElementById('modalItemType').value = 'KIT';
