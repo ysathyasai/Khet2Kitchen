@@ -628,7 +628,13 @@
                             if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
                         }).catch(() => {});
                     }
-                    showOtpStatus(err.message || 'Failed to send SMS OTP. Please check the number or choose a password.', true);
+                    let userFriendlyMsg = err.message || 'Failed to send SMS OTP. Please check the number or choose a password.';
+                    if (err.code === 'auth/operation-not-allowed' || (err.message && (err.message.includes('operation-not-allowed') || err.message.includes('region')))) {
+                        userFriendlyMsg = 'SMS OTP is pending region activation in Firebase Console. You can set a password directly below to register right now, or use an email address.';
+                    } else if (err.code === 'auth/too-many-requests') {
+                        userFriendlyMsg = 'Too many SMS requests. Please wait a few minutes, use an email address, or enter a password directly.';
+                    }
+                    showOtpStatus(userFriendlyMsg, true);
                 } finally {
                     btn.disabled = false;
                     btn.innerText = originalText;
