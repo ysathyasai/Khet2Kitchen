@@ -8,18 +8,18 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
         <div>
             <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
-                Settlement & Fleet • Agri-Fintech
+                Earnings & Payouts
             </div>
             <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
-                Agri-Fintech Payouts & Digital Wallet
+                Kisan Digital Wallet & Bank Payouts
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-                Immutable digital ledger tracking batch sales, quality bonuses, and instantaneous UPI/IMPS bank withdrawals.
+                Track your crop sales, quality bonuses, and instant UPI withdrawals directly to your bank account.
             </p>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
             <span class="status-pill status-growing">
-                ● 24/7 IMPS & UPI Settlement Active
+                ● 24/7 Instant Bank Transfers Active
             </span>
         </div>
     </div>
@@ -36,7 +36,7 @@
                 ₹{{ wallet.current_balance|floatformat:2 }}
             </div>
             <div style="font-size: 0.85rem; color: #065F46; font-weight: 600; margin-top: 0.25rem;">
-                ● Linked to: {{ user.phone_number }}@upi (Instant settlement rail)
+                ● Linked to: {{ user.phone_number }}@upi (Instant bank payout)
             </div>
         </div>
 
@@ -45,7 +45,7 @@
                 ⚡ Withdraw to Bank Account
             </button>
             <span style="font-size: 0.75rem; color: var(--text-muted);">
-                Zero transaction fees • Instant NEFT/IMPS rail
+                Zero fees • Instant transfer to your bank
             </span>
         </div>
     </div>
@@ -53,15 +53,15 @@
     <!-- Quick stats strip -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--card-border);">
         <div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Cumulative Payouts</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Payouts Received</div>
             <div style="font-size: 1.2rem; font-weight: 700; color: #133826;">₹{{ financial_summary.total_net_payout|floatformat:2 }}</div>
         </div>
         <div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Disintermediation Saved</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Extra Profit vs Mandi</div>
             <div style="font-size: 1.2rem; font-weight: 700; color: #059669;">+₹{{ financial_summary.total_disintermediation_gain|floatformat:2 }}</div>
         </div>
         <div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Gross Produced</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Produce Sold</div>
             <div style="font-size: 1.2rem; font-weight: 700; color: #1F2937;">₹{{ financial_summary.total_gross_value|floatformat:2 }}</div>
         </div>
     </div>
@@ -72,9 +72,9 @@
     <div class="card-header">
         <div>
             <h2 class="card-title">
-                <span>📜</span> Digital Wallet Transaction Ledger
+                <span>📜</span> Transaction History & Bank Transfers
             </h2>
-            <div class="card-subtitle">Immutable audit trail of instant batch settlement credits and bank withdrawals.</div>
+            <div class="card-subtitle">Detailed list of your crop earnings and bank withdrawals.</div>
         </div>
     </div>
 

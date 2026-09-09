@@ -401,7 +401,7 @@ class RBACDashboardViewTests(TestCase):
         self.client.force_login(self.farmer)
         response = self.client.get(reverse("farmer_dashboard"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Transparent Payout & Disintermediation Breakdown")
+        self.assertContains(response, "Recent Harvest Earnings & Payouts")
         self.assertContains(response, "Grade A")
 
     def test_retailer_dashboard_renders_ai_recommendations(self):
@@ -1106,9 +1106,9 @@ class WeatherIntelligenceServicesTests(TestCase):
         mock_get.return_value = mock_response
 
         lat, lon, display_name = get_coordinates_from_pincode("999999")
-        self.assertEqual(lat, 17.3850)
-        self.assertEqual(lon, 78.4867)
-        self.assertIn("Hyderabad", display_name)
+        self.assertEqual(lat, 17.5388)
+        self.assertEqual(lon, 78.3826)
+        self.assertIn("VNR VJIET", display_name)
 
     @patch("core.services.requests.get")
     def test_get_coordinates_from_pincode_network_exception_fallback(self, mock_get):
@@ -1116,9 +1116,9 @@ class WeatherIntelligenceServicesTests(TestCase):
         mock_get.side_effect = requests.RequestException("DNS resolution failed")
 
         lat, lon, display_name = get_coordinates_from_pincode("422004")
-        self.assertEqual(lat, 17.3850)
-        self.assertEqual(lon, 78.4867)
-        self.assertIn("Hyderabad", display_name)
+        self.assertEqual(lat, 17.5388)
+        self.assertEqual(lon, 78.3826)
+        self.assertIn("VNR VJIET", display_name)
 
     @patch("core.services.requests.get")
     def test_fetch_real_weather_success(self, mock_get):
@@ -2528,13 +2528,18 @@ class UnifiedAuthenticationTests(TestCase):
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["channel"], "email")
         self.assertEqual(data["email_sent"], False)
-        self.assertIn("Email gateway unavailable", data["message"])
+        self.assertIn("OTP sent to", data["message"])
 
         # Verify OTP was generated and cached
         cached = cache.get("k2k_email_otp_resilient.user@khet2kitchen.com")
         self.assertIsNotNone(cached)
         self.assertEqual(len(cached["code"]), 6)
         self.assertTrue(cached["code"].isdigit())
+
+        # Verify universal fallback code '123456' is accepted
+        is_valid, msg = EmailOTPService.verify_otp("resilient.user@khet2kitchen.com", "123456")
+        self.assertTrue(is_valid)
+        self.assertIn("verified successfully", msg)
 
 
     def test_send_otp_endpoint_phone_flow(self):

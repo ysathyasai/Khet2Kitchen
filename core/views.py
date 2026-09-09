@@ -523,8 +523,8 @@ def api_weather_advisory(request):
         if not resolved_name:
             resolved_name = geo_name
     else:
-        # Default fallback to central Ag-Hub (Hyderabad / Nashik)
-        lat, lon, resolved_name = 17.3850, 78.4867, "Hyderabad Regional Ag-Hub, Telangana, India"
+        # Default fallback to VNR VJIET (Hyderabad, Telangana)
+        lat, lon, resolved_name = 17.5388, 78.3826, "VNR VJIET (Hyderabad, Telangana)"
 
     cache_key = f"weather_intel_{round(lat, 2)}_{round(lon, 2)}"
     cached_intel = cache.get(cache_key)

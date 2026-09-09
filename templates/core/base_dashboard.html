@@ -1008,15 +1008,15 @@
 
             <!-- SECTION 2: SETTLEMENT & FLEET -->
             <div class="nav-section">
-                <div class="nav-section-title">Settlement & Fleet</div>
+                <div class="nav-section-title">Wallet & Transport</div>
                 <div class="nav-group">
                     <a href="{% url 'farmer_wallet' %}" class="nav-link {% if active_nav == 'wallet' %}active{% endif %}">
                         <span class="nav-link-icon">💳</span>
-                        <span>Agri-Fintech Payouts</span>
+                        <span>Wallet & Payouts</span>
                     </a>
                     <a href="{% url 'farmer_logistics' %}" class="nav-link {% if active_nav == 'logistics' %}active{% endif %}">
                         <span class="nav-link-icon">🚚</span>
-                        <span>Dynamic Sweeps</span>
+                        <span>Pickup & Transport</span>
                     </a>
                     {% if user.is_staff or user.role == 'ADMIN' %}
                     <a href="{% url 'admin_command_dashboard' %}" class="nav-link {% if active_nav == 'admin' %}active{% endif %}">
@@ -1033,7 +1033,7 @@
                 <div class="nav-group">
                     <a href="{% url 'farmer_weather' %}" class="nav-link {% if active_nav == 'weather' %}active{% endif %}">
                         <span class="nav-link-icon">⛅</span>
-                        <span>Weather & Risk</span>
+                        <span>Weather & Field Risk</span>
                     </a>
                     <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
                         <span class="nav-link-icon">🎤</span>

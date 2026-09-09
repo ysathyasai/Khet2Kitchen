@@ -59,29 +59,29 @@
     <div style="position: relative; z-index: 2; max-width: 850px;">
         <!-- Network Pill -->
         <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.35); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #6EE7B7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
-            <span>🛰️</span> Agronomic Weather & GIS Intelligence
+            <span>🛰️</span> Live Farm Weather & Advisory
         </div>
 
         <!-- Headline -->
         <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: #FFFFFF; line-height: 1.2;">
-            Hyperlocal Microclimate & GIS Telemetry
+            Field Weather & Crop Risk Advisor
         </h1>
 
         <!-- Subtitle -->
         <p style="color: #A3C2B0; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem; max-width: 720px;">
-            Connecting rural farms to live satellite meteorological feeds, root-zone volumetric soil moisture models, and real-time Google Gemini agronomic risk advisories.
+            Real-time weather forecasts, soil moisture levels, and AI crop advice to protect your harvest and optimize irrigation.
         </p>
 
         <!-- Glassmorphic Badges -->
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.75rem;">
             <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); padding: 0.45rem 0.95rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #F3F4F6; display: flex; align-items: center; gap: 0.4rem;">
-                <span>📡</span> Live Open-Meteo Telemetry
+                <span>📡</span> Live Weather Feed
             </div>
             <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); padding: 0.45rem 0.95rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #F3F4F6; display: flex; align-items: center; gap: 0.4rem;">
-                <span>💧</span> Root-Zone Soil Moisture (3-9cm)
+                <span>💧</span> Soil Moisture Check
             </div>
             <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); padding: 0.45rem 0.95rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #F3F4F6; display: flex; align-items: center; gap: 0.4rem;">
-                <span>🌱</span> Google Gemini Advisory
+                <span>🌱</span> AI Crop Advice
             </div>
         </div>
 
@@ -118,7 +118,7 @@
                 <span>🎯</span> Use Current GPS
             </button>
             <div style="display: flex; gap: 0.4rem; align-items: center;">
-                <input type="text" id="weatherPincodeInput" placeholder="Enter PIN (e.g. 422004)" value="{{ user.pincode|default:'422004' }}"
+                <input type="text" id="weatherPincodeInput" placeholder="Enter PIN (e.g. 500090)" value="{{ user.pincode|default:'500090' }}"
                     style="width: 170px; padding: 0.55rem 0.8rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.85rem; outline: none;">
                 <button type="button" id="analyzeRegionBtn" onclick="analyzePincode()" class="btn btn-forest" style="padding: 0.55rem 0.95rem; font-size: 0.85rem; font-weight: 600;">
                     Analyze Region
@@ -241,26 +241,26 @@
     <div class="card-header">
         <div>
             <h2 class="card-title">
-                <span>🗺️</span> Interactive Farm Map & GIS Field Selector
+                <span>🗺️</span> Interactive Farm Map
             </h2>
             <div class="card-subtitle">
-                Click anywhere on the map or drag the farm pin to manually select your exact field coordinates. Telemetry automatically recalculates.
+                Click anywhere on the map or drag the pin to select your field location. Weather updates automatically.
             </div>
         </div>
 
         <!-- Preset Quick Jump Pills -->
         <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="map-preset-pill" style="background: #E6F4EA; border-color: #059669; color: #065F46; font-weight: 700;" onclick="selectMapPreset(17.5388, 78.3826, 'VNR VJIET (Hyderabad Hub)')">
+                <span>📍</span> VNR VJIET (Default)
+            </button>
+            <button type="button" class="map-preset-pill" onclick="selectMapPreset(17.385, 78.486, 'Hyderabad Central Zone')">
+                <span>📍</span> Hyderabad Central
+            </button>
             <button type="button" class="map-preset-pill" onclick="selectMapPreset(20.005, 73.789, 'Nashik Agro Cluster Hub #1')">
                 <span>📍</span> Nashik Hub
             </button>
             <button type="button" class="map-preset-pill" onclick="selectMapPreset(18.520, 73.856, 'Pune Western Ghats Hub #2')">
                 <span>📍</span> Pune Hub
-            </button>
-            <button type="button" class="map-preset-pill" onclick="selectMapPreset(19.206, 73.876, 'Junnar Agro Valley')">
-                <span>📍</span> Junnar Valley
-            </button>
-            <button type="button" class="map-preset-pill" onclick="selectMapPreset(17.385, 78.486, 'Telangana Agri Zone')">
-                <span>📍</span> Telangana Zone
             </button>
         </div>
     </div>
@@ -270,7 +270,7 @@
         <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span>🎯 <strong>Selected Field Pin:</strong></span>
             <span style="color: #059669; font-family: monospace; font-size: 0.9rem; font-weight: 700; background: #FFFFFF; padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--card-border);">
-                Lat: <span id="mapSelectedLat">19.2060°</span> | Lon: <span id="mapSelectedLon">73.8760°</span>
+                Lat: <span id="mapSelectedLat">17.5388°</span> | Lon: <span id="mapSelectedLon">78.3826°</span>
             </span>
         </div>
         <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem;">
@@ -288,16 +288,16 @@
 <script>
     let farmMapInstance = null;
     let farmMarkerInstance = null;
-    let currentMapLat = 19.2060;
-    let currentMapLon = 73.8760;
+    let currentMapLat = 17.5388;
+    let currentMapLon = 78.3826;
 
     /**
      * Initializes or smoothly pans the interactive Leaflet GIS map.
      * Guaranteed to render immediately on DOM load without blank boxes.
      */
     function initOrUpdateFarmMap(lat, lon, label) {
-        currentMapLat = parseFloat(lat) || 19.2060;
-        currentMapLon = parseFloat(lon) || 73.8760;
+        currentMapLat = parseFloat(lat) || 17.5388;
+        currentMapLon = parseFloat(lon) || 78.3826;
 
         updateCoordinatesDisplay(currentMapLat, currentMapLon);
 
@@ -520,9 +520,8 @@
                 loadWeatherAdvisory({ lat, lon, location_name: "Farmer GPS Field" });
             },
             (err) => {
-                console.warn("[K2K Weather] Geolocation denied or unavailable:", err.message);
-                const pin = document.getElementById("weatherPincodeInput")?.value?.trim();
-                loadWeatherAdvisory({ pincode: pin || "422004" });
+                console.warn("[K2K Weather] Geolocation denied or unavailable, using VNR VJIET default:", err.message);
+                loadWeatherAdvisory({ lat: "17.5388", lon: "78.3826", location_name: "VNR VJIET (Hyderabad, Telangana)" });
             },
             { timeout: 10000, enableHighAccuracy: true }
         );
@@ -531,7 +530,7 @@
     function analyzePincode() {
         const pin = document.getElementById("weatherPincodeInput")?.value?.trim();
         if (!pin) {
-            alert("Please enter a 6-digit Indian PIN code (e.g., 422004).");
+            alert("Please enter a 6-digit Indian PIN code (e.g., 500090).");
             return;
         }
         loadWeatherAdvisory({ pincode: pin });
@@ -539,12 +538,11 @@
 
     // Auto-load interactive GIS map IMMEDIATELY and query weather telemetry on page ready
     document.addEventListener("DOMContentLoaded", () => {
-        // 1. Render the map instantly so user NEVER sees a blank box
-        initOrUpdateFarmMap(currentMapLat, currentMapLon, "Junnar Valley Agro Center");
+        // 1. Render the map instantly centered at VNR VJIET (Hyderabad)
+        initOrUpdateFarmMap(currentMapLat, currentMapLon, "VNR VJIET (Hyderabad Hub)");
 
-        // 2. Load weather telemetry for default or user pincode
-        const initialPin = document.getElementById("weatherPincodeInput")?.value?.trim();
-        loadWeatherAdvisory({ pincode: initialPin || "422004", skipMapPan: true });
+        // 2. Load weather telemetry instantly with hardcoded VNR VJIET coordinates (bypasses geocoder latency)
+        loadWeatherAdvisory({ lat: "17.5388", lon: "78.3826", location_name: "VNR VJIET (Hyderabad, Telangana)", skipMapPan: true });
 
         // 3. Handle window resize to invalidate Leaflet map dimensions
         window.addEventListener("resize", () => {

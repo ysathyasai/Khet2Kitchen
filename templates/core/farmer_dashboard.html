@@ -10,7 +10,7 @@
     <div style="position: relative; z-index: 2; max-width: 850px;">
         <!-- Network pill -->
         <div class="hero-network-pill">
-            <span>⚡</span> Direct Farmer Network • Fair & Fast Payments
+            <span>⚡</span> Direct Farmer Network • Fair Prices & Fast Payouts
         </div>
 
         <!-- Headline -->
@@ -20,7 +20,7 @@
 
         <!-- Subtitle -->
         <p class="hero-subtitle" style="color: #E2E8F0;">
-            Welcome to Khet2Kitchen. Sell your harvest directly for the best price, get instant money in your bank account, and use your voice to ask our assistant for help.
+            Sell your produce directly without middleman deductions. Get guaranteed minimum prices, instant bank transfers via UPI, and voice help in your local language.
         </p>
 
         <!-- Feature chips (High-Contrast Guaranteed on Mobile) -->
@@ -29,10 +29,10 @@
                 ✅ Best Price Guarantee
             </span>
             <span class="hero-chip">
-                ⚡ Instant Bank Payment
+                ⚡ Instant Bank Transfer (UPI)
             </span>
             <span class="hero-chip">
-                📍 Drop at Local Hub
+                📍 Free Drop at Local Hub
             </span>
         </div>
 
@@ -52,7 +52,7 @@
 </div>
 
 <!-- ======================================================================= -->
-<!-- 2. MY CROPS TABULAR SECTION (STRICTLY DATA-ISOLATED PER FARMER)      -->
+<!-- 2. MY CROPS TABULAR SECTION                                             -->
 <!-- ======================================================================= -->
 <div class="card">
     <div class="card-header">
@@ -60,14 +60,14 @@
             <h2 class="card-title">
                 <span>🌱</span> My Crops
             </h2>
-            <div class="card-subtitle">An overview of your current and past crops.</div>
+            <div class="card-subtitle">Your active crops and harvest schedules.</div>
         </div>
         <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
             <button type="button" class="btn btn-forest" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem; cursor: pointer;" onclick="openAddCropModal()">
                 <span>➕ Add Crop</span>
             </button>
             <a href="{% url 'farmer_orders' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem;">
-                <span>🔍 Batch Traceability Tracker</span>
+                <span>🔍 Track Produce Batches</span>
             </a>
         </div>
     </div>
@@ -132,7 +132,7 @@
                         <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🌾</div>
                         <div style="font-weight: 700; font-size: 1rem; color: #133826; margin-bottom: 0.35rem;">No crops registered yet</div>
                         <div style="font-size: 0.85rem; max-width: 420px; margin: 0 auto 1.25rem auto; line-height: 1.4;">
-                            Track your seasonal plantings, estimate expected yield, and schedule optical quality inspections for guaranteed payouts.
+                            Track your crops, estimate harvest yields, and scan produce for instant payments.
                         </div>
                         <button type="button" class="btn btn-forest" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;" onclick="openAddCropModal()">
                             ➕ Add First Crop
@@ -146,19 +146,19 @@
 </div>
 
 <!-- ======================================================================= -->
-<!-- 3. FOUR KPI CARDS (BOTTOM METRICS ROW FROM MOCKUP)                      -->
+<!-- 3. FOUR KPI CARDS (CORE FARMER METRICS)                                 -->
 <!-- ======================================================================= -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
-    <!-- Card 1: Farm Reliability Score -->
+    <!-- Card 1: Farmer Trust Score -->
     <div class="card" style="margin-bottom: 0;">
         <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
-            Farm Reliability Score
+            Farmer Trust Score
         </div>
         <div style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
             {{ reliability_score }} <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">/ 100</span>
         </div>
         <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #065F46; font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
-            <span>⭐ Grade A Tier</span> • 100% Delivery Integrity
+            <span>⭐ Grade A Farmer</span> • On-Time Deliveries
         </div>
     </div>
 
@@ -172,53 +172,53 @@
             ₹{{ wallet.current_balance|floatformat:2 }}
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; font-size: 0.78rem;">
-            <span style="color: var(--text-muted);">Instant UPI Rail</span>
+            <span style="color: var(--text-muted);">Instant UPI to Bank</span>
             <a href="{% url 'farmer_wallet' %}" style="color: #133826; font-weight: 700; text-decoration: underline;">
                 Withdraw →
             </a>
         </div>
     </div>
 
-    <!-- Card 3: Active Input Loans -->
+    <!-- Card 3: Seeds & Fertilizer Advance -->
     <div class="card" style="margin-bottom: 0;">
         <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
-            Active Input Loans
+            Seeds & Fertilizer Advance
         </div>
         <div style="font-size: 1.85rem; font-weight: 800; color: #1F2937; letter-spacing: -0.02em;">
             ₹0.00
         </div>
         <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #059669; font-weight: 600;">
-            ● 0% Pre-Harvest Subsidized Credit
+            ● 0% Interest Farming Advance
         </div>
     </div>
 
-    <!-- Card 4: Guaranteed MSP Floor -->
+    <!-- Card 4: Guaranteed Minimum Price (MSP) -->
     <div class="card" style="margin-bottom: 0;">
         <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
-            Guaranteed MSP Floor
+            Guaranteed Minimum Price (MSP)
         </div>
         <div style="font-size: 1.85rem; font-weight: 800; color: #D97706; letter-spacing: -0.02em;">
             100% Protected
         </div>
         <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #B45309; font-weight: 600;">
-            +{{ financial_summary.total_disintermediation_gain|floatformat:0 }} Direct Disintermediation Gain
+            +₹{{ financial_summary.total_disintermediation_gain|floatformat:0 }} Extra Profit vs Mandi
         </div>
     </div>
 </div>
 
 <!-- ======================================================================= -->
-<!-- 4. TRANSPARENT PAYOUT & DISINTERMEDIATION BREAKDOWN (UNIT TEST REQUIRED) -->
+<!-- 4. RECENT HARVEST EARNINGS & PAYOUTS                                     -->
 <!-- ======================================================================= -->
 <div class="card">
     <div class="card-header">
         <div>
             <h2 class="card-title">
-                <span>⚖️</span> Transparent Payout & Disintermediation Breakdown
+                <span>💰</span> Recent Harvest Earnings & Payouts
             </h2>
-            <div class="card-subtitle">Historical produce batches dropped off at micro-hubs with transparent disintermediation audit trail.</div>
+            <div class="card-subtitle">Your produce drops, AI quality grades, and guaranteed direct earnings compared to mandi rates.</div>
         </div>
         <a href="{% url 'farmer_pricing' %}" class="btn btn-forest" style="padding: 0.45rem 0.9rem; font-size: 0.8rem;">
-            View Detailed Analysis →
+            View Detailed Price Analysis →
         </a>
     </div>
 
@@ -228,14 +228,11 @@
                 <tr>
                     <th>Batch ID</th>
                     <th>Crop & Hub</th>
-                    <th>Volume (kg)</th>
-                    <th>AI Grade</th>
-                    <th>Base Value</th>
-                    <th>Quality Modifier</th>
-                    <th>Hub Logistics</th>
-                    <th>Net Final Payout</th>
-                    <th>Traditional Mandi</th>
-                    <th>Farmer Gain</th>
+                    <th>Quantity</th>
+                    <th>AI Quality Grade</th>
+                    <th>Your Payout</th>
+                    <th>Mandi Rate</th>
+                    <th>Extra Profit</th>
                 </tr>
             </thead>
             <tbody>
@@ -252,21 +249,8 @@
                             Grade {{ item.breakdown.ai_grade }} ({{ item.breakdown.ai_confidence_score }}%)
                         </span>
                     </td>
-                    <td>₹{{ item.breakdown.base_value }}<br><span style="font-size: 0.75rem; color: var(--text-muted);">@ ₹{{ item.breakdown.base_price_per_kg }}/kg</span></td>
                     <td>
-                        {% if item.breakdown.grade_modifier_pct > 0 %}
-                            <span style="color: #059669; font-weight: 600;">+{{ item.breakdown.grade_modifier_pct }}% (+₹{{ item.breakdown.grade_modifier_amount }})</span>
-                        {% elif item.breakdown.grade_modifier_pct == 0 %}
-                            <span style="color: var(--text-muted);">0% (Standard)</span>
-                        {% else %}
-                            <span style="color: #DC2626; font-weight: 600;">{{ item.breakdown.grade_modifier_pct }}% (-₹{{ item.breakdown.grade_modifier_amount|stringformat:".2f" }})</span>
-                        {% endif %}
-                    </td>
-                    <td style="color: #DC2626;">
-                        -₹{{ item.breakdown.logistics_deduction }}
-                    </td>
-                    <td>
-                        <strong style="color: #059669; font-size: 1rem;">₹{{ item.breakdown.final_payout }}</strong>
+                        <strong style="color: #059669; font-size: 1.05rem;">₹{{ item.breakdown.final_payout }}</strong>
                     </td>
                     <td style="color: var(--text-muted); text-decoration: line-through;">
                         ₹{{ item.breakdown.traditional_mandi_payout }}
@@ -279,8 +263,8 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-                        No harvest batches recorded yet. <a href="{% url 'farmer_graded_produce' %}" style="color: #133826; font-weight: 700;">Upload produce photo</a> to run optical AI quality grading!
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No harvest batches recorded yet. <a href="{% url 'farmer_graded_produce' %}" style="color: #133826; font-weight: 700;">Upload produce photo</a> to run AI quality grading and get paid!
                     </td>
                 </tr>
                 {% endfor %}
@@ -300,12 +284,12 @@
                 📦
             </div>
             <div>
-                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Optical AI Grading Station</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Multispectral surface inspection</div>
+                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Photo Quality Grading</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Instant AI produce scan</div>
             </div>
         </div>
         <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
-            Upload harvest photos or place produce on the conveyor for instant neural AGMARK grading and guaranteed payouts.
+            Take a clear photo of your harvest to instantly check quality grade and get guaranteed fair prices.
         </p>
     </a>
 
@@ -316,12 +300,12 @@
                 ⛅
             </div>
             <div>
-                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Weather & Agronomic Risk</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Satellite & Soil Telemetry</div>
+                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Weather & Field Advice</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Live forecast & soil moisture</div>
             </div>
         </div>
         <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
-            Real-time Open-Meteo microclimate, volumetric soil moisture, and Gemini AI irrigation and harvest advisories.
+            Check live local weather forecasts, soil moisture levels, and AI recommendations for your crops.
         </p>
     </a>
 
@@ -332,12 +316,12 @@
                 🚚
             </div>
             <div>
-                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Dynamic Cold-Chain Sweeps</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">4°C Reefer EV Fleet</div>
+                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Pickup & Transport</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Direct hub delivery</div>
             </div>
         </div>
         <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
-            Track scheduled EV collection sweeps from local micro-hubs to urban retail buyers with carbon offset audit.
+            Track scheduled pickup vehicles from your local micro-hub directly to city buyers.
         </p>
     </a>
 </div>
