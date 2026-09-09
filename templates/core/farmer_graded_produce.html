@@ -313,29 +313,38 @@
         <table>
             <thead>
                 <tr>
-                    <th>BATCH ID</th>
-                    <th>CROP</th>
-                    <th>VOLUME</th>
-                    <th>GRADE</th>
-                    <th>CONFIDENCE</th>
-                    <th>FINAL NET PAYOUT</th>
-                    <th>STATUS</th>
+                    <th><span style="margin-right: 0.25rem;">#️⃣</span> BATCH ID</th>
+                    <th><span style="margin-right: 0.25rem;">🌾</span> CROP</th>
+                    <th><span style="margin-right: 0.25rem;">⚖️</span> VOLUME</th>
+                    <th><span style="margin-right: 0.25rem;">🎯</span> QUALITY GRADE</th>
+                    <th><span style="margin-right: 0.25rem;">📊</span> AI CONFIDENCE</th>
+                    <th><span style="margin-right: 0.25rem;">💰</span> FINAL PAYOUT</th>
+                    <th><span style="margin-right: 0.25rem;">📌</span> STATUS</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in batch_breakdowns %}
                 <tr>
                     <td><code>{{ item.batch.batch_id }}</code></td>
-                    <td><strong>{{ item.batch.crop.name }}</strong></td>
-                    <td>{{ item.breakdown.volume_kg }} kg</td>
                     <td>
-                        <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}">
-                            Grade {{ item.breakdown.ai_grade }}
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <span>🥬</span>
+                            <strong>{{ item.batch.crop.name }}</strong>
+                        </div>
+                    </td>
+                    <td><strong>{{ item.breakdown.volume_kg }} kg</strong></td>
+                    <td>
+                        <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                            {% if item.breakdown.ai_grade == 'A' %}⭐{% elif item.breakdown.ai_grade == 'B' %}📦{% else %}⚠️{% endif %} Grade {{ item.breakdown.ai_grade }}
                         </span>
                     </td>
-                    <td>{{ item.breakdown.ai_confidence_score }}%</td>
-                    <td><strong style="color: #059669;">₹{{ item.breakdown.final_payout }}</strong></td>
-                    <td><span class="status-pill status-hub">Inspected</span></td>
+                    <td><strong>{{ item.breakdown.ai_confidence_score }}%</strong></td>
+                    <td><strong style="color: #059669; font-size: 1rem;">₹{{ item.breakdown.final_payout }}</strong></td>
+                    <td>
+                        <span class="status-pill status-hub" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <span>✅</span> Inspected
+                        </span>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -539,6 +548,15 @@
 
             resultCard.style.display = "block";
             resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        // Voice assistant action-oriented auto-trigger
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("action") === "scan") {
+            setTimeout(() => {
+                const btn = document.getElementById("triggerUploadBtn");
+                if (btn) btn.click();
+            }, 350);
         }
     });
 </script>

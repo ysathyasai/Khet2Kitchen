@@ -2625,5 +2625,79 @@ class UnifiedAuthenticationTests(TestCase):
         self.assertNotContains(res, "AIzaSyCq48UsiSWoL6BJTYsYXhbH-nLx3oLADqA")
 
 
+class ActionOrientedVoiceAssistantTests(TestCase):
+    """
+    Verifies that conversational voice commands parse actionable intent
+    and return explicit app actions and routing targets:
+    - 'Log harvest for tomatoes' -> REDIRECT_TO_HARVEST (/farmer/graded-produce/?action=scan)
+    - 'Check MSP pricing' -> REDIRECT_TO_PRICING (/farmer/pricing/)
+    - 'Scan produce' -> REDIRECT_TO_HARVEST (/farmer/graded-produce/?action=scan)
+    - 'What is my wallet balance?' -> FETCH_WALLET (/farmer/wallet/)
+    - 'Show incoming buyer pre-orders' -> REDIRECT_TO_ORDERS (/farmer/orders/)
+    """
+
+    def setUp(self):
+        self.farmer = User.objects.create_user(
+            phone_number="+919876543290",
+            role=User.Role.FARMER,
+            first_name="Santosh",
+            last_name="Patil",
+        )
+        self.wallet, _ = FarmerWallet.objects.get_or_create(
+            farmer=self.farmer,
+            defaults={"current_balance": Decimal("5200.00")},
+        )
+
+    def test_voice_command_log_harvest(self):
+        res = process_intent_with_gemini(
+            transcribed_text="Log harvest for tomatoes",
+            farmer_user=self.farmer,
+            language_code="en-IN",
+        )
+        self.assertEqual(res["intent"], "harvest_schedule")
+        self.assertEqual(res["action"], "REDIRECT_TO_HARVEST")
+        self.assertEqual(res["action_target"], "/farmer/graded-produce/?action=scan")
+        self.assertIn("harvest", res["response_text"].lower())
+
+    def test_voice_command_check_msp_pricing(self):
+        res = process_intent_with_gemini(
+            transcribed_text="Check MSP pricing",
+            farmer_user=self.farmer,
+            language_code="en-IN",
+        )
+        self.assertEqual(res["intent"], "CHECK_PRICE")
+        self.assertEqual(res["action"], "REDIRECT_TO_PRICING")
+        self.assertEqual(res["action_target"], "/farmer/pricing/")
+
+    def test_voice_command_scan_produce(self):
+        res = process_intent_with_gemini(
+            transcribed_text="Scan produce",
+            farmer_user=self.farmer,
+            language_code="en-IN",
+        )
+        self.assertEqual(res["action"], "REDIRECT_TO_HARVEST")
+        self.assertEqual(res["action_target"], "/farmer/graded-produce/?action=scan")
+
+    def test_voice_command_check_wallet(self):
+        res = process_intent_with_gemini(
+            transcribed_text="What is my wallet balance?",
+            farmer_user=self.farmer,
+            language_code="en-IN",
+        )
+        self.assertEqual(res["intent"], "wallet_balance")
+        self.assertEqual(res["action"], "FETCH_WALLET")
+        self.assertEqual(res["action_target"], "/farmer/wallet/")
+
+    def test_voice_command_orders(self):
+        res = process_intent_with_gemini(
+            transcribed_text="Show incoming buyer pre-orders",
+            farmer_user=self.farmer,
+            language_code="en-IN",
+        )
+        self.assertEqual(res["action"], "REDIRECT_TO_ORDERS")
+        self.assertEqual(res["action_target"], "/farmer/orders/")
+
+
+
 
 

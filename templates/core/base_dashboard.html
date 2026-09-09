@@ -1192,17 +1192,20 @@
 
                 <!-- Quick Prompts Chips -->
                 <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
-                    <button type="button" onclick="quickModalVoiceQuery('मेरा वॉलेट बैलेंस कितना है?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
-                        💰 वॉलेट बैलेंस?
+                    <button type="button" onclick="quickModalVoiceQuery('Log harvest for tomatoes')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: #A7F3D0; background: #ECFDF5; color: #065F46; font-weight: 600;">
+                        🌾 Log Harvest / AI Scan
                     </button>
-                    <button type="button" onclick="quickModalVoiceQuery('What is my wallet balance?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
-                        💳 Balance (EN)?
+                    <button type="button" onclick="quickModalVoiceQuery('Check MSP pricing')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: #FDE68A; background: #FFFBEB; color: #92400E; font-weight: 600;">
+                        ⚖️ Check MSP Pricing
                     </button>
-                    <button type="button" onclick="quickModalVoiceQuery('अगली फसल कटाई कब करनी है?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
-                        🌾 फसल कटाई शेड्यूल?
+                    <button type="button" onclick="quickModalVoiceQuery('What is my wallet balance?')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: #BFDBFE; background: #EFF6FF; color: #1E40AF; font-weight: 600;">
+                        💳 Wallet Balance
                     </button>
-                    <button type="button" onclick="quickModalVoiceQuery('What are the tomato market rates today?')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
-                        📈 Tomato Rates?
+                    <button type="button" onclick="quickModalVoiceQuery('Check live weather forecast')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                        ⛅ Weather & Risk
+                    </button>
+                    <button type="button" onclick="quickModalVoiceQuery('Show incoming buyer pre-orders')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                        🛒 Pre-Orders
                     </button>
                 </div>
 
@@ -1370,18 +1373,21 @@
 
             let actionBadge = '';
             if (action && actionTarget) {
-                let label = "Opening page...";
-                if (action === 'FETCH_WALLET') label = "💳 Opening Wallet...";
-                else if (action === 'REDIRECT_TO_HARVEST') label = "🌾 Opening Harvest Logging...";
-                else if (action === 'REDIRECT_TO_PRICING') label = "⚖️ Opening MSP Pricing...";
-                else if (action === 'REDIRECT_TO_WEATHER') label = "🌦️ Opening Weather Advisory...";
-                else if (action === 'REDIRECT_TO_ORDERS') label = "📦 Opening Orders & Batches...";
+                let label = "Opening requested view...";
+                if (action === 'FETCH_WALLET') label = "💳 Opening Wallet & Payouts...";
+                else if (action === 'REDIRECT_TO_HARVEST') label = "🌾 Opening AI Produce Scanner...";
+                else if (action === 'REDIRECT_TO_PRICING') label = "⚖️ Opening MSP Floor & Pricing...";
+                else if (action === 'REDIRECT_TO_WEATHER') label = "🌦️ Opening Weather & Field Advisory...";
+                else if (action === 'REDIRECT_TO_ORDERS') label = "📦 Opening Active Pre-Orders...";
+                else if (action === 'OPEN_ADD_CROP') label = "➕ Opening Add Crop Form...";
                 else label = `⚡ Opening ${action}...`;
 
                 actionBadge = `
-                    <div style="margin-top: 0.5rem; padding: 0.35rem 0.65rem; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 700; color: #92400E; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="margin-top: 0.5rem; padding: 0.45rem 0.75rem; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 700; color: #92400E; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                         <span>${label}</span>
-                        <a href="${actionTarget}" style="color: #B45309; text-decoration: underline; margin-left: 0.5rem;">Redirecting... →</a>
+                        <a href="${actionTarget}" class="btn btn-gold" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; text-decoration: none; border-radius: 0.35rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            Open Now →
+                        </a>
                     </div>
                 `;
             }
@@ -1447,19 +1453,39 @@
                         speakModalDeviceSpeech(data.response_text, modalLastLanguage);
                     }
 
-                    // Smart Action Execution
+                    // Smart Active Action Execution
                     if (data.action && data.action_target && data.action !== 'NONE') {
                         const actIndicator = document.getElementById('modalActionIndicator');
                         if (actIndicator) {
                             actIndicator.style.display = 'block';
-                            actIndicator.innerText = `⚡ Action: Opening ${data.action_target}...`;
+                            actIndicator.innerText = `⚡ Executing Action: Opening ${data.action_target}...`;
                         }
                         if (statusText) {
-                            statusText.innerText = `⚡ Action Triggered: Redirecting to ${data.action_target}...`;
+                            statusText.innerText = `⚡ Action Triggered: Opening ${data.action_target}...`;
                         }
-                        setTimeout(() => {
-                            window.location.href = data.action_target;
-                        }, 1800);
+
+                        // Check if action can be executed in-place immediately without a full page reload
+                        let inPlaceExecuted = false;
+                        if (data.action === 'OPEN_ADD_CROP' && typeof openAddCropModal === 'function') {
+                            setTimeout(() => {
+                                closeVoiceAssistantModal();
+                                openAddCropModal();
+                            }, 800);
+                            inPlaceExecuted = true;
+                        } else if (data.action === 'REDIRECT_TO_HARVEST' && window.location.pathname.includes('/farmer/graded-produce/')) {
+                            setTimeout(() => {
+                                closeVoiceAssistantModal();
+                                const fileInput = document.getElementById('produceImageInput') || document.getElementById('triggerUploadBtn');
+                                if (fileInput) fileInput.click();
+                            }, 800);
+                            inPlaceExecuted = true;
+                        }
+
+                        if (!inPlaceExecuted) {
+                            setTimeout(() => {
+                                window.location.href = data.action_target;
+                            }, 1300);
+                        }
                     }
                 } else {
                     if (statusText) statusText.innerText = data.error || "Could not process query. Please try again.";

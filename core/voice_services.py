@@ -232,9 +232,27 @@ def _heuristic_intent_and_reply(
         "वॉलेट", "बैलेंस", "पैसे", "रुपये", "खाता", "कमाई",
         "wallet", "balance", "money", "rupee", "payment", "earning", "paise", "rupaye", "kamai", "khata"
     ]
+    scan_log_keywords = [
+        "log harvest", "scan produce", "scan crop", "ai scan", "grade produce", "grading",
+        "scan", "स्कैन", "लॉग हार्वेस्ट", "फोटो", "जांच", "camera"
+    ]
     harvest_keywords = [
         "कटाई", "हार्वेस्ट", "काटना", "तारीख", "कब", "फसल", "शेड्यूल",
         "harvest", "schedule", "crop", "katai", "fasal", "kab", "tarikh", "tareekh", "date", "kheti", "picking"
+    ]
+    msp_keywords = [
+        "msp", "pricing", "rate table", "price table", "floor price", "mandi rate",
+        "एमएसपी", "दर", "दाम सूची", "भाव तालिका", "रेट तालिका", "दाम"
+    ]
+    order_keywords = [
+        "order", "orders", "pre-order", "preorder", "pre-orders", "retailer order", "buyer order", "buyer demand",
+        "ऑर्डर", "प्री-ऑर्डर", "मांग", "खरीदार", "रिटेलर"
+    ]
+    add_crop_keywords = [
+        "add crop", "new crop", "log planting", "नई फसल", "फसल जोड़ें", "crop add"
+    ]
+    weather_keywords = [
+        "weather", "rain", "forecast", "climate", "soil", "barish", "mausam", "मौसम", "बारिश", "मिट्टी"
     ]
     price_keywords = [
         "भाव", "दाम", "रेट", "कीमत", "मुनाफा", "प्राइस", "सेल", "बेचना",
@@ -248,17 +266,68 @@ def _heuristic_intent_and_reply(
     action = "NONE"
     action_target = ""
 
-    # Matching logic
-    if any(k in text_lower for k in wallet_keywords):
+    # Priority 1: Action-oriented active triggers (Log Harvest / Scan Produce)
+    if any(k in text_lower for k in scan_log_keywords):
+        intent = "harvest_schedule"
+        action = "REDIRECT_TO_HARVEST"
+        action_target = "/farmer/graded-produce/?action=scan"
+        if is_english:
+            reply = f"Hello {farmer_name}, opening AI harvest logging and produce scanner for you now."
+        else:
+            reply = f"नमस्ते {farmer_name} जी, आपके लिए AI हार्वेस्ट और फसल स्कैनिंग पोर्टल खोला जा रहा है।"
+
+    # Priority 2: Add New Crop
+    elif any(k in text_lower for k in add_crop_keywords):
+        intent = "add_crop"
+        action = "OPEN_ADD_CROP"
+        action_target = "/farmer/dashboard/?action=add_crop"
+        if is_english:
+            reply = f"Hello {farmer_name}, opening the new crop planting form."
+        else:
+            reply = f"नमस्ते {farmer_name} जी, आपके लिए नई फसल जोड़ने का फॉर्म खोला जा रहा है।"
+
+    # Priority 3: Check MSP Pricing
+    elif any(k in text_lower for k in msp_keywords):
+        intent = "CHECK_PRICE"
+        action = "REDIRECT_TO_PRICING"
+        action_target = "/farmer/pricing/"
+        if is_english:
+            reply = f"Hello {farmer_name}, opening the guaranteed MSP floor and direct pricing schedule."
+        else:
+            reply = f"नमस्ते {farmer_name} जी, आपके लिए एमएसपी और मंडी खरीद भाव तालिका खोली जा रही है।"
+
+    # Priority 4: Wallet Balance Check & Payouts
+    elif any(k in text_lower for k in wallet_keywords):
         intent = "wallet_balance"
         action = "FETCH_WALLET"
         action_target = "/farmer/wallet/"
         if is_english:
-            reply = f"Hello {farmer_name}, your K2K digital wallet balance is ₹{balance:,.2f}. You can transfer it directly to your bank account anytime."
+            reply = f"Hello {farmer_name}, your K2K digital wallet balance is ₹{balance:,.2f}. Opening your wallet now."
         else:
-            reply = f"नमस्ते {farmer_name} जी, आपके K2K डिजिटल वॉलेट में कुल ₹{balance:,.2f} हैं। आप जब चाहें इसे अपने बैंक खाते में ट्रांसफर कर सकते हैं।"
+            reply = f"नमस्ते {farmer_name} जी, आपके K2K डिजिटल वॉलेट में कुल ₹{balance:,.2f} हैं। आपका वॉलेट खोला जा रहा है।"
 
-    elif any(k in text_lower for k in harvest_keywords) or any(k in text_lower for k in ["log harvest", "लॉग", "हार्वेस्ट", "scan", "स्कैन"]):
+    # Priority 5: Active Retailer Orders & Demand
+    elif any(k in text_lower for k in order_keywords):
+        intent = "view_orders"
+        action = "REDIRECT_TO_ORDERS"
+        action_target = "/farmer/orders/"
+        if is_english:
+            reply = f"Hello {farmer_name}, opening active urban retailer pre-orders and buyer demand contracts."
+        else:
+            reply = f"नमस्ते {farmer_name} जी, आपके लिए शहरी रिटेलर प्री-ऑर्डर और अनुबंध खोले जा रहे हैं।"
+
+    # Priority 6: Weather & Field Advisory
+    elif any(k in text_lower for k in weather_keywords):
+        intent = "weather_forecast"
+        action = "REDIRECT_TO_WEATHER"
+        action_target = "/farmer/weather/"
+        if is_english:
+            reply = f"Hello {farmer_name}, opening your live satellite weather and soil advisory dashboard."
+        else:
+            reply = f"नमस्ते {farmer_name} जी, आपके लिए मौसम और मिट्टी नमी का लाइव डैशबोर्ड खोला जा रहा है।"
+
+    # Priority 7: Harvest Schedules Query
+    elif any(k in text_lower for k in harvest_keywords):
         intent = "harvest_schedule"
         action = "REDIRECT_TO_HARVEST"
         action_target = "/farmer/graded-produce/"
@@ -277,24 +346,7 @@ def _heuristic_intent_and_reply(
             else:
                 reply = f"नमस्ते {farmer_name} जी, आपके लिए हार्वेस्ट और AI ग्रेडिंग पोर्टल खोला जा रहा है।"
 
-    elif any(k in text_lower for k in ["weather", "rain", "forecast", "मौसम", "बारिश"]):
-        intent = "weather_forecast"
-        action = "REDIRECT_TO_WEATHER"
-        action_target = "/farmer/weather/"
-        if is_english:
-            reply = f"Hello {farmer_name}, opening your live satellite weather and soil advisory dashboard."
-        else:
-            reply = f"नमस्ते {farmer_name} जी, आपके लिए मौसम और मिट्टी नमी का लाइव डैशबोर्ड खोला जा रहा है।"
-
-    elif any(k in text_lower for k in ["msp", "pricing", "एमएसपी", "दर", "दाम सूची", "rate table"]):
-        intent = "CHECK_PRICE"
-        action = "REDIRECT_TO_PRICING"
-        action_target = "/farmer/pricing/"
-        if is_english:
-            reply = f"Hello {farmer_name}, opening the guaranteed MSP floor and direct pricing schedule."
-        else:
-            reply = f"नमस्ते {farmer_name} जी, आपके लिए एमएसपी और मंडी खरीद भाव तालिका खोली जा रही है।"
-
+    # Priority 8: Specific Crop Price Check
     elif any(k in text_lower for k in price_keywords) or any(c in text_lower for c in ["टमाटर", "tomato", "टोमेटो"]):
         intent = "CHECK_PRICE"
         matched_crop = next((c for c in crops if c["crop"].lower() in text_lower), (crops[0] if crops else None))
@@ -334,12 +386,16 @@ def _normalize_intent(raw_intent: str, fallback_intent: str) -> str:
         return fallback_intent
     if any(k in raw for k in ["wallet", "balance", "money", "payout"]):
         return "wallet_balance"
-    if any(k in raw for k in ["harvest", "schedule", "cut", "crop"]):
+    if any(k in raw for k in ["harvest", "schedule", "cut", "crop", "scan"]):
         return "harvest_schedule"
     if any(k in raw for k in ["price", "pricing", "mandi", "msp", "rate", "cost"]):
         return "CHECK_PRICE"
     if any(k in raw for k in ["weather", "rain", "forecast", "climate"]):
         return "weather_forecast"
+    if any(k in raw for k in ["order", "demand"]):
+        return "view_orders"
+    if any(k in raw for k in ["add", "plant"]):
+        return "add_crop"
     if any(k in raw for k in ["greet", "hello", "hi", "namaste"]):
         return "greeting"
     if any(k in raw for k in ["advice", "farm", "general", "inquiry", "help", "tip"]):
@@ -347,20 +403,25 @@ def _normalize_intent(raw_intent: str, fallback_intent: str) -> str:
     return raw_intent or fallback_intent
 
 
-def _normalize_action(raw_action: str, raw_target: str, intent: str) -> Tuple[str, str]:
+def _normalize_action(raw_action: str, raw_target: str, intent: str, transcribed_text: str = "") -> Tuple[str, str]:
     act = (raw_action or "").strip().upper()
     tgt = (raw_target or "").strip()
+    txt = (transcribed_text or "").lower()
     if act == "FETCH_WALLET" or ("WALLET" in act):
         return "FETCH_WALLET", tgt or "/farmer/wallet/"
-    if "HARVEST" in act:
-        return "REDIRECT_TO_HARVEST", tgt or "/farmer/graded-produce/"
-    if "PRICING" in act or "PRICE" in act:
+    if "HARVEST" in act or "SCAN" in act or "GRADE" in act:
+        if any(k in txt for k in ["scan", "log", "grade", "grading", "स्कैन", "लॉग"]) or "?action=scan" in tgt or not tgt or tgt.rstrip("/") == "/farmer/graded-produce":
+            return "REDIRECT_TO_HARVEST", "/farmer/graded-produce/?action=scan"
+        return "REDIRECT_TO_HARVEST", tgt or "/farmer/graded-produce/?action=scan"
+    if "PRICING" in act or "MSP" in act or ("PRICE" in act and "ORDER" not in act):
         return "REDIRECT_TO_PRICING", tgt or "/farmer/pricing/"
     if "WEATHER" in act:
         return "REDIRECT_TO_WEATHER", tgt or "/farmer/weather/"
     if "ORDER" in act:
         return "REDIRECT_TO_ORDERS", tgt or "/farmer/orders/"
-    if act in ["FETCH_WALLET", "REDIRECT_TO_HARVEST", "REDIRECT_TO_PRICING", "REDIRECT_TO_WEATHER", "REDIRECT_TO_ORDERS"]:
+    if "ADD_CROP" in act or "CROP_MODAL" in act or "PLANT" in act:
+        return "OPEN_ADD_CROP", tgt or "/farmer/dashboard/?action=add_crop"
+    if act in ["FETCH_WALLET", "REDIRECT_TO_HARVEST", "REDIRECT_TO_PRICING", "REDIRECT_TO_WEATHER", "REDIRECT_TO_ORDERS", "OPEN_ADD_CROP"]:
         return act, tgt
     return "NONE", ""
 
@@ -459,7 +520,7 @@ CRITICAL RULES:
    - "intent" MUST be exactly one of: "wallet_balance", "harvest_schedule", "CHECK_PRICE", "weather_forecast", "greeting", "general_advice".
    - If the farmer commands or requests an app action, output the matching action and action_target:
      * "FETCH_WALLET" (action_target: "/farmer/wallet/"): asking to check balance, view wallet, or transfer money.
-     * "REDIRECT_TO_HARVEST" (action_target: "/farmer/graded-produce/"): asking to log a harvest, scan produce, or check harvest grading.
+     * "REDIRECT_TO_HARVEST" (action_target: "/farmer/graded-produce/?action=scan"): asking to log a harvest, scan produce, or check harvest grading.
      * "REDIRECT_TO_PRICING" (action_target: "/farmer/pricing/"): asking to view MSP rate table or pricing.
      * "REDIRECT_TO_WEATHER" (action_target: "/farmer/weather/"): asking about weather, rain, or agronomic advisory.
      * "REDIRECT_TO_ORDERS" (action_target: "/farmer/orders/"): asking to view batches, track shipments, or orders.
@@ -505,7 +566,7 @@ Output valid JSON only matching this schema:
                     intent = _normalize_intent(raw_intent, heuristic_intent)
                     raw_action = parsed.get("action") or heuristic_action
                     raw_target = parsed.get("action_target") or heuristic_target
-                    action, action_target = _normalize_action(raw_action, raw_target, intent)
+                    action, action_target = _normalize_action(raw_action, raw_target, intent, transcribed_text=transcribed_text)
                     reply_text = (parsed.get("response_text") or parsed.get("voice_reply_text") or "").strip()
                     if detected_lang.startswith("en"):
                         resp_lang = "en-IN"
@@ -562,7 +623,7 @@ Output valid JSON only matching this schema:
                     intent = _normalize_intent(raw_intent, heuristic_intent)
                     raw_action = parsed.get("action") or heuristic_action
                     raw_target = parsed.get("action_target") or heuristic_target
-                    action, action_target = _normalize_action(raw_action, raw_target, intent)
+                    action, action_target = _normalize_action(raw_action, raw_target, intent, transcribed_text=transcribed_text)
                     reply_text = (parsed.get("response_text") or parsed.get("voice_reply_text") or "").strip()
                     if reply_text:
                         logger.info("Gemini legacy resolved intent: %s | action: %s", intent, action)

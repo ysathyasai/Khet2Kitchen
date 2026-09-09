@@ -76,52 +76,52 @@
         <table>
             <thead>
                 <tr>
-                    <th>CROP NAME</th>
-                    <th>PLANTED / HARVEST DATE</th>
-                    <th>EXPECTED YIELD</th>
-                    <th>STATUS</th>
-                    <th style="text-align: right;">ACTIONS</th>
+                    <th><span style="margin-right: 0.25rem;">🌾</span> CROP NAME</th>
+                    <th><span style="margin-right: 0.25rem;">📅</span> PLANTED / HARVEST DATE</th>
+                    <th><span style="margin-right: 0.25rem;">⚖️</span> EXPECTED YIELD</th>
+                    <th><span style="margin-right: 0.25rem;">📌</span> STATUS</th>
+                    <th style="text-align: right;"><span style="margin-right: 0.25rem;">⚡</span> ACTIONS</th>
                 </tr>
             </thead>
             <tbody>
                 {% for crop_item in my_crops %}
                 <tr>
                     <td>
-                        <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">
-                            {{ crop_item.name }}
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <span>🥬</span> {{ crop_item.name }}
                             {% if crop_item.status == "At Hub (Graded)" %}
                                 <span style="display: inline-block; margin-left: 0.4rem; padding: 0.15rem 0.45rem; background: #D1FAE5; color: #065F46; border-radius: 4px; font-size: 0.68rem; font-weight: 700;">Active Demo</span>
                             {% endif %}
                         </div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-left: 1.5rem;">
                             Code: <code>{{ crop_item.code }}</code> • {{ crop_item.get_category_display }}
                         </div>
                     </td>
                     <td style="color: var(--text-muted); font-size: 0.88rem;">
                         {% if crop_item.planted_date %}
-                            {{ crop_item.planted_date|date:"Y-m-d" }}
+                            📅 {{ crop_item.planted_date|date:"Y-m-d" }}
                         {% elif crop_item.harvest_date %}
-                            {{ crop_item.harvest_date|date:"Y-m-d" }}
+                            📅 {{ crop_item.harvest_date|date:"Y-m-d" }}
                         {% else %}
                             <span style="color: var(--text-muted);">Unscheduled</span>
                         {% endif %}
                     </td>
                     <td style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">
-                        {{ crop_item.expected_yield_kg|floatformat:0 }} kg
+                        <strong>{{ crop_item.expected_yield_kg|floatformat:0 }} kg</strong>
                     </td>
                     <td>
-                        <span class="status-pill {{ crop_item.get_status_class }}">
-                            {{ crop_item.status }}
+                        <span class="status-pill {{ crop_item.get_status_class }}" style="display: inline-flex; align-items: center; gap: 0.3rem;">
+                            {% if crop_item.status == 'Growing' %}🌱{% elif crop_item.status == 'Planting' %}🚜{% elif crop_item.status == 'Harvested' %}🌾{% elif crop_item.status == 'At Hub (Graded)' %}🏬{% endif %} {{ crop_item.status }}
                         </span>
                     </td>
                     <td style="text-align: right;">
                         {% if crop_item.status == 'At Hub (Graded)' %}
-                            <button type="button" class="btn btn-forest" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; border-radius: 0.4rem; cursor: pointer;" onclick="openInspectModal({{ crop_item.id }})">
-                                Inspect
+                            <button type="button" class="btn btn-forest" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; border-radius: 0.4rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;" onclick="openInspectModal({{ crop_item.id }})">
+                                <span>🔍</span> Inspect
                             </button>
                         {% else %}
-                            <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; border-radius: 0.4rem; cursor: pointer;" onclick="openEditModal({{ crop_item.id }}, '{{ crop_item.name|escapejs }}', '{{ crop_item.expected_yield_kg|floatformat:0 }}', '{{ crop_item.harvest_date|date:"Y-m-d"|default:"" }}', '{{ crop_item.status|escapejs }}')">
-                                Edit
+                            <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; border-radius: 0.4rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;" onclick="openEditModal({{ crop_item.id }}, '{{ crop_item.name|escapejs }}', '{{ crop_item.expected_yield_kg|floatformat:0 }}', '{{ crop_item.harvest_date|date:"Y-m-d"|default:"" }}', '{{ crop_item.status|escapejs }}')">
+                                <span>✏️</span> Edit
                             </button>
                         {% endif %}
                     </td>
@@ -226,13 +226,13 @@
         <table>
             <thead>
                 <tr>
-                    <th>Batch ID</th>
-                    <th>Crop & Hub</th>
-                    <th>Quantity</th>
-                    <th>AI Quality Grade</th>
-                    <th>Your Payout</th>
-                    <th>Mandi Rate</th>
-                    <th>Extra Profit</th>
+                    <th><span style="margin-right: 0.25rem;">#️⃣</span> Batch ID</th>
+                    <th><span style="margin-right: 0.25rem;">🌾</span> Crop & Hub</th>
+                    <th><span style="margin-right: 0.25rem;">⚖️</span> Quantity</th>
+                    <th><span style="margin-right: 0.25rem;">🎯</span> AI Quality Grade</th>
+                    <th><span style="margin-right: 0.25rem;">💰</span> Your Payout</th>
+                    <th><span style="margin-right: 0.25rem;">🏛️</span> Mandi Rate</th>
+                    <th><span style="margin-right: 0.25rem;">✨</span> Extra Profit</th>
                 </tr>
             </thead>
             <tbody>
@@ -240,13 +240,18 @@
                 <tr>
                     <td><code>{{ item.batch.batch_id }}</code></td>
                     <td>
-                        <strong>{{ item.batch.crop.name }}</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ item.batch.hub.name }}</div>
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <span>🥬</span>
+                            <strong>{{ item.batch.crop.name }}</strong>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-left: 1.35rem;">
+                            <span>📍</span> {{ item.batch.hub.name }}
+                        </div>
                     </td>
                     <td><strong>{{ item.breakdown.volume_kg }} kg</strong></td>
                     <td>
-                        <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}">
-                            Grade {{ item.breakdown.ai_grade }} ({{ item.breakdown.ai_confidence_score }}%)
+                        <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                            {% if item.breakdown.ai_grade == 'A' %}⭐{% elif item.breakdown.ai_grade == 'B' %}📦{% else %}⚠️{% endif %} Grade {{ item.breakdown.ai_grade }} ({{ item.breakdown.ai_confidence_score }}%)
                         </span>
                     </td>
                     <td>
@@ -256,14 +261,15 @@
                         ₹{{ item.breakdown.traditional_mandi_payout }}
                     </td>
                     <td>
-                        <span class="status-pill status-growing" style="font-weight: 700;">
-                            +₹{{ item.breakdown.disintermediation_gain }} (+{{ item.breakdown.extra_income_pct }}%)
+                        <span class="status-pill status-growing" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <span>✨</span> +₹{{ item.breakdown.disintermediation_gain }} (+{{ item.breakdown.extra_income_pct }}%)
                         </span>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
                     <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
                         No harvest batches recorded yet. <a href="{% url 'farmer_graded_produce' %}" style="color: #133826; font-weight: 700;">Upload produce photo</a> to run AI quality grading and get paid!
                     </td>
                 </tr>
@@ -547,6 +553,16 @@
             const m = document.getElementById(id);
             if (m && e.target === m) m.style.display = 'none';
         });
+    });
+
+    // Voice assistant auto-execution handler
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'add_crop') {
+            setTimeout(() => {
+                openAddCropModal();
+            }, 300);
+        }
     });
 </script>
 {% endblock %}

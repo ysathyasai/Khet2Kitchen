@@ -3,7 +3,7 @@ services:
     name: khet2kitchen
     runtime: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn k2k.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    startCommand: "gunicorn k2k.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

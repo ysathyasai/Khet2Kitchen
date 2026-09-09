@@ -82,20 +82,20 @@
         <table id="walletLedgerTable">
             <thead>
                 <tr>
-                    <th>TIMESTAMP</th>
-                    <th>TYPE</th>
-                    <th>DESCRIPTION</th>
-                    <th>AMOUNT</th>
-                    <th>SETTLEMENT RAIL</th>
+                    <th><span style="margin-right: 0.25rem;">📅</span> DATE & TIME</th>
+                    <th><span style="margin-right: 0.25rem;">📌</span> TYPE</th>
+                    <th><span style="margin-right: 0.25rem;">📝</span> DESCRIPTION</th>
+                    <th><span style="margin-right: 0.25rem;">💰</span> AMOUNT</th>
+                    <th><span style="margin-right: 0.25rem;">💳</span> SETTLEMENT METHOD</th>
                 </tr>
             </thead>
             <tbody id="walletLedgerBody">
                 {% for tx in recent_transactions %}
                 <tr>
-                    <td style="color: var(--text-muted); font-size: 0.88rem;">{{ tx.timestamp|date:"d M Y, H:i" }}</td>
+                    <td style="color: var(--text-muted); font-size: 0.88rem;">📅 {{ tx.timestamp|date:"d M Y, H:i" }}</td>
                     <td>
-                        <span class="status-pill {% if tx.transaction_type == 'CREDIT' %}status-growing{% else %}status-planting{% endif %}">
-                            {{ tx.get_transaction_type_display }}
+                        <span class="status-pill {% if tx.transaction_type == 'CREDIT' %}status-growing{% else %}status-planting{% endif %}" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                            {% if tx.transaction_type == 'CREDIT' %}💰{% else %}⚡{% endif %} {{ tx.get_transaction_type_display }}
                         </span>
                     </td>
                     <td><strong>{{ tx.description }}</strong></td>
@@ -106,7 +106,7 @@
                             <strong style="color: #DC2626; font-size: 1rem;">-₹{{ tx.amount }}</strong>
                         {% endif %}
                     </td>
-                    <td><span class="status-pill status-hub">Settled (UPI/IMPS)</span></td>
+                    <td><span class="status-pill status-hub" style="display: inline-flex; align-items: center; gap: 0.25rem;"><span>✅</span> Settled (UPI/Bank)</span></td>
                 </tr>
                 {% empty %}
                 <tr id="emptyLedgerRow">
