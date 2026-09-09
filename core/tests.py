@@ -1106,8 +1106,8 @@ class WeatherIntelligenceServicesTests(TestCase):
         mock_get.return_value = mock_response
 
         lat, lon, display_name = get_coordinates_from_pincode("999999")
-        self.assertEqual(lat, 17.5388)
-        self.assertEqual(lon, 78.3826)
+        self.assertEqual(lat, 17.5375)
+        self.assertEqual(lon, 78.3846)
         self.assertIn("VNR VJIET", display_name)
 
     @patch("core.services.requests.get")
@@ -1116,8 +1116,8 @@ class WeatherIntelligenceServicesTests(TestCase):
         mock_get.side_effect = requests.RequestException("DNS resolution failed")
 
         lat, lon, display_name = get_coordinates_from_pincode("422004")
-        self.assertEqual(lat, 17.5388)
-        self.assertEqual(lon, 78.3826)
+        self.assertEqual(lat, 17.5375)
+        self.assertEqual(lon, 78.3846)
         self.assertIn("VNR VJIET", display_name)
 
     @patch("core.services.requests.get")
@@ -1409,7 +1409,7 @@ class UserRegistrationTests(TestCase):
         self.assertTemplateUsed(response, "core/signup.html")
         self.assertContains(response, "Join Khet2Kitchen")
         self.assertContains(response, "Complete Registration")
-        self.assertContains(response, "btn-request-otp")
+        self.assertNotContains(response, "btn-request-otp")
         self.assertNotContains(response, "recaptcha-container")
         self.assertNotContains(response, "id_firebase_id_token")
         self.assertNotContains(response, "firebase-app-compat.js")
@@ -2576,35 +2576,25 @@ class UnifiedAuthenticationTests(TestCase):
         # User is authenticated in session
         self.assertEqual(int(self.client.session["_auth_user_id"]), self.retailer.id)
 
-    def test_email_otp_login_success_and_consumption(self):
-        """Verifies user can log in using their 6-digit Email OTP, and OTP is consumed."""
-        # 1. Request OTP
-        self.client.post(reverse("send_otp"), data={"identifier": self.retailer_email})
-        cached = cache.get(f"k2k_email_otp_{self.retailer_email.lower()}")
-        otp_code = cached["code"]
-
-        # 2. Log in using the OTP in the password field
+    def test_direct_password_login_success(self):
+        """Verifies user can log in immediately using their email and password without OTP gating."""
         login_res = self.client.post(
             reverse("login"),
             data={
                 "username": self.retailer_email,
-                "password": otp_code,
+                "password": self.retailer_password,
             },
         )
         self.assertRedirects(login_res, reverse("retailer_dashboard"))
         self.assertEqual(int(self.client.session["_auth_user_id"]), self.retailer.id)
 
-        # 3. OTP must be consumed (prevent replay)
-        self.assertIsNone(cache.get(f"k2k_email_otp_{self.retailer_email.lower()}"))
-
-    def test_invalid_email_otp_fails_login(self):
-        """Verifies invalid OTP fails gracefully without logging in."""
-        self.client.post(reverse("send_otp"), data={"identifier": self.retailer_email})
+    def test_invalid_password_fails_login(self):
+        """Verifies invalid password fails gracefully without logging in."""
         login_res = self.client.post(
             reverse("login"),
             data={
                 "username": self.retailer_email,
-                "password": "000000",  # wrong code
+                "password": "wrongpassword123",
             },
         )
         self.assertEqual(login_res.status_code, 200)
@@ -2612,17 +2602,31 @@ class UnifiedAuthenticationTests(TestCase):
         self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_login_page_renders_unified_elements(self):
-        """Verifies login.html contains the single-card unified form and Email OTP button without Firebase SDK or reCAPTCHA."""
+        """Verifies login.html contains the single-card unified password form without OTP buttons, spinners, or Firebase SDK."""
         res = self.client.get(reverse("login"))
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "btn-request-otp")
-        self.assertContains(res, "Get OTP")
-        self.assertContains(res, "otp-status-msg")
+        self.assertContains(res, "id_username")
+        self.assertContains(res, "id_password")
+        self.assertContains(res, "btn-login-submit")
+        self.assertNotContains(res, "btn-request-otp")
+        self.assertNotContains(res, "Get OTP via Email")
+        self.assertNotContains(res, "otp-status-msg")
         self.assertNotContains(res, "recaptcha-container")
         self.assertNotContains(res, "id_firebase_id_token")
         self.assertNotContains(res, "firebase-app-compat.js")
         self.assertNotContains(res, "firebase-auth-compat.js")
         self.assertNotContains(res, "AIzaSyCq48UsiSWoL6BJTYsYXhbH-nLx3oLADqA")
+
+    def test_signup_page_renders_instant_registration_elements(self):
+        """Verifies signup.html provides direct registration without OTP buttons or waiting spinners."""
+        res = self.client.get(reverse("signup"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "id_identifier_input")
+        self.assertContains(res, "id_password")
+        self.assertContains(res, "btn-signup-submit")
+        self.assertNotContains(res, "btn-request-otp")
+        self.assertNotContains(res, "Get OTP via Email")
+        self.assertNotContains(res, "otp-status-msg")
 
 
 class ActionOrientedVoiceAssistantTests(TestCase):

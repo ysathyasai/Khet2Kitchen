@@ -4,70 +4,213 @@
 
 {% block content %}
 <!-- ======================================================================= -->
-<!-- 1. STRIKING HERO SECTION (FROM REFERENCE IMAGE 4F6E78.JPG)              -->
+<!-- 1. STRIKING HERO SECTION                                                -->
 <!-- ======================================================================= -->
 <div class="hero-section" style="background: var(--hero-bg-gradient, linear-gradient(135deg, #0F2027 0%, #133826 45%, #1A4431 100%)); border-radius: 1.25rem; padding: 2.25rem 2rem; color: #FFFFFF; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(19, 56, 38, 0.25); border: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 2rem;">
     <div style="position: relative; z-index: 2; max-width: 850px;">
         <!-- Network pill -->
-        <div class="hero-network-pill">
-            <span>⚡</span> Direct Farmer Network • Fair Prices & Fast Payouts
+        <div class="hero-network-pill" style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 700; color: #A7F3D0; margin-bottom: 1rem;">
+            <span>🌾</span> Kisan Direct Market • 0% Middlemen • 100% Fair Price
         </div>
 
         <!-- Headline -->
-        <h1 class="hero-title" style="color: #FFFFFF;">
-            Khet2Kitchen Kisan Gateway
+        <h1 class="hero-title" style="color: #FFFFFF; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.6rem;">
+            Namaste, {{ user.first_name|default:"Kisan Bhai" }}! 👨‍🌾
         </h1>
 
         <!-- Subtitle -->
-        <p class="hero-subtitle" style="color: #E2E8F0;">
-            Sell your produce directly without middleman deductions. Get guaranteed minimum prices, instant bank transfers via UPI, and voice help in your local language.
+        <p class="hero-subtitle" style="color: #E2E8F0; font-size: 1.05rem; line-height: 1.5; margin-bottom: 1.25rem; max-width: 720px;">
+            अपनी फसल सीधे बेचें, सही दाम पाएं। फोटो खींच कर क्वालिटी जांचें और पूरा पैसा सीधा अपने बैंक खाते (UPI) में पाएं।<br>
+            <span style="font-size: 0.92rem; opacity: 0.9;">Sell crops directly at fair rates • Instant photo check • Direct UPI bank transfer.</span>
         </p>
 
-        <!-- Feature chips (High-Contrast Guaranteed on Mobile) -->
+        <!-- Feature chips -->
         <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.75rem;">
-            <span class="hero-chip">
-                ✅ Best Price Guarantee
+            <span class="hero-chip" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600;">
+                ✅ Best Price Guarantee (MSP)
             </span>
-            <span class="hero-chip">
-                ⚡ Instant Bank Transfer (UPI)
+            <span class="hero-chip" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600;">
+                ⚡ Same-Day Bank Transfer (UPI)
             </span>
-            <span class="hero-chip">
+            <span class="hero-chip" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600;">
                 📍 Free Drop at Local Hub
             </span>
         </div>
 
         <!-- CTA Buttons -->
-        <div class="hero-cta-group">
-            <a href="{% url 'farmer_graded_produce' %}" class="btn btn-gold" style="padding: 0.75rem 1.6rem; font-size: 0.95rem; font-weight: 700; border-radius: 0.6rem;">
-                <span>+ Log Harvest / AI Scan</span> →
+        <div class="hero-cta-group" style="display: flex; gap: 0.85rem; flex-wrap: wrap; align-items: center;">
+            <a href="{% url 'farmer_graded_produce' %}" class="btn btn-gold" style="padding: 0.85rem 1.8rem; font-size: 1.05rem; font-weight: 800; border-radius: 0.65rem; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <span>📸 Scan & Sell Crop (फसल बेचें)</span> →
             </a>
-            <a href="{% url 'farmer_pricing' %}" class="btn-hero-translucent">
-                <span>⚖️ View MSP Floor & Pricing</span>
+            <a href="{% url 'farmer_pricing' %}" class="btn-hero-translucent" style="padding: 0.85rem 1.4rem; font-size: 0.95rem; font-weight: 700; border-radius: 0.65rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.15); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.25);">
+                <span>💰 View MSP Floor & Rates (आज का भाव)</span>
             </a>
-            <button type="button" onclick="openVoiceAssistantModal()" class="btn" style="background: rgba(16, 185, 129, 0.25); color: #A7F3D0; border: 1px solid rgba(52, 211, 153, 0.45); padding: 0.75rem 1.25rem; font-size: 0.95rem; border-radius: 0.6rem; font-weight: 600; cursor: pointer;">
-                <span>🎤 Voice Assistant</span>
+            <button type="button" onclick="openVoiceAssistantModal()" class="btn" style="background: rgba(16, 185, 129, 0.3); color: #A7F3D0; border: 1px solid rgba(52, 211, 153, 0.5); padding: 0.85rem 1.4rem; font-size: 0.95rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <span>🎤 Bol Kar Poochein (बोल कर पूछें)</span>
             </button>
         </div>
     </div>
 </div>
 
 <!-- ======================================================================= -->
-<!-- 2. MY CROPS TABULAR SECTION                                             -->
+<!-- 2. FOUR BIG ACTION TILES (MAIN FARMER TASKS)                            -->
+<!-- ======================================================================= -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <!-- Tile 1: Scan & Sell -->
+    <a href="{% url 'farmer_graded_produce' %}" class="card" style="text-decoration: none; color: inherit; transition: all 0.2s ease; border: 2px solid #A7F3D0; background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%); margin-bottom: 0;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.75rem;">
+            <div style="width: 50px; height: 50px; border-radius: 12px; background: #D1FAE5; color: #065F46; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                📸
+            </div>
+            <div>
+                <div style="font-weight: 800; color: #133826; font-size: 1.1rem;">Scan & Sell Crop</div>
+                <div style="font-size: 0.8rem; color: #059669; font-weight: 700;">फोटो खींच कर तुरंत बेचें</div>
+            </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.85rem;">
+            Take a photo of your harvest to check quality grade and get guaranteed fair rates immediately.
+        </p>
+        <div style="font-size: 0.88rem; font-weight: 800; color: #059669; display: flex; align-items: center; gap: 0.35rem;">
+            <span>Sell Now (बेचें)</span> →
+        </div>
+    </a>
+
+    <!-- Tile 2: Today's Rates -->
+    <a href="{% url 'farmer_pricing' %}" class="card" style="text-decoration: none; color: inherit; transition: all 0.2s ease; border: 2px solid #FDE68A; background: linear-gradient(135deg, #FFFFFF 0%, #FFFBEB 100%); margin-bottom: 0;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.75rem;">
+            <div style="width: 50px; height: 50px; border-radius: 12px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                💰
+            </div>
+            <div>
+                <div style="font-weight: 800; color: #133826; font-size: 1.1rem;">Crop Rates (Bhav)</div>
+                <div style="font-size: 0.8rem; color: #B45309; font-weight: 700;">आज का मंडी भाव</div>
+            </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.85rem;">
+            Check today's guaranteed floor prices (MSP) for Tomato, Potato, Onion & seasonal crops.
+        </p>
+        <div style="font-size: 0.88rem; font-weight: 800; color: #B45309; display: flex; align-items: center; gap: 0.35rem;">
+            <span>Check Rates (भाव देखें)</span> →
+        </div>
+    </a>
+
+    <!-- Tile 3: My Money -->
+    <a href="{% url 'farmer_wallet' %}" class="card" style="text-decoration: none; color: inherit; transition: all 0.2s ease; border: 2px solid #BAE6FD; background: linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 100%); margin-bottom: 0;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.75rem;">
+            <div style="width: 50px; height: 50px; border-radius: 12px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                💳
+            </div>
+            <div>
+                <div style="font-weight: 800; color: #133826; font-size: 1.1rem;">My Money (Wallet)</div>
+                <div style="font-size: 0.8rem; color: #0284C7; font-weight: 700;">₹{{ wallet.current_balance|floatformat:2 }} खाते में</div>
+            </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.85rem;">
+            Send your crop earnings directly to your bank account via UPI instantly with zero fees.
+        </p>
+        <div style="font-size: 0.88rem; font-weight: 800; color: #0284C7; display: flex; align-items: center; gap: 0.35rem;">
+            <span>Transfer to Bank (पैसे निकालें)</span> →
+        </div>
+    </a>
+
+    <!-- Tile 4: Weather Advice -->
+    <a href="{% url 'farmer_weather' %}" class="card" style="text-decoration: none; color: inherit; transition: all 0.2s ease; border: 2px solid #E9D5FF; background: linear-gradient(135deg, #FFFFFF 0%, #FAF5FF 100%); margin-bottom: 0;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.75rem;">
+            <div style="width: 50px; height: 50px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                ⛅
+            </div>
+            <div>
+                <div style="font-weight: 800; color: #133826; font-size: 1.1rem;">Weather & Rain</div>
+                <div style="font-size: 0.8rem; color: #7E22CE; font-weight: 700;">मौसम और बारिश की सलाह</div>
+            </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.85rem;">
+            Check live rainfall forecast, spraying conditions, and harvest guidance for your field.
+        </p>
+        <div style="font-size: 0.88rem; font-weight: 800; color: #7E22CE; display: flex; align-items: center; gap: 0.35rem;">
+            <span>View Weather (मौसम देखें)</span> →
+        </div>
+    </a>
+</div>
+
+<!-- ======================================================================= -->
+<!-- 3. FOUR KPI CARDS (CORE FARMER METRICS)                                 -->
+<!-- ======================================================================= -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+    <!-- Card 1: Digital Wallet Balance -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">💳 Your Money (Wallet)</span>
+            <span style="font-size: 1.2rem;">💵</span>
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: #059669; letter-spacing: -0.02em;">
+            ₹{{ wallet.current_balance|floatformat:2 }}
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; font-size: 0.8rem;">
+            <span style="color: var(--text-muted);">खाते में उपलब्ध</span>
+            <a href="{% url 'farmer_wallet' %}" style="color: #133826; font-weight: 700; text-decoration: underline;">
+                Transfer to Bank →
+            </a>
+        </div>
+    </div>
+
+    <!-- Card 2: Total Crop Sales -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            🌾 Total Crop Sales (कुल कमाई)
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
+            ₹{{ financial_summary.total_net_payout|floatformat:0 }}
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.8rem; color: #065F46; font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
+            <span>● 100% Paid directly to your bank</span>
+        </div>
+    </div>
+
+    <!-- Card 3: Extra Profit vs Mandi -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            ✨ Extra Profit vs Mandi (बचत)
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: #059669; letter-spacing: -0.02em;">
+            +₹{{ financial_summary.total_disintermediation_gain|floatformat:0 }}
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.8rem; color: #059669; font-weight: 600;">
+            ● 0% middleman commission cut
+        </div>
+    </div>
+
+    <!-- Card 4: Farmer Rating -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+            ⭐ Your Farmer Rating (साख)
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: #D97706; letter-spacing: -0.02em;">
+            {{ reliability_score }} <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">/ 100</span>
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.8rem; color: #B45309; font-weight: 600;">
+            ⭐ Grade A Farmer • Trusted Quality
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- 4. MY CROPS TABULAR SECTION                                             -->
 <!-- ======================================================================= -->
 <div class="card">
     <div class="card-header">
         <div>
             <h2 class="card-title">
-                <span>🌱</span> My Crops
+                <span>🌱</span> My Crops in Field (मेरी फसलें)
             </h2>
-            <div class="card-subtitle">Your active crops and harvest schedules.</div>
+            <div class="card-subtitle">List of crops you are currently growing or getting ready to sell. (खेत में खड़ी फसलें)</div>
         </div>
         <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-            <button type="button" class="btn btn-forest" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem; cursor: pointer;" onclick="openAddCropModal()">
-                <span>➕ Add Crop</span>
+            <button type="button" class="btn btn-forest" style="padding: 0.6rem 1.25rem; font-size: 0.9rem; font-weight: 800; border-radius: 0.5rem; cursor: pointer;" onclick="openAddCropModal()">
+                <span>➕ Add New Crop (नई फसल)</span>
             </button>
-            <a href="{% url 'farmer_orders' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.82rem; border-radius: 0.5rem;">
-                <span>🔍 Track Produce Batches</span>
+            <a href="{% url 'farmer_orders' %}" class="btn btn-secondary" style="padding: 0.6rem 1.1rem; font-size: 0.88rem; border-radius: 0.5rem;">
+                <span>🔍 Track My Produce Batches</span>
             </a>
         </div>
     </div>
@@ -76,11 +219,11 @@
         <table>
             <thead>
                 <tr>
-                    <th><span style="margin-right: 0.25rem;">🌾</span> CROP NAME</th>
-                    <th><span style="margin-right: 0.25rem;">📅</span> PLANTED / HARVEST DATE</th>
-                    <th><span style="margin-right: 0.25rem;">⚖️</span> EXPECTED YIELD</th>
-                    <th><span style="margin-right: 0.25rem;">📌</span> STATUS</th>
-                    <th style="text-align: right;"><span style="margin-right: 0.25rem;">⚡</span> ACTIONS</th>
+                    <th><span style="margin-right: 0.25rem;">🌾</span> Crop (फसल)</th>
+                    <th><span style="margin-right: 0.25rem;">📅</span> Planted / Harvest (तारीख)</th>
+                    <th><span style="margin-right: 0.25rem;">📦</span> Quantity (वजन)</th>
+                    <th><span style="margin-right: 0.25rem;">⏱️</span> Status (स्थिति)</th>
+                    <th style="text-align: right;"><span style="margin-right: 0.25rem;">⚡</span> Actions (काम)</th>
                 </tr>
             </thead>
             <tbody>
@@ -111,7 +254,7 @@
                     </td>
                     <td>
                         <span class="status-pill {{ crop_item.get_status_class }}" style="display: inline-flex; align-items: center; gap: 0.3rem;">
-                            {% if crop_item.status == 'Growing' %}🌱{% elif crop_item.status == 'Planting' %}🚜{% elif crop_item.status == 'Harvested' %}🌾{% elif crop_item.status == 'At Hub (Graded)' %}🏬{% endif %} {{ crop_item.status }}
+                            {% if crop_item.status == 'Growing' %}🌱 खेत में है (Growing){% elif crop_item.status == 'Planting' %}🚜 बुवाई (Planting){% elif crop_item.status == 'Harvested' %}🌾 कटाई तैयार (Harvested){% elif crop_item.status == 'At Hub (Graded)' %}🏬 केंद्र पर (At Hub){% else %}{{ crop_item.status }}{% endif %}
                         </span>
                     </td>
                     <td style="text-align: right;">
@@ -129,13 +272,13 @@
                 {% empty %}
                 <tr>
                     <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
-                        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🌾</div>
-                        <div style="font-weight: 700; font-size: 1rem; color: #133826; margin-bottom: 0.35rem;">No crops registered yet</div>
-                        <div style="font-size: 0.85rem; max-width: 420px; margin: 0 auto 1.25rem auto; line-height: 1.4;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🌾</div>
+                        <div style="font-weight: 800; font-size: 1.1rem; color: #133826; margin-bottom: 0.35rem;">कोई फसल नहीं जोड़ी गई (No crops added yet)</div>
+                        <div style="font-size: 0.88rem; max-width: 440px; margin: 0 auto 1.25rem auto; line-height: 1.5;">
                             Track your crops, estimate harvest yields, and scan produce for instant payments.
                         </div>
-                        <button type="button" class="btn btn-forest" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;" onclick="openAddCropModal()">
-                            ➕ Add First Crop
+                        <button type="button" class="btn btn-forest" style="padding: 0.6rem 1.4rem; font-size: 0.9rem;" onclick="openAddCropModal()">
+                            ➕ Add First Crop (पहली फसल जोड़ें)
                         </button>
                     </td>
                 </tr>
@@ -146,76 +289,15 @@
 </div>
 
 <!-- ======================================================================= -->
-<!-- 3. FOUR KPI CARDS (CORE FARMER METRICS)                                 -->
-<!-- ======================================================================= -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
-    <!-- Card 1: Farmer Trust Score -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
-            Farmer Trust Score
-        </div>
-        <div style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
-            {{ reliability_score }} <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">/ 100</span>
-        </div>
-        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #065F46; font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
-            <span>⭐ Grade A Farmer</span> • On-Time Deliveries
-        </div>
-    </div>
-
-    <!-- Card 2: Digital Wallet Balance -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Digital Wallet Balance</span>
-            <span style="font-size: 1.1rem;">💳</span>
-        </div>
-        <div style="font-size: 1.85rem; font-weight: 800; color: #059669; letter-spacing: -0.02em;">
-            ₹{{ wallet.current_balance|floatformat:2 }}
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; font-size: 0.78rem;">
-            <span style="color: var(--text-muted);">Instant UPI to Bank</span>
-            <a href="{% url 'farmer_wallet' %}" style="color: #133826; font-weight: 700; text-decoration: underline;">
-                Withdraw →
-            </a>
-        </div>
-    </div>
-
-    <!-- Card 3: Seeds & Fertilizer Advance -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
-            Seeds & Fertilizer Advance
-        </div>
-        <div style="font-size: 1.85rem; font-weight: 800; color: #1F2937; letter-spacing: -0.02em;">
-            ₹0.00
-        </div>
-        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #059669; font-weight: 600;">
-            ● 0% Interest Farming Advance
-        </div>
-    </div>
-
-    <!-- Card 4: Guaranteed Minimum Price (MSP) -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
-            Guaranteed Minimum Price (MSP)
-        </div>
-        <div style="font-size: 1.85rem; font-weight: 800; color: #D97706; letter-spacing: -0.02em;">
-            100% Protected
-        </div>
-        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: #B45309; font-weight: 600;">
-            +₹{{ financial_summary.total_disintermediation_gain|floatformat:0 }} Extra Profit vs Mandi
-        </div>
-    </div>
-</div>
-
-<!-- ======================================================================= -->
-<!-- 4. RECENT HARVEST EARNINGS & PAYOUTS                                     -->
+<!-- 5. RECENT HARVEST EARNINGS & PAYOUTS                                     -->
 <!-- ======================================================================= -->
 <div class="card">
     <div class="card-header">
         <div>
             <h2 class="card-title">
-                <span>💰</span> Recent Harvest Earnings & Payouts
+                <span>💰</span> Recent Harvest Earnings & Payouts (बिक्री और कमाई)
             </h2>
-            <div class="card-subtitle">Your produce drops, AI quality grades, and guaranteed direct earnings compared to mandi rates.</div>
+            <div class="card-subtitle">Crops you dropped off, quality check results, and how much extra you made compared to old mandi rates.</div>
         </div>
         <a href="{% url 'farmer_pricing' %}" class="btn btn-forest" style="padding: 0.45rem 0.9rem; font-size: 0.8rem;">
             View Detailed Price Analysis →
@@ -227,12 +309,12 @@
             <thead>
                 <tr>
                     <th><span style="margin-right: 0.25rem;">#️⃣</span> Batch ID</th>
-                    <th><span style="margin-right: 0.25rem;">🌾</span> Crop & Hub</th>
-                    <th><span style="margin-right: 0.25rem;">⚖️</span> Quantity</th>
-                    <th><span style="margin-right: 0.25rem;">🎯</span> AI Quality Grade</th>
-                    <th><span style="margin-right: 0.25rem;">💰</span> Your Payout</th>
-                    <th><span style="margin-right: 0.25rem;">🏛️</span> Mandi Rate</th>
-                    <th><span style="margin-right: 0.25rem;">✨</span> Extra Profit</th>
+                    <th><span style="margin-right: 0.25rem;">🌾</span> Crop & Center</th>
+                    <th><span style="margin-right: 0.25rem;">📦</span> Weight</th>
+                    <th><span style="margin-right: 0.25rem;">🎯</span> Quality Grade</th>
+                    <th><span style="margin-right: 0.25rem;">💰</span> Money You Got</th>
+                    <th><span style="margin-right: 0.25rem;">🏛️</span> Old Mandi Rate</th>
+                    <th><span style="margin-right: 0.25rem;">✨</span> Extra Profit vs Mandi</th>
                 </tr>
             </thead>
             <tbody>
@@ -251,7 +333,7 @@
                     <td><strong>{{ item.breakdown.volume_kg }} kg</strong></td>
                     <td>
                         <span class="status-pill {% if item.breakdown.ai_grade == 'A' %}status-growing{% elif item.breakdown.ai_grade == 'B' %}status-planting{% else %}status-harvested{% endif %}" style="display: inline-flex; align-items: center; gap: 0.25rem;">
-                            {% if item.breakdown.ai_grade == 'A' %}⭐{% elif item.breakdown.ai_grade == 'B' %}📦{% else %}⚠️{% endif %} Grade {{ item.breakdown.ai_grade }} ({{ item.breakdown.ai_confidence_score }}%)
+                            {% if item.breakdown.ai_grade == 'A' %}⭐ Grade A (Top Quality){% elif item.breakdown.ai_grade == 'B' %}📦 Grade B (Good){% else %}⚠️ Grade C{% endif %}
                         </span>
                     </td>
                     <td>
@@ -270,66 +352,13 @@
                 <tr>
                     <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
                         <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
-                        No harvest batches recorded yet. <a href="{% url 'farmer_graded_produce' %}" style="color: #133826; font-weight: 700;">Upload produce photo</a> to run AI quality grading and get paid!
+                        अभी कोई फसल नहीं बेची गई (No harvest sold yet). Click <a href="{% url 'farmer_graded_produce' %}" style="color: #133826; font-weight: 700;">Scan & Sell Crop</a> to take a photo of your produce and get paid!
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-</div>
-
-<!-- ======================================================================= -->
-<!-- 5. PORTAL QUICK ACCESS TILES                                            -->
-<!-- ======================================================================= -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
-    <!-- Tile 1 -->
-    <a href="{% url 'farmer_graded_produce' %}" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease; display: block;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #E6F4EA; color: #133826; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                📦
-            </div>
-            <div>
-                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Photo Quality Grading</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Instant AI produce scan</div>
-            </div>
-        </div>
-        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
-            Take a clear photo of your harvest to instantly check quality grade and get guaranteed fair prices.
-        </p>
-    </a>
-
-    <!-- Tile 2 -->
-    <a href="{% url 'farmer_weather' %}" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease; display: block;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                ⛅
-            </div>
-            <div>
-                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Weather & Field Advice</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Live forecast & soil moisture</div>
-            </div>
-        </div>
-        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
-            Check live local weather forecasts, soil moisture levels, and AI recommendations for your crops.
-        </p>
-    </a>
-
-    <!-- Tile 3 -->
-    <a href="{% url 'farmer_logistics' %}" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease; display: block;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                🚚
-            </div>
-            <div>
-                <div style="font-weight: 700; color: #133826; font-size: 1rem;">Pickup & Transport</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Direct hub delivery</div>
-            </div>
-        </div>
-        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
-            Track scheduled pickup vehicles from your local micro-hub directly to city buyers.
-        </p>
-    </a>
 </div>
 
 <!-- ======================================================================= -->
@@ -341,43 +370,43 @@
     <div style="background: #FFFFFF; border-radius: 1rem; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E5E9E2; overflow: hidden; animation: fadeIn 0.2s ease-out;">
         <div style="padding: 1.25rem 1.5rem; background: #FAFCF9; border-bottom: 1px solid #E5E9E2; display: flex; justify-content: space-between; align-items: center;">
             <div style="font-weight: 800; font-size: 1.1rem; color: #133826; display: flex; align-items: center; gap: 0.5rem;">
-                <span>🌱</span> Log New Crop Planting
+                <span>🌱</span> Add New Crop (नई फसल जोड़ें)
             </div>
             <button type="button" onclick="closeAddCropModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted);">&times;</button>
         </div>
         <form method="post" action="{% url 'add_crop' %}" style="padding: 1.5rem;">
             {% csrf_token %}
             <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">CROP NAME</label>
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">CROP NAME (फसल का नाम)</label>
                 {{ crop_create_form.name }}
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">CATEGORY</label>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">CATEGORY (प्रकार)</label>
                     {{ crop_create_form.category }}
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">EXPECTED YIELD (KG)</label>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">WEIGHT IN KG (वजन - किलो)</label>
                     {{ crop_create_form.expected_yield_kg }}
                 </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">PLANTED DATE</label>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">PLANTED DATE (बोने की तारीख)</label>
                     {{ crop_create_form.planted_date }}
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">ESTIMATED HARVEST</label>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">HARVEST DATE (कटाई की तारीख)</label>
                     {{ crop_create_form.harvest_date }}
                 </div>
             </div>
             <div style="margin-bottom: 1.25rem;">
-                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">STATUS</label>
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem;">STATUS (स्थिति)</label>
                 {{ crop_create_form.status }}
             </div>
             <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                <button type="button" class="btn btn-secondary" onclick="closeAddCropModal()">Cancel</button>
-                <button type="submit" class="btn btn-forest">Save Crop</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddCropModal()">Cancel (रद्द करें)</button>
+                <button type="submit" class="btn btn-forest">Save Crop (फसल सेव करें)</button>
             </div>
         </form>
     </div>

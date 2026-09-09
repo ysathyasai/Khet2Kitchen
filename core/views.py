@@ -524,7 +524,7 @@ def api_weather_advisory(request):
             resolved_name = geo_name
     else:
         # Default fallback to VNR VJIET (Hyderabad, Telangana)
-        lat, lon, resolved_name = 17.5388, 78.3826, "VNR VJIET (Hyderabad, Telangana)"
+        lat, lon, resolved_name = 17.5375, 78.3846, "VNR VJIET (Hyderabad, Telangana)"
 
     cache_key = f"weather_intel_{round(lat, 2)}_{round(lon, 2)}"
     cached_intel = cache.get(cache_key)
@@ -1145,12 +1145,8 @@ def send_otp_view(request):
 
 def login_view(request):
     """
-    Unified Single-View Login for Project Khet2Kitchen (K2K).
-    Supports Password and Email OTP seamlessly through the exact same card.
-    
-    Precedence Order:
-    1. Password Check: user = authenticate(request, username=normalized_identifier, password=credential). If valid, login immediately.
-    2. Email OTP Check: If password fails and identifier is email, verify against active stored 6-digit Email OTP.
+    Zero-friction, direct login view for Project Khet2Kitchen (K2K).
+    Authenticates directly via username/mobile/email and password with no OTP barriers.
     """
     if request.user.is_authenticated:
         return redirect(request.user.get_dashboard_url())
@@ -1171,20 +1167,20 @@ def login_view(request):
         try:
             body_data = json.loads(request.body.decode("utf-8"))
             identifier = body_data.get("username") or body_data.get("identifier") or ""
-            credential = body_data.get("password") or body_data.get("otp") or ""
+            credential = body_data.get("password") or body_data.get("credential") or ""
         except Exception:
             pass
 
     if not identifier:
         identifier = request.POST.get("username") or request.POST.get("identifier") or ""
     if not credential:
-        credential = request.POST.get("password") or request.POST.get("otp") or ""
+        credential = request.POST.get("password") or request.POST.get("credential") or ""
 
     identifier = str(identifier).strip()
     credential = str(credential).strip()
 
-    if not identifier:
-        error_msg = "Please enter your mobile number or email address."
+    if not identifier or not credential:
+        error_msg = "Please enter both your identifier (mobile / email / username) and password."
         if is_ajax:
             return JsonResponse({"status": "error", "message": error_msg}, status=400)
         return render(request, "core/login.html", {"error": error_msg, "form_errors": True})
@@ -1195,47 +1191,19 @@ def login_view(request):
     else:
         normalized_identifier = normalize_phone_number(identifier)
 
-    # --------------------------------------------------------------------------
-    # 1. Password Check (Never invalidated by requesting an OTP)
-    # --------------------------------------------------------------------------
-    if credential:
-        user = authenticate(request, username=normalized_identifier, password=credential)
-        if not user and normalized_identifier != identifier:
-            user = authenticate(request, username=identifier, password=credential)
+    # Authenticate via DualAuthBackend
+    user = authenticate(request, username=normalized_identifier, password=credential)
+    if not user and normalized_identifier != identifier:
+        user = authenticate(request, username=identifier, password=credential)
 
-        if user and user.is_active:
-            login(request, user, backend="core.backends.DualAuthBackend")
-            logger.info("User %s successfully logged in via Password", user.identifier)
-            if is_ajax:
-                return JsonResponse({"status": "success", "redirect_url": user.get_dashboard_url()})
-            return redirect(user.get_dashboard_url())
+    if user and user.is_active:
+        login(request, user, backend="core.backends.DualAuthBackend")
+        logger.info("User %s successfully logged in via password", user.identifier)
+        if is_ajax:
+            return JsonResponse({"status": "success", "redirect_url": user.get_dashboard_url()})
+        return redirect(user.get_dashboard_url())
 
-    # --------------------------------------------------------------------------
-    # 2. Email OTP Check (If password fails and identifier is an email)
-    # --------------------------------------------------------------------------
-    if credential and is_email_identifier(identifier):
-        is_otp_valid, otp_msg = EmailOTPService.verify_otp(identifier, credential, request=request)
-        if is_otp_valid:
-            user = User.objects.filter(
-                Q(email__iexact=identifier) | Q(identifier__iexact=identifier)
-            ).first()
-
-            if user and user.is_active:
-                login(request, user, backend="core.backends.DualAuthBackend")
-                logger.info("User %s successfully logged in via Email OTP", user.identifier)
-                if is_ajax:
-                    return JsonResponse({"status": "success", "redirect_url": user.get_dashboard_url()})
-                return redirect(user.get_dashboard_url())
-            else:
-                error_msg = f"Valid OTP, but no active account was found for {identifier}."
-                if is_ajax:
-                    return JsonResponse({"status": "error", "message": error_msg}, status=400)
-                return render(request, "core/login.html", {"error": error_msg, "form_errors": True})
-
-    # --------------------------------------------------------------------------
-    # 3. Authentication Failed
-    # --------------------------------------------------------------------------
-    error_msg = "Invalid credentials. Please enter a valid password or 6-digit Email OTP."
+    error_msg = "Invalid credentials. Please verify your mobile number/email and password."
     if is_ajax:
         return JsonResponse({"status": "error", "message": error_msg}, status=400)
 
@@ -1245,48 +1213,14 @@ def login_view(request):
 
 def signup_view(request):
     """
-    Secure User Registration (Signup) view for Project Khet2Kitchen (K2K).
-    Supports Password and Email OTP registration.
+    Zero-friction User Registration (Signup) view for Project Khet2Kitchen (K2K).
+    Direct registration with username/mobile/email and password, with no OTP gates.
     Automatically provisions wallet, mirrors credentials, and routes dynamically.
     """
     if request.user.is_authenticated:
         return redirect(request.user.get_dashboard_url())
 
     if request.method == "POST":
-        raw_identifier = request.POST.get("identifier", "").strip()
-        raw_password = request.POST.get("password", "").strip()
-
-        # ----------------------------------------------------------------------
-        # 1. Email OTP Verification (if 6-digit code entered for email)
-        # ----------------------------------------------------------------------
-        if is_email_identifier(raw_identifier) and len(raw_password) == 6 and raw_password.isdigit():
-            is_otp_valid, otp_msg = EmailOTPService.verify_otp(raw_identifier, raw_password, request=request)
-            if is_otp_valid:
-                existing_user = User.objects.filter(
-                    Q(email__iexact=raw_identifier) | Q(identifier__iexact=raw_identifier)
-                ).first()
-                if existing_user and existing_user.is_active:
-                    login(request, existing_user, backend="core.backends.DualAuthBackend")
-                    messages.info(
-                        request,
-                        f"Welcome back, {existing_user.first_name or existing_user.identifier}! You already have an account.",
-                    )
-                    return redirect(existing_user.get_dashboard_url())
-
-                form = UserRegistrationForm(request.POST)
-                if form.is_valid():
-                    user = form.save()
-                    login(request, user, backend="core.backends.DualAuthBackend")
-                    messages.success(
-                        request,
-                        f"Welcome to Khet2Kitchen, {user.first_name or user.identifier}! Email verified successfully.",
-                    )
-                    return redirect(user.get_dashboard_url())
-                return render(request, "core/signup.html", {"form": form})
-
-        # ----------------------------------------------------------------------
-        # 2. Standard Password Registration
-        # ----------------------------------------------------------------------
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()

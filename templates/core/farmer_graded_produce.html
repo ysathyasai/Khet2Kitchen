@@ -97,21 +97,22 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
         <div>
             <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
-                Core Operations • Computer Vision
+                📸 फसल बेचें • आसान फोटो चेक (Sell Produce • Easy Photo Check)
             </div>
             <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
-                My Graded Produce & Optical AI Scan
+                📸 Scan & Sell Your Crop (फसल की फोटो खींचें)
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-                Drop off produce at hub conveyor or upload a photo for instant computer vision quality grading and guaranteed transparent payout calculation.
+                अपनी सब्जी या फल की फोटो अपलोड करें। सिस्टम तुरंत क्वालिटी चेक करके सही दाम बताएगा। केंद्र पर जमा करें और पूरा पैसा पाएं।<br>
+                <span style="font-size: 0.88rem; opacity: 0.9;">Take a photo of your harvest. Get instant quality grade, fair price calculation, and direct bank payout.</span>
             </p>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
             <span class="status-pill status-growing">
-                ● Edge Vision AI Active
+                ● Instant Photo Check
             </span>
             <span class="status-pill status-planting">
-                AGMARK Certified
+                100% Fair Price
             </span>
         </div>
     </div>
@@ -124,9 +125,9 @@
     <div class="card-header">
         <div>
             <h2 class="card-title">
-                <span>📸</span> Optical Inspection Scanner
+                <span>📸</span> Crop Camera & Quality Check (फोटो और क्वालिटी जांच)
             </h2>
-            <div class="card-subtitle">Multispectral color uniformity, geometry assessment & defect ratio measurement.</div>
+            <div class="card-subtitle">Take a clear photo of your produce to check freshness, color, and guaranteed selling price.</div>
         </div>
     </div>
 
@@ -134,8 +135,8 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
         <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <label for="cropSelect" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0;">
-                    Crop Variety:
+                <label for="cropSelect" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0;">
+                    फसल चुनें (Select Crop):
                 </label>
                 <span id="autoDetectedCropBadge" style="display: none; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 700; background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; padding: 0.15rem 0.5rem; border-radius: 9999px;">
                     🎯 Auto-Detected
@@ -153,16 +154,16 @@
         </div>
 
         <div>
-            <label for="volumeInput" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
-                Batch Volume (kg):
+            <label for="volumeInput" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem;">
+                वजन - किलो में (Weight in kg):
             </label>
             <input type="number" id="volumeInput" value="100" min="1" step="10" 
                 style="width: 100%; padding: 0.65rem 0.9rem; background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 0.5rem; color: var(--text-main); font-size: 0.9rem; outline: none;">
         </div>
 
         <div style="display: flex; align-items: flex-end;">
-            <button type="button" id="triggerUploadBtn" class="btn btn-gold" style="width: 100%; padding: 0.65rem; font-weight: 700; border-radius: 0.5rem;">
-                📷 Upload / Capture Photo
+            <button type="button" id="triggerUploadBtn" class="btn btn-gold" style="width: 100%; padding: 0.65rem; font-weight: 800; border-radius: 0.5rem;">
+                📷 Take / Upload Photo (फोटो खींचें)
             </button>
             <input type="file" id="produceImageInput" accept="image/*" style="display: none;">
         </div>
@@ -180,12 +181,12 @@
 
         <!-- Initial Placeholder State -->
         <div id="viewfinderPlaceholder" style="text-align: center; padding: 2.5rem 1rem;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.75rem;">🔍</div>
-            <div style="font-weight: 700; font-size: 1.15rem; color: #133826; margin-bottom: 0.25rem;">
-                Optical Viewfinder Ready
+            <div style="font-size: 3.5rem; margin-bottom: 0.75rem;">📸</div>
+            <div style="font-weight: 800; font-size: 1.15rem; color: #133826; margin-bottom: 0.25rem;">
+                यहाँ फोटो अपलोड करें (Tap Here to Take Photo)
             </div>
-            <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 440px; margin: 0 auto;">
-                Drag & drop a harvest sample photo here, or click to capture. Multispectral optical scan will analyze surface blemishes and grade the batch automatically.
+            <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 440px; margin: 0 auto; line-height: 1.5;">
+                Click here or tap the button above to upload a clear photo of your harvested produce.
             </p>
         </div>
 
@@ -194,7 +195,7 @@
 
         <!-- Scanning Status Bar Overlay -->
         <div id="scanningStatus" style="display: none; position: absolute; bottom: 15px; background: rgba(19, 56, 38, 0.95); border: 1px solid #34D399; padding: 0.5rem 1.25rem; border-radius: 9999px; color: #FFFFFF; font-size: 0.85rem; font-weight: 600;">
-            ⚡ Scanning: Analyzing surface blemishes & geometry...
+            ⚡ Checking quality: Analyzing freshness, color & quality...
         </div>
     </div>
 
@@ -204,10 +205,10 @@
             <div style="font-size: 1.6rem; line-height: 1;">🚫</div>
             <div>
                 <div style="font-size: 0.95rem; font-weight: 800; color: #991B1B; margin-bottom: 0.25rem;">
-                    Optical Quality Inspection Rejected
+                    फोटो स्पष्ट नहीं है (Photo Needs to be Clear)
                 </div>
                 <div id="scanErrorMessage" style="font-size: 0.88rem; color: #B91C1C; line-height: 1.45; font-weight: 500;">
-                    Invalid image. Please upload a clear photo of fresh agricultural produce (e.g., tomatoes, onions, chillies).
+                    कृपया अपनी ताज़ा फसल (जैसे टमाटर, प्याज, मिर्च) की साफ़ फोटो अपलोड करें।
                 </div>
             </div>
         </div>
@@ -217,8 +218,8 @@
     <div id="scanResultCard" style="display: none; margin-top: 1.5rem; background: #FFFFFF; border: 2px solid #10B981; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
             <div>
-                <span style="font-size: 0.72rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">
-                    AI Quality Assessment Result
+                <span style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">
+                    क्वालिटी जांच परिणाम (Quality Grade Result)
                 </span>
                 <div style="font-size: 1.4rem; font-weight: 800; color: #133826; margin-top: 0.2rem;" id="resultCropName">
                     Produce Variety

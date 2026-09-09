@@ -8,18 +8,19 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
         <div>
             <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
-                Earnings & Payouts
+                💳 कमाई और बैंक खाता (Earnings & Bank Transfer)
             </div>
             <h1 style="font-size: 1.85rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;">
-                Kisan Digital Wallet & Bank Payouts
+                💳 My Money & Bank Payouts (मेरा पैसा)
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-                Track your crop sales, quality bonuses, and instant UPI withdrawals directly to your bank account.
+                अपनी फसल की कमाई देखें और बिना किसी शुल्क के तुरंत अपने बैंक खाते (UPI) में ट्रांसफर करें।<br>
+                <span style="font-size: 0.88rem; opacity: 0.9;">Check your crop earnings and transfer money directly to your bank account via UPI with zero fees.</span>
             </p>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
             <span class="status-pill status-growing">
-                ● 24/7 Instant Bank Transfers Active
+                ● 24/7 Instant Bank Transfer (UPI)
             </span>
         </div>
     </div>
@@ -30,22 +31,22 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
         <div>
             <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
-                Available Wallet Balance
+                खाते में उपलब्ध पैसे (Available Balance)
             </div>
             <div style="font-size: 2.75rem; font-weight: 800; color: #133826; letter-spacing: -0.02em;" id="walletBalanceDisplay">
                 ₹{{ wallet.current_balance|floatformat:2 }}
             </div>
             <div style="font-size: 0.85rem; color: #065F46; font-weight: 600; margin-top: 0.25rem;">
-                ● Linked to: {{ user.phone_number }}@upi (Instant bank payout)
+                ● Linked UPI Account: <strong>{{ user.phone_number }}@upi</strong> (सीधा बैंक में)
             </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-end;">
             <button type="button" id="withdrawBtn" class="btn btn-gold" style="padding: 0.75rem 1.75rem; font-size: 1rem; font-weight: 800; border-radius: 0.6rem;">
-                ⚡ Withdraw to Bank Account
+                ⚡ Withdraw to Bank (पैसे निकालें)
             </button>
             <span style="font-size: 0.75rem; color: var(--text-muted);">
-                Zero fees • Instant transfer to your bank
+                0% Fees • Instant transfer directly to your bank
             </span>
         </div>
     </div>

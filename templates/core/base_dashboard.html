@@ -983,40 +983,40 @@
 
             {% else %}
             <!-- ================= DEFAULT / FARMER NAVIGATION ================= -->
-            <!-- SECTION 1: CORE OPERATIONS -->
+            <!-- SECTION 1: MAIN ACTIONS -->
             <div class="nav-section">
-                <div class="nav-section-title">Core Operations</div>
+                <div class="nav-section-title">Main Actions (मुख्य काम)</div>
                 <div class="nav-group">
                     <a href="{% url 'farmer_dashboard' %}" class="nav-link {% if active_nav == 'dashboard' %}active{% endif %}">
-                        <span class="nav-link-icon">📊</span>
-                        <span>Farmer's Dashboard</span>
+                        <span class="nav-link-icon">🌾</span>
+                        <span>My Farm Dashboard</span>
                     </a>
                     <a href="{% url 'farmer_graded_produce' %}" class="nav-link {% if active_nav == 'graded_produce' %}active{% endif %}">
-                        <span class="nav-link-icon">📦</span>
-                        <span>My Graded Produce</span>
+                        <span class="nav-link-icon">📸</span>
+                        <span>Scan & Sell Crop (फसल बेचें)</span>
                     </a>
                     <a href="{% url 'farmer_pricing' %}" class="nav-link {% if active_nav == 'pricing' %}active{% endif %}">
-                        <span class="nav-link-icon">💵</span>
-                        <span>AI Pricing & MSP Floor</span>
+                        <span class="nav-link-icon">💰</span>
+                        <span>Crop Rates (आज का भाव)</span>
                     </a>
                     <a href="{% url 'farmer_orders' %}" class="nav-link {% if active_nav == 'orders' %}active{% endif %}">
-                        <span class="nav-link-icon">🛒</span>
-                        <span>Incoming Orders</span>
+                        <span class="nav-link-icon">📦</span>
+                        <span>Buyer Orders (खरीदार आर्डर)</span>
                     </a>
                 </div>
             </div>
 
-            <!-- SECTION 2: SETTLEMENT & FLEET -->
+            <!-- SECTION 2: MONEY & DROP-OFF -->
             <div class="nav-section">
-                <div class="nav-section-title">Wallet & Transport</div>
+                <div class="nav-section-title">Payments & Hub (पैसा और केंद्र)</div>
                 <div class="nav-group">
                     <a href="{% url 'farmer_wallet' %}" class="nav-link {% if active_nav == 'wallet' %}active{% endif %}">
                         <span class="nav-link-icon">💳</span>
-                        <span>Wallet & Payouts</span>
+                        <span>My Money (खाते में पैसे)</span>
                     </a>
                     <a href="{% url 'farmer_logistics' %}" class="nav-link {% if active_nav == 'logistics' %}active{% endif %}">
                         <span class="nav-link-icon">🚚</span>
-                        <span>Pickup & Transport</span>
+                        <span>Collection Hub (कलेक्शन केंद्र)</span>
                     </a>
                     {% if user.is_staff or user.role == 'ADMIN' %}
                     <a href="{% url 'admin_command_dashboard' %}" class="nav-link {% if active_nav == 'admin' %}active{% endif %}">
@@ -1027,17 +1027,17 @@
                 </div>
             </div>
 
-            <!-- SECTION 3: FARMER ADVISORY -->
+            <!-- SECTION 3: WEATHER & HELP -->
             <div class="nav-section">
-                <div class="nav-section-title">Farmer Advisory</div>
+                <div class="nav-section-title">Weather & Help (मौसम और मदद)</div>
                 <div class="nav-group">
                     <a href="{% url 'farmer_weather' %}" class="nav-link {% if active_nav == 'weather' %}active{% endif %}">
                         <span class="nav-link-icon">⛅</span>
-                        <span>Weather & Field Risk</span>
+                        <span>Weather & Rain (मौसम सलाह)</span>
                     </a>
                     <button type="button" class="nav-link" onclick="openVoiceAssistantModal()">
                         <span class="nav-link-icon">🎤</span>
-                        <span>Voice Assistant</span>
+                        <span>Bol Kar Poochein (बोल कर पूछें)</span>
                     </button>
                 </div>
             </div>
@@ -1466,17 +1466,35 @@
 
                         // Check if action can be executed in-place immediately without a full page reload
                         let inPlaceExecuted = false;
+                        const currentPath = window.location.pathname;
+
                         if (data.action === 'OPEN_ADD_CROP' && typeof openAddCropModal === 'function') {
                             setTimeout(() => {
                                 closeVoiceAssistantModal();
                                 openAddCropModal();
                             }, 800);
                             inPlaceExecuted = true;
-                        } else if (data.action === 'REDIRECT_TO_HARVEST' && window.location.pathname.includes('/farmer/graded-produce/')) {
+                        } else if (data.action === 'REDIRECT_TO_HARVEST' && currentPath.includes('/farmer/graded-produce/')) {
                             setTimeout(() => {
                                 closeVoiceAssistantModal();
+                                const vf = document.getElementById('viewfinder') || document.getElementById('triggerUploadBtn');
+                                if (vf) vf.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 const fileInput = document.getElementById('produceImageInput') || document.getElementById('triggerUploadBtn');
                                 if (fileInput) fileInput.click();
+                            }, 800);
+                            inPlaceExecuted = true;
+                        } else if (data.action === 'REDIRECT_TO_PRICING' && currentPath.includes('/farmer/pricing/')) {
+                            setTimeout(() => {
+                                closeVoiceAssistantModal();
+                                const targetElem = document.querySelector('table') || document.querySelector('.card');
+                                if (targetElem) targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 800);
+                            inPlaceExecuted = true;
+                        } else if (data.action === 'REDIRECT_TO_WEATHER' && currentPath.includes('/farmer/weather/')) {
+                            setTimeout(() => {
+                                closeVoiceAssistantModal();
+                                const mapElem = document.getElementById('farmMapSection') || document.getElementById('farmMap');
+                                if (mapElem) mapElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }, 800);
                             inPlaceExecuted = true;
                         }

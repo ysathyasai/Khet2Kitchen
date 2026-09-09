@@ -327,17 +327,11 @@
                 </div>
 
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
-                        <label for="id_password" class="form-label" style="margin-bottom: 0;">
-                            Password / OTP
-                        </label>
-                        <button type="button" id="btn-request-otp" class="text-xs font-semibold text-amber-500 hover:text-amber-400" style="background: none; border: none; font-size: 0.8rem; font-weight: 700; color: #D97706; cursor: pointer; text-decoration: underline; padding: 0;">
-                            Get OTP via Email
-                        </button>
-                    </div>
-                    <div id="otp-status-msg" style="display: none; font-size: 0.82rem; margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-weight: 600;"></div>
+                    <label for="id_password" class="form-label">
+                        Password
+                    </label>
                     <input type="password" name="password" required id="id_password"
-                        placeholder="Enter password or OTP" class="form-input">
+                        placeholder="Enter your password" class="form-input">
                 </div>
 
                 <button type="submit" id="btn-login-submit" class="btn-submit">
@@ -388,101 +382,6 @@
     </footer>
 
     <script>
-        function showOtpStatus(msg, isError = false) {
-            const box = document.getElementById('otp-status-msg');
-            if (!box) return;
-            box.style.display = 'block';
-            if (typeof msg === 'string' && msg.trim().startsWith('<')) {
-                if (msg.includes('text-amber')) {
-                    box.style.background = '#FFFBEB';
-                    box.style.border = '1px solid #FCD34D';
-                    box.style.color = '#B45309';
-                } else if (msg.includes('text-emerald')) {
-                    box.style.background = '#ECFDF5';
-                    box.style.border = '1px solid #A7F3D0';
-                    box.style.color = '#065F46';
-                } else {
-                    box.style.background = '#FFFBEB';
-                    box.style.border = '1px solid #FCD34D';
-                }
-                box.innerHTML = msg;
-                return;
-            }
-            if (isError) {
-                box.style.background = '#FEF2F2';
-                box.style.border = '1px solid #FCA5A5';
-                box.style.color = '#991B1B';
-                box.innerHTML = '⚠️ ' + msg;
-            } else {
-                box.style.background = '#ECFDF5';
-                box.style.border = '1px solid #A7F3D0';
-                box.style.color = '#065F46';
-                box.innerHTML = '✅ ' + msg;
-            }
-        }
-
-        // Request OTP Button Click Handler
-        document.getElementById('btn-request-otp').addEventListener('click', async function () {
-            const userInput = document.getElementById('id_username');
-            const rawVal = userInput ? userInput.value.trim() : '';
-            if (!rawVal) {
-                showOtpStatus('Please enter your email address above to receive an OTP.', true);
-                if (userInput) userInput.focus();
-                return;
-            }
-
-            const btn = this;
-            btn.disabled = true;
-            btn.innerText = 'Requesting OTP...';
-
-            try {
-                if (rawVal.includes('@')) {
-                    // Email Flow: Call backend /auth/send-otp/
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
-                    const res = await fetch('{% url "send_otp" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': csrfToken,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: new URLSearchParams({ identifier: rawVal })
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            showOtpStatus('<span class="text-emerald-600">✅ OTP sent to your email. Valid for 5 minutes.</span>');
-                            const passInput = document.getElementById('id_password');
-                            if (passInput) {
-                                passInput.placeholder = 'Enter 6-digit Email OTP';
-                                passInput.focus();
-                            }
-                        } else {
-                            showOtpStatus(data.message || 'Failed to send Email OTP.', true);
-                        }
-                    } else {
-                        let errorMsg = 'Failed to send Email OTP.';
-                        try {
-                            const errData = await res.json();
-                            if (errData.message) errorMsg = errData.message;
-                        } catch (_) {}
-                        showOtpStatus(errorMsg, true);
-                    }
-                } else {
-                    // Mobile number entered
-                    showOtpStatus('<span class="text-amber-500 text-xs font-medium">⚠️ OTP is sent via Email only. Please enter your email above to receive an OTP, or enter your Password below to sign in directly.</span>', true);
-                }
-            } catch (err) {
-                console.error('OTP Request Error:', err);
-                showOtpStatus('Network error requesting OTP. Please retry or enter your password directly.', true);
-            } finally {
-                // Button text reset and never stuck
-                btn.disabled = false;
-                btn.innerText = 'Get OTP via Email';
-            }
-        });
-
         function fillDemo(identifier, password) {
             const userInput = document.getElementById('id_username');
             const passInput = document.getElementById('id_password');

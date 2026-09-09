@@ -620,8 +620,8 @@ def mock_dynamic_route(hub_id: Optional[int] = None) -> Dict[str, Any]:
 # ==============================================================================
 
 DEFAULT_HUB_COORDINATES: Tuple[float, float, str] = (
-    17.5388,
-    78.3826,
+    17.5375,
+    78.3846,
     "VNR VJIET (Hyderabad, Telangana)",
 )
 
@@ -632,7 +632,7 @@ def get_coordinates_from_pincode(pincode: str) -> Tuple[float, float, str]:
     via OpenStreetMap Nominatim API.
     
     Returns: Tuple of (lat, lon, display_name)
-    Fallback: (17.5388, 78.3826, 'VNR VJIET (Hyderabad, Telangana)')
+    Fallback: (17.5375, 78.3846, 'VNR VJIET (Hyderabad, Telangana)')
     """
     clean_pin = str(pincode or "").strip()
     if not clean_pin:
